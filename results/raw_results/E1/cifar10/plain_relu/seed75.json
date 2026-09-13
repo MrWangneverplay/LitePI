@@ -1,0 +1,28 @@
+{
+  "exp_id": "E1",
+  "dataset": "cifar10",
+  "method": "plain_relu",
+  "seed": 75,
+  "git_sha": "1c08721faf3652b4c9840c2012d2f2d6aab42ef4",
+  "timestamp_utc": "2026-09-08T04:10:13+00:00",
+  "hyperparams": {
+    "epochs": 40,
+    "batch_size": 128,
+    "lr": 0.001,
+    "optimizer": "AdamW",
+    "weight_decay": 0.0001,
+    "scheduler": "CosineAnnealingLR"
+  },
+  "device": "cpu",
+  "accuracy": {
+    "train_acc_final": 0.58596,
+    "test_acc_final": 0.604,
+    "test_acc_best": 0.6048,
+    "train_time_s": 3220.0
+  },
+  "acceptance": {
+    "threshold": 0.63,
+    "passed": false
+  },
+  "client_metrics": "n/a - plaintext training only (Phase 1)"
+}

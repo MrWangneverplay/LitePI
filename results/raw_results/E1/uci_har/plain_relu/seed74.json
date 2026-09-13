@@ -1,0 +1,29 @@
+{
+  "exp_id": "E1",
+  "dataset": "uci_har",
+  "method": "plain_relu",
+  "seed": 74,
+  "git_sha": "1c08721faf3652b4c9840c2012d2f2d6aab42ef4",
+  "timestamp_utc": "2026-09-08T09:50:02+00:00",
+  "hyperparams": {
+    "epochs": 30,
+    "batch_size": 128,
+    "lr": 0.001,
+    "optimizer": "AdamW",
+    "weight_decay": 0.0001,
+    "scheduler": "CosineAnnealingLR"
+  },
+  "device": "cpu",
+  "architecture": "conv(12ch)->relu->fc(128)->relu->fc(6)",
+  "accuracy": {
+    "train_acc_final": 0.9600108813928183,
+    "test_acc_final": 0.9005768578215134,
+    "test_acc_best": 0.9029521547336274,
+    "train_time_s": 10548.6
+  },
+  "acceptance": {
+    "threshold": 0.89,
+    "passed": true
+  },
+  "client_metrics": "n/a - plaintext training only (Phase 1)"
+}

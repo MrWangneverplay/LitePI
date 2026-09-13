@@ -1,0 +1,28 @@
+# 远端服务器实验环境依赖
+# 训练 model/mnist_cnn.py 所需:
+torch>=2.0
+torchvision>=0.15
+
+# 提示:
+# 1) CPU 版安装方式 (小, 安装快):
+#    pip install torch torchvision --index-url https://download.pytorch.org/whl/cpu
+# 2) NVIDIA GPU / CUDA 版安装方式:
+#    pip install torch torchvision --index-url https://download.pytorch.org/whl/cu121
+# 3) 同态加密 (TenSEAL) 需要单独安装:
+#    pip install tenseal
+#    或使用仓库内源码 TenSEAL/ 自行构建 (需 CMake 与 C++ 工具链)
+
+# =====================================================================
+# LitePI 实验环境锁定版（2026-09-12 整理）
+#
+# 导师服务器实测环境：Ubuntu + Python 3.12.3 + TenSEAL 0.3.16
+# 本地建议：Python 3.10 / 3.11 / 3.12 之一（tenseal 0.3.16 没有 3.13/3.14 的轮子）
+# 关键约束：numpy<2 —— TenSEAL 0.3.x 是按 numpy 1.x 编译的，装 numpy 2.x 会出错
+#
+# 安装（CPU 版 torch，体积小、装得快）：
+#   python -m pip install -r requirements.txt --extra-index-url https://download.pytorch.org/whl/cpu
+# =====================================================================
+tenseal==0.3.16
+numpy<2
+psutil>=5.9
+matplotlib>=3.7

@@ -1,0 +1,29 @@
+{
+  "exp_id": "E1",
+  "dataset": "mnist",
+  "method": "plain_relu",
+  "seed": 77,
+  "git_sha": "1c08721faf3652b4c9840c2012d2f2d6aab42ef4",
+  "timestamp_utc": "2026-09-07T09:33:26+00:00",
+  "hyperparams": {
+    "epochs": 10,
+    "batch_size": 64,
+    "lr": 0.001,
+    "optimizer": "Adam",
+    "weight_decay": 0.0,
+    "scheduler": null
+  },
+  "device": "cpu",
+  "accuracy": {
+    "train_acc_final": 0.98245,
+    "test_acc_final": 0.9778,
+    "test_acc_best": 0.9778,
+    "train_time_s": 1274.0
+  },
+  "acceptance": {
+    "threshold": 0.975,
+    "passed": true
+  },
+  "client_metrics": "n/a - plaintext training only (Phase 1)",
+  "source": "retrained"
+}

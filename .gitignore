@@ -1,0 +1,21 @@
+# 数据集（673 MB，不纳入版本控制；脚本需要时从 datasets/ 读取）
+datasets/
+
+# 训练产物（权重/日志/曲线）。如需追踪权重，注释掉下一行
+datas/
+
+# 虚拟环境（坏掉的 .venv 也在这里；新环境建议建在 D:\venvs\he_ai）
+.venv/
+.venv310/
+venv/
+
+# IDE
+.idea/
+.vscode/
+
+# Python
+__pycache__/
+*.py[cod]
+.pytest_cache/
+
+# 实验结果请务必保留（红线①），因此不忽略 results/

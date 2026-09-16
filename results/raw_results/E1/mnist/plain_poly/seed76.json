@@ -1,0 +1,28 @@
+{
+  "exp_id": "E1",
+  "dataset": "mnist",
+  "method": "plain_poly",
+  "seed": 76,
+  "git_sha": "812f023e0017b369b60d39c3c4b7d1c0077601f3",
+  "timestamp_utc": "2026-09-16T10:59:09+00:00",
+  "hyperparams": {
+    "epochs": 10,
+    "batch_size": 64,
+    "lr": 0.001,
+    "optimizer": "Adam/AdamW(按导师脚本)",
+    "activation": "poly2",
+    "p2_coeffs": [
+      0.0625,
+      0.5,
+      0.5
+    ]
+  },
+  "device": "cpu",
+  "accuracy": {
+    "test_acc_final": 0.982,
+    "test_acc_best": 0.982,
+    "train_time_s": 79.6
+  },
+  "checkpoint": "datas\\mnist_poly2_he_cnn_train_seed76.pt",
+  "source": "retrained"
+}

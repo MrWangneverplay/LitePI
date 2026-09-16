@@ -1,0 +1,17 @@
+{
+  "exp_id": "E1",
+  "dataset": "mnist",
+  "method": "approx_square",
+  "seed": 73,
+  "git_sha": "812f023e0017b369b60d39c3c4b7d1c0077601f3",
+  "timestamp_utc": "2026-09-15T14:09:41+00:00",
+  "checkpoint": "datas\\mnist_relu_cnn_train.pt",
+  "activation": {
+    "layer1": "square",
+    "layer2": "square"
+  },
+  "test_set_size": 10000,
+  "correct": 1784,
+  "accuracy": 0.1784,
+  "note": "post-hoc activation substitution on the ReLU-twin network (no retraining)"
+}

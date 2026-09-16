@@ -1,0 +1,17 @@
+{
+  "exp_id": "E10",
+  "dataset": "mnist",
+  "method": "mia_logits",
+  "seed": 73,
+  "git_sha": "a4eadae8a76c9a77bb3e879380ff0f4b092d146d",
+  "timestamp_utc": "2026-09-16T12:16:29+00:00",
+  "membership_inference": {
+    "auc": 0.5022469410456062,
+    "n_member": 300,
+    "n_non_member": 300,
+    "dim": 10
+  },
+  "output_mode": "full_logits",
+  "member_train_acc": 0.9766666666666667,
+  "non_member_test_acc": 0.9866666666666667
+}

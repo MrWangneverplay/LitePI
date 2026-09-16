@@ -1,0 +1,20 @@
+{
+  "exp_id": "E10",
+  "dataset": "mnist",
+  "method": "mask_fresh_layer2",
+  "seed": 73,
+  "git_sha": "a4eadae8a76c9a77bb3e879380ff0f4b092d146d",
+  "timestamp_utc": "2026-09-16T12:16:28+00:00",
+  "leakage": {
+    "Q": 200,
+    "dim": 64,
+    "mask_domain_R": 26.02219505310059,
+    "mse": 445.8638444923734,
+    "true_difference_energy": 26.58519172668457,
+    "relative_error": 16.771135189701976,
+    "recovery_correlation": 0.22886899845812286,
+    "recovery_snr_db": -12.24562459740135
+  },
+  "layer": "layer2",
+  "mask_policy": "fresh"
+}

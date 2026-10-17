@@ -1,0 +1,390 @@
+{
+  "exp_id": "E3",
+  "method": "rtt_scan",
+  "seed": 73,
+  "model": "T_e2e = T_client(s) + T_server(s) + (2+K_h)*RTT + bytes(s)/BW",
+  "bandwidth_mbps": 10.0,
+  "s_hybrid_per_layer_kb": 600.0,
+  "t_server_hybrid_ms": 0.0,
+  "note": "derived from measured E2 constants; per-layer server cost not measured, counted as 0",
+  "rows": [
+    {
+      "dataset": "mnist",
+      "rtt_ms": 1,
+      "schedule": "s=00 (HE-only)",
+      "K_h": 0,
+      "end_to_end_ms": 1015.699
+    },
+    {
+      "dataset": "mnist",
+      "rtt_ms": 1,
+      "schedule": "s=10 (1 hybrid)",
+      "K_h": 1,
+      "end_to_end_ms": 1515.405
+    },
+    {
+      "dataset": "mnist",
+      "rtt_ms": 1,
+      "schedule": "s=11 (all-hybrid)",
+      "K_h": 2,
+      "end_to_end_ms": 2015.11
+    },
+    {
+      "dataset": "mnist",
+      "rtt_ms": 5,
+      "schedule": "s=00 (HE-only)",
+      "K_h": 0,
+      "end_to_end_ms": 1023.699
+    },
+    {
+      "dataset": "mnist",
+      "rtt_ms": 5,
+      "schedule": "s=10 (1 hybrid)",
+      "K_h": 1,
+      "end_to_end_ms": 1527.405
+    },
+    {
+      "dataset": "mnist",
+      "rtt_ms": 5,
+      "schedule": "s=11 (all-hybrid)",
+      "K_h": 2,
+      "end_to_end_ms": 2031.11
+    },
+    {
+      "dataset": "mnist",
+      "rtt_ms": 20,
+      "schedule": "s=00 (HE-only)",
+      "K_h": 0,
+      "end_to_end_ms": 1053.699
+    },
+    {
+      "dataset": "mnist",
+      "rtt_ms": 20,
+      "schedule": "s=10 (1 hybrid)",
+      "K_h": 1,
+      "end_to_end_ms": 1572.405
+    },
+    {
+      "dataset": "mnist",
+      "rtt_ms": 20,
+      "schedule": "s=11 (all-hybrid)",
+      "K_h": 2,
+      "end_to_end_ms": 2091.11
+    },
+    {
+      "dataset": "mnist",
+      "rtt_ms": 50,
+      "schedule": "s=00 (HE-only)",
+      "K_h": 0,
+      "end_to_end_ms": 1113.699
+    },
+    {
+      "dataset": "mnist",
+      "rtt_ms": 50,
+      "schedule": "s=10 (1 hybrid)",
+      "K_h": 1,
+      "end_to_end_ms": 1662.405
+    },
+    {
+      "dataset": "mnist",
+      "rtt_ms": 50,
+      "schedule": "s=11 (all-hybrid)",
+      "K_h": 2,
+      "end_to_end_ms": 2211.11
+    },
+    {
+      "dataset": "mnist",
+      "rtt_ms": 100,
+      "schedule": "s=00 (HE-only)",
+      "K_h": 0,
+      "end_to_end_ms": 1213.699
+    },
+    {
+      "dataset": "mnist",
+      "rtt_ms": 100,
+      "schedule": "s=10 (1 hybrid)",
+      "K_h": 1,
+      "end_to_end_ms": 1812.405
+    },
+    {
+      "dataset": "mnist",
+      "rtt_ms": 100,
+      "schedule": "s=11 (all-hybrid)",
+      "K_h": 2,
+      "end_to_end_ms": 2411.11
+    },
+    {
+      "dataset": "mnist",
+      "rtt_ms": 200,
+      "schedule": "s=00 (HE-only)",
+      "K_h": 0,
+      "end_to_end_ms": 1413.699
+    },
+    {
+      "dataset": "mnist",
+      "rtt_ms": 200,
+      "schedule": "s=10 (1 hybrid)",
+      "K_h": 1,
+      "end_to_end_ms": 2112.405
+    },
+    {
+      "dataset": "mnist",
+      "rtt_ms": 200,
+      "schedule": "s=11 (all-hybrid)",
+      "K_h": 2,
+      "end_to_end_ms": 2811.11
+    },
+    {
+      "dataset": "cifar10",
+      "rtt_ms": 1,
+      "schedule": "s=00 (HE-only)",
+      "K_h": 0,
+      "end_to_end_ms": 3839.191
+    },
+    {
+      "dataset": "cifar10",
+      "rtt_ms": 1,
+      "schedule": "s=10 (1 hybrid)",
+      "K_h": 1,
+      "end_to_end_ms": 4340.539
+    },
+    {
+      "dataset": "cifar10",
+      "rtt_ms": 1,
+      "schedule": "s=11 (all-hybrid)",
+      "K_h": 2,
+      "end_to_end_ms": 4841.886
+    },
+    {
+      "dataset": "cifar10",
+      "rtt_ms": 5,
+      "schedule": "s=00 (HE-only)",
+      "K_h": 0,
+      "end_to_end_ms": 3847.191
+    },
+    {
+      "dataset": "cifar10",
+      "rtt_ms": 5,
+      "schedule": "s=10 (1 hybrid)",
+      "K_h": 1,
+      "end_to_end_ms": 4352.539
+    },
+    {
+      "dataset": "cifar10",
+      "rtt_ms": 5,
+      "schedule": "s=11 (all-hybrid)",
+      "K_h": 2,
+      "end_to_end_ms": 4857.886
+    },
+    {
+      "dataset": "cifar10",
+      "rtt_ms": 20,
+      "schedule": "s=00 (HE-only)",
+      "K_h": 0,
+      "end_to_end_ms": 3877.191
+    },
+    {
+      "dataset": "cifar10",
+      "rtt_ms": 20,
+      "schedule": "s=10 (1 hybrid)",
+      "K_h": 1,
+      "end_to_end_ms": 4397.539
+    },
+    {
+      "dataset": "cifar10",
+      "rtt_ms": 20,
+      "schedule": "s=11 (all-hybrid)",
+      "K_h": 2,
+      "end_to_end_ms": 4917.886
+    },
+    {
+      "dataset": "cifar10",
+      "rtt_ms": 50,
+      "schedule": "s=00 (HE-only)",
+      "K_h": 0,
+      "end_to_end_ms": 3937.191
+    },
+    {
+      "dataset": "cifar10",
+      "rtt_ms": 50,
+      "schedule": "s=10 (1 hybrid)",
+      "K_h": 1,
+      "end_to_end_ms": 4487.539
+    },
+    {
+      "dataset": "cifar10",
+      "rtt_ms": 50,
+      "schedule": "s=11 (all-hybrid)",
+      "K_h": 2,
+      "end_to_end_ms": 5037.886
+    },
+    {
+      "dataset": "cifar10",
+      "rtt_ms": 100,
+      "schedule": "s=00 (HE-only)",
+      "K_h": 0,
+      "end_to_end_ms": 4037.191
+    },
+    {
+      "dataset": "cifar10",
+      "rtt_ms": 100,
+      "schedule": "s=10 (1 hybrid)",
+      "K_h": 1,
+      "end_to_end_ms": 4637.539
+    },
+    {
+      "dataset": "cifar10",
+      "rtt_ms": 100,
+      "schedule": "s=11 (all-hybrid)",
+      "K_h": 2,
+      "end_to_end_ms": 5237.886
+    },
+    {
+      "dataset": "cifar10",
+      "rtt_ms": 200,
+      "schedule": "s=00 (HE-only)",
+      "K_h": 0,
+      "end_to_end_ms": 4237.191
+    },
+    {
+      "dataset": "cifar10",
+      "rtt_ms": 200,
+      "schedule": "s=10 (1 hybrid)",
+      "K_h": 1,
+      "end_to_end_ms": 4937.539
+    },
+    {
+      "dataset": "cifar10",
+      "rtt_ms": 200,
+      "schedule": "s=11 (all-hybrid)",
+      "K_h": 2,
+      "end_to_end_ms": 5637.886
+    },
+    {
+      "dataset": "uci_har",
+      "rtt_ms": 1,
+      "schedule": "s=00 (HE-only)",
+      "K_h": 0,
+      "end_to_end_ms": 2585.817
+    },
+    {
+      "dataset": "uci_har",
+      "rtt_ms": 1,
+      "schedule": "s=10 (1 hybrid)",
+      "K_h": 1,
+      "end_to_end_ms": 3086.826
+    },
+    {
+      "dataset": "uci_har",
+      "rtt_ms": 1,
+      "schedule": "s=11 (all-hybrid)",
+      "K_h": 2,
+      "end_to_end_ms": 3587.836
+    },
+    {
+      "dataset": "uci_har",
+      "rtt_ms": 5,
+      "schedule": "s=00 (HE-only)",
+      "K_h": 0,
+      "end_to_end_ms": 2593.817
+    },
+    {
+      "dataset": "uci_har",
+      "rtt_ms": 5,
+      "schedule": "s=10 (1 hybrid)",
+      "K_h": 1,
+      "end_to_end_ms": 3098.826
+    },
+    {
+      "dataset": "uci_har",
+      "rtt_ms": 5,
+      "schedule": "s=11 (all-hybrid)",
+      "K_h": 2,
+      "end_to_end_ms": 3603.836
+    },
+    {
+      "dataset": "uci_har",
+      "rtt_ms": 20,
+      "schedule": "s=00 (HE-only)",
+      "K_h": 0,
+      "end_to_end_ms": 2623.817
+    },
+    {
+      "dataset": "uci_har",
+      "rtt_ms": 20,
+      "schedule": "s=10 (1 hybrid)",
+      "K_h": 1,
+      "end_to_end_ms": 3143.826
+    },
+    {
+      "dataset": "uci_har",
+      "rtt_ms": 20,
+      "schedule": "s=11 (all-hybrid)",
+      "K_h": 2,
+      "end_to_end_ms": 3663.836
+    },
+    {
+      "dataset": "uci_har",
+      "rtt_ms": 50,
+      "schedule": "s=00 (HE-only)",
+      "K_h": 0,
+      "end_to_end_ms": 2683.817
+    },
+    {
+      "dataset": "uci_har",
+      "rtt_ms": 50,
+      "schedule": "s=10 (1 hybrid)",
+      "K_h": 1,
+      "end_to_end_ms": 3233.826
+    },
+    {
+      "dataset": "uci_har",
+      "rtt_ms": 50,
+      "schedule": "s=11 (all-hybrid)",
+      "K_h": 2,
+      "end_to_end_ms": 3783.836
+    },
+    {
+      "dataset": "uci_har",
+      "rtt_ms": 100,
+      "schedule": "s=00 (HE-only)",
+      "K_h": 0,
+      "end_to_end_ms": 2783.817
+    },
+    {
+      "dataset": "uci_har",
+      "rtt_ms": 100,
+      "schedule": "s=10 (1 hybrid)",
+      "K_h": 1,
+      "end_to_end_ms": 3383.826
+    },
+    {
+      "dataset": "uci_har",
+      "rtt_ms": 100,
+      "schedule": "s=11 (all-hybrid)",
+      "K_h": 2,
+      "end_to_end_ms": 3983.836
+    },
+    {
+      "dataset": "uci_har",
+      "rtt_ms": 200,
+      "schedule": "s=00 (HE-only)",
+      "K_h": 0,
+      "end_to_end_ms": 2983.817
+    },
+    {
+      "dataset": "uci_har",
+      "rtt_ms": 200,
+      "schedule": "s=10 (1 hybrid)",
+      "K_h": 1,
+      "end_to_end_ms": 3683.826
+    },
+    {
+      "dataset": "uci_har",
+      "rtt_ms": 200,
+      "schedule": "s=11 (all-hybrid)",
+      "K_h": 2,
+      "end_to_end_ms": 4383.836
+    }
+  ]
+}

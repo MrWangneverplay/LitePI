@@ -1,0 +1,20 @@
+{
+  "exp_id": "E1-deep",
+  "dataset": "cifar10",
+  "method": "deep_p2_depth4",
+  "seed": 75,
+  "epochs": 40,
+  "git_sha": "f77b1ccb0e0d5e07ea01dc56d782a2f173d48887",
+  "timestamp_utc": "2026-10-15T11:48:04+00:00",
+  "architecture": {
+    "channels": 32,
+    "hidden": 256,
+    "depth": 4,
+    "activation": "p2",
+    "multiplicative_depth": 9,
+    "fits_ckks_budget_6": false
+  },
+  "checkpoint": "datas\\cifar10_deep_p2_depth4_seed75_cnn_train.pt",
+  "test_accuracy": 0.6657,
+  "note": "deepened CIFAR-10 twin (grayscale, single conv + depth FCs)"
+}

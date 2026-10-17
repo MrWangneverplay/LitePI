@@ -1,0 +1,87 @@
+{
+  "exp_id": "E2",
+  "dataset": "mnist",
+  "method": "he_only",
+  "seed": 73,
+  "git_sha": "f77b1ccb0e0d5e07ea01dc56d782a2f173d48887",
+  "timestamp_utc": "2026-09-16T13:45:10+00:00",
+  "client_metrics": {
+    "T_encode_enc_total": {
+      "n": 25,
+      "mean_ms": 11.093828012235463,
+      "std_ms": 0.4875254983205984,
+      "min_ms": 10.549800004810095,
+      "max_ms": 12.322400056291372
+    },
+    "T_encode": {
+      "n": 25,
+      "mean_ms": 5.609728014096618,
+      "std_ms": 0.5830527302713749,
+      "min_ms": 4.393799987155944,
+      "max_ms": 6.942000065464526,
+      "derived": true,
+      "note": "= T_encode+enc_total − T_enc标定；TenSEAL 的 im2col_encoding 不可拆分"
+    },
+    "T_enc": {
+      "n": 25,
+      "mean_ms": 5.484099998138845,
+      "std_ms": 0.217853507098342,
+      "min_ms": 5.20329998107627,
+      "max_ms": 6.156000017654151
+    },
+    "T_dec": {
+      "n": 25,
+      "mean_ms": 1.7011239938437939,
+      "std_ms": 0.06991650265623608,
+      "min_ms": 1.6066000098362565,
+      "max_ms": 1.8753999611362815
+    },
+    "T_post": {
+      "n": 25,
+      "mean_ms": 0.012812006752938032,
+      "std_ms": 0.002334580701793927,
+      "min_ms": 0.00990001717582345,
+      "max_ms": 0.01780001912266016
+    },
+    "M_client_peak_mb": 728.6640625,
+    "E_client": "n/a（E6 能耗实验未做）"
+  },
+  "communication": {
+    "S_up_bytes": {
+      "n": 25,
+      "mean_bytes": 438286.36,
+      "std_bytes": 745.10328590516,
+      "min_bytes": 437415.0,
+      "max_bytes": 439354.0
+    },
+    "S_down_bytes": {
+      "n": 25,
+      "mean_bytes": 94359.32,
+      "std_bytes": 47.66700466080634,
+      "min_bytes": 94265.0,
+      "max_bytes": 94451.0
+    },
+    "S_key_bytes": 95446145,
+    "note": "S_up/S_down 为密文序列化字节；S_key = public+galois+relin（不含 sk）"
+  },
+  "reference": {
+    "T_server": {
+      "n": 25,
+      "mean_ms": 574.7750079957768,
+      "std_ms": 15.621185571051928,
+      "min_ms": 549.7759000281803,
+      "max_ms": 612.1490999939851
+    },
+    "context_setup_s": 0.9960335000068881,
+    "ckpt": "mnist_he_cnn_train.pt",
+    "encoded_slots": 4096,
+    "plaintext_vs_ciphertext_agreement": "25/25"
+  },
+  "hyperparams": {
+    "samples": 5,
+    "repeats": 5,
+    "warmup": 3,
+    "poly_modulus_degree": 8192,
+    "global_scale": 2097152
+  }
+}

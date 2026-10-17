@@ -1,0 +1,87 @@
+{
+  "exp_id": "E2",
+  "dataset": "uci_har",
+  "method": "he_only",
+  "seed": 73,
+  "git_sha": "f77b1ccb0e0d5e07ea01dc56d782a2f173d48887",
+  "timestamp_utc": "2026-09-16T13:47:53+00:00",
+  "client_metrics": {
+    "T_encode_enc_total": {
+      "n": 25,
+      "mean_ms": 13.898287999909371,
+      "std_ms": 1.5151690453978526,
+      "min_ms": 11.043099977541715,
+      "max_ms": 17.18039996922016
+    },
+    "T_encode": {
+      "n": 25,
+      "mean_ms": 7.229907994624227,
+      "std_ms": 1.2661763182099928,
+      "min_ms": 5.501499981619418,
+      "max_ms": 10.426099936012179,
+      "derived": true,
+      "note": "= T_encode+enc_total − T_enc标定；TenSEAL 的 im2col_encoding 不可拆分"
+    },
+    "T_enc": {
+      "n": 25,
+      "mean_ms": 6.668380005285144,
+      "std_ms": 0.5051589025908543,
+      "min_ms": 5.279900040477514,
+      "max_ms": 7.8298000153154135
+    },
+    "T_dec": {
+      "n": 25,
+      "mean_ms": 1.8211000063456595,
+      "std_ms": 0.09046685488233447,
+      "min_ms": 1.6921000205911696,
+      "max_ms": 1.9817000138573349
+    },
+    "T_post": {
+      "n": 25,
+      "mean_ms": 0.012299984227865934,
+      "std_ms": 0.002048168932740368,
+      "min_ms": 0.009400013368576765,
+      "max_ms": 0.020099978428333998
+    },
+    "M_client_peak_mb": 949.11328125,
+    "E_client": "n/a（E6 能耗实验未做）"
+  },
+  "communication": {
+    "S_up_bytes": {
+      "n": 25,
+      "mean_bytes": 438069.6,
+      "std_bytes": 644.8891377593516,
+      "min_bytes": 437370.0,
+      "max_bytes": 439450.0
+    },
+    "S_down_bytes": {
+      "n": 25,
+      "mean_bytes": 94347.68,
+      "std_bytes": 53.957328819478576,
+      "min_bytes": 94240.0,
+      "max_bytes": 94433.0
+    },
+    "S_key_bytes": 95451313,
+    "note": "S_up/S_down 为密文序列化字节；S_key = public+galois+relin（不含 sk）"
+  },
+  "reference": {
+    "T_server": {
+      "n": 25,
+      "mean_ms": 2142.1513600018807,
+      "std_ms": 49.82759679048194,
+      "min_ms": 2038.9074999839067,
+      "max_ms": 2236.852200003341
+    },
+    "context_setup_s": 1.0423585000098683,
+    "ckpt": "uci_har_he_cnn_train.pt",
+    "encoded_slots": 2016,
+    "plaintext_vs_ciphertext_agreement": "25/25"
+  },
+  "hyperparams": {
+    "samples": 5,
+    "repeats": 5,
+    "warmup": 3,
+    "poly_modulus_degree": 8192,
+    "global_scale": 2097152
+  }
+}

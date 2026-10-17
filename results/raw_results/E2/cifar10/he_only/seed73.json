@@ -1,0 +1,87 @@
+{
+  "exp_id": "E2",
+  "dataset": "cifar10",
+  "method": "he_only",
+  "seed": 73,
+  "git_sha": "f77b1ccb0e0d5e07ea01dc56d782a2f173d48887",
+  "timestamp_utc": "2026-09-16T13:46:49+00:00",
+  "client_metrics": {
+    "T_encode_enc_total": {
+      "n": 25,
+      "mean_ms": 15.959115994628517,
+      "std_ms": 3.2458545823757747,
+      "min_ms": 12.064799957443029,
+      "max_ms": 21.955600008368492
+    },
+    "T_encode": {
+      "n": 25,
+      "mean_ms": 8.939387993887067,
+      "std_ms": 3.2502709629553146,
+      "min_ms": 3.088399942498654,
+      "max_ms": 15.213900012895465,
+      "derived": true,
+      "note": "= T_encode+enc_total − T_enc标定；TenSEAL 的 im2col_encoding 不可拆分"
+    },
+    "T_enc": {
+      "n": 25,
+      "mean_ms": 7.019728000741452,
+      "std_ms": 0.8728477433259105,
+      "min_ms": 5.3387999651022255,
+      "max_ms": 9.588300017639995
+    },
+    "T_dec": {
+      "n": 25,
+      "mean_ms": 1.8076079967431724,
+      "std_ms": 0.17783045519857857,
+      "min_ms": 1.6518000047653913,
+      "max_ms": 2.536799991503358
+    },
+    "T_post": {
+      "n": 25,
+      "mean_ms": 0.012380010448396206,
+      "std_ms": 0.0017656412920802726,
+      "min_ms": 0.010100018698722124,
+      "max_ms": 0.0171000137925148
+    },
+    "M_client_peak_mb": 967.94921875,
+    "E_client": "n/a（E6 能耗实验未做）"
+  },
+  "communication": {
+    "S_up_bytes": {
+      "n": 25,
+      "mean_bytes": 438113.68,
+      "std_bytes": 672.1896880097661,
+      "min_bytes": 437221.0,
+      "max_bytes": 439457.0
+    },
+    "S_down_bytes": {
+      "n": 25,
+      "mean_bytes": 94355.72,
+      "std_bytes": 36.633909610268645,
+      "min_bytes": 94256.0,
+      "max_bytes": 94400.0
+    },
+    "S_key_bytes": 95450473,
+    "note": "S_up/S_down 为密文序列化字节；S_key = public+galois+relin（不含 sk）"
+  },
+  "reference": {
+    "T_server": {
+      "n": 25,
+      "mean_ms": 3393.4365480020642,
+      "std_ms": 73.6499959751088,
+      "min_ms": 3249.531499983277,
+      "max_ms": 3552.3749999701977
+    },
+    "context_setup_s": 0.9886279999627732,
+    "ckpt": "cifar10_he_cnn_train.pt",
+    "encoded_slots": 3200,
+    "plaintext_vs_ciphertext_agreement": "11/25"
+  },
+  "hyperparams": {
+    "samples": 5,
+    "repeats": 5,
+    "warmup": 3,
+    "poly_modulus_degree": 8192,
+    "global_scale": 2097152
+  }
+}

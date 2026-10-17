@@ -1,0 +1,247 @@
+"""Real (non-simulated) secure ReLU on additive shares.
+
+Built on ot_core.py (Chou-Orlandi OT) and gmw_core.py (GMW AND gates / wires).
+Nothing is ever reconstructed outside the self-test: each party only ever sees
+its own share.
+
+Pipeline for z = s_c + s_s (mod 2^k, two's complement fixed point):
+
+  1. A2B      additive share of z  ->  XOR bit-shares of z
+              (GMW ripple-carry adder; party0 feeds its own bits, party1 the others)
+  2. sign     b = NOT(msb)         ->  a shared bit, b = 1 iff z >= 0
+              (in two's complement the top bit IS the sign; a wire flip is free)
+  3. [b]      XOR bit-share -> ADDITIVE share of b     (1 OT)
+  4. z * b    additive shares of z*b                   (2 Gilboa OT multiplications)
+  5. output   additive shares of ReLU(z) = (c_c, c_s)
+
+Cost per ReLU:  A2B costs 3k AND gates (= 6k base OTs); step 3 costs 1 OT;
+step 4 costs 2k OTs.  Total ~= 8k+1 base OTs, i.e. ~4k+1 1-out-of-4 OTs.
+With the pure-Python curve (~0.5 s per 1-of-4 OT) a k=6 ReLU takes ~25 s.
+
+Run the self-test:
+    python mpc_relu_secure.py --self-test
+"""
+
+from __future__ import annotations
+
+import argparse
+import secrets
+
+from gmw_core import _ot_1of2_inproc, const, wand, wnot, wxor
+
+
+# ---------------------------------------------------------------- helpers
+
+def _nb(k: int) -> int:
+    return (k + 7) // 8
+
+
+def _enc(v: int, k: int) -> bytes:
+    return (v % (1 << k)).to_bytes(_nb(k), "big")
+
+
+def _dec(b: bytes, k: int) -> int:
+    return int.from_bytes(b, "big") % (1 << k)
+
+
+def _bits_of_private(v: int, k: int, party: int):
+    """Wire vector (LSB first) of an integer known only to `party`."""
+    out = []
+    for i in range(k):
+        bit = (v >> i) & 1
+        out.append((bit, 0) if party == 0 else (0, bit))
+    return out
+
+
+# ---------------------------------------------------------------- circuits
+
+def gmw_add(a_bits, b_bits, k: int):
+    """Ripple-carry adder over XOR-shared bits (LSB first).  ~3 AND gates/bit."""
+    carry = const(0)
+    out = []
+    for i in range(k):
+        axb = wxor(a_bits[i], b_bits[i])
+        out.append(wxor(axb, carry))                 # sum bit
+        carry = wxor(wand(a_bits[i], b_bits[i]), wand(carry, axb))  # carry out
+    return out
+
+
+def a2b(s_c: int, s_s: int, k: int):
+    """Arithmetic -> binary: additive shares (mod 2^k) to XOR bit-shares of the sum."""
+    return gmw_add(_bits_of_private(s_c, k, 0), _bits_of_private(s_s, k, 1), k)
+
+
+def drelu_wire(s_c: int, s_s: int, k: int):
+    """Shared bit b with b = 1 iff (s_c + s_s) mod 2^k is non-negative."""
+    bits = a2b(s_c, s_s, k)
+    return wnot(bits[k - 1])          # sign bit flipped: >= 0 means not negative
+
+
+# ---------------------------------------------------------------- OT multiplication
+
+def ot_mul_bit(bit0: int, bit1: int):
+    """One party knows bit0, the other bit1.
+
+    Returns additive shares of bit0*bit1 that satisfy  share0 + share1 == bit0*bit1
+    *as integers* (each share may be negative).  Reducing mod 2 here would wrap
+    share0 + share1 by 2, and the caller doubles the shares when rebuilding
+    b = b0 + b1 - 2*b0*b1, which would amplify that wrap into a wrong result.
+    """
+    rho = secrets.randbits(1)
+    got = _ot_1of2_inproc(bytes([rho]), bytes([rho + bit0]), bit1)
+    return -rho, got[0]
+
+
+def ot_mul_gilboa(x0: int, y1: int, k: int):
+    """Gilboa OT multiplication: party0 knows x0, party1 knows y1 (k-bit each).
+
+    Returns (share_p0, share_p1) with share_p0 + share_p1 == x0 * y1  (mod 2^k).
+    One 1-out-of-2 OT per bit of y1; party0 masks each partial product with a
+    fresh pad, so party1 only ever sees padded values.
+    """
+    total_pad = 0
+    p1_share = 0
+    for j in range(k):
+        rho = secrets.randbelow(1 << k)
+        total_pad = (total_pad + rho) % (1 << k)
+        msg0 = _enc(rho, k)
+        msg1 = _enc(rho + x0 * (1 << j), k)
+        got = _ot_1of2_inproc(msg0, msg1, (y1 >> j) & 1)
+        p1_share = (p1_share + _dec(got, k)) % (1 << k)
+    return (-total_pad) % (1 << k), p1_share
+
+
+def ot_xorbit_mult(x: int, b_self: int, b_other: int, k: int):
+    """Multiply a value by a XOR-shared bit in ONE 1-of-2 OT.
+
+    "self" holds the value x and one share b_self of the bit; "other" holds the
+    other share b_other.  Returns (self_share, other_share) with
+    self_share + other_share == x * (b_self xor b_other)  (mod 2^k).
+
+    Trick: the sender offers x * (b_self xor 0) and x * (b_self xor 1); the
+    receiver picks by b_other, so it receives x * (b_self xor b_other) masked by
+    a fresh pad.  This replaces the k-OT Gilboa loop with a single OT whose
+    messages are k bits wide.
+    """
+    rho = secrets.randbelow(1 << k)
+    m0 = (rho + x * (b_self ^ 0)) % (1 << k)
+    m1 = (rho + x * (b_self ^ 1)) % (1 << k)
+    got = _ot_1of2_inproc(_enc(m0, k), _enc(m1, k), b_other)
+    return (-rho) % (1 << k), _dec(got, k)
+
+
+# ---------------------------------------------------------------- the protocol
+
+def secure_relu(s_c: int, s_s: int, k: int, k_compare: int | None = None):
+    """Secure ReLU on additive shares.  Returns (c_c, c_s) with c_c + c_s == ReLU(z).
+
+    k       : ring bit width of the shares s_c, s_s and of the output shares.
+    k_compare : bit width used for the sign comparison (the A2B window).  Must be
+                <= k.  When |z| < 2^(k_compare-1), only the low k_compare bits are
+                needed to decide the sign, so the AND-gate count scales with
+                k_compare while the multiplication ring stays k bits wide.
+    """
+    if k_compare is None:
+        k_compare = k
+    assert 1 <= k_compare <= k
+    mask = (1 << k_compare) - 1
+    bits = a2b(s_c & mask, s_s & mask, k_compare)
+    b0, b1 = wnot(bits[k_compare - 1])             # shared sign/validity bit
+
+    # z * b = (s_c + s_s) * (b0 xor b1), via two single-OT "bit-selects".
+    a0, a1 = ot_xorbit_mult(s_c, b0, b1, k)        # shares of s_c * b (self=party0)
+    d1, d0 = ot_xorbit_mult(s_s, b1, b0, k)        # shares of s_s * b (self=party1)
+
+    c_c = (a0 + d0) % (1 << k)
+    c_s = (a1 + d1) % (1 << k)
+    return c_c, c_s
+
+
+# ---------------------------------------------------------------- self test
+
+def self_test(k: int = 6) -> int:
+    failures = 0
+
+    def check(name, ok, detail=""):
+        nonlocal failures
+        if not ok:
+            failures += 1
+        print(("PASS" if ok else "FAIL") + f"  {name}" + (f"  [{detail}]" if detail else ""))
+
+    # 1. A2B correctness
+    ok = True
+    detail = ""
+    for _ in range(3):
+        v = secrets.randbelow(1 << k)
+        s_c = secrets.randbelow(1 << k)
+        s_s = (v - s_c) % (1 << k)
+        bits = a2b(s_c, s_s, k)
+        rec = sum((b0 ^ b1) << i for i, (b0, b1) in enumerate(bits))
+        if rec != v:
+            ok = False
+            detail = f"v={v} got={rec}"
+    check("A2B: additive shares -> bit shares", ok, detail)
+
+    # 2. secure_relu matches plaintext ReLU (signed two's complement)
+    half = 1 << (k - 1)
+    cases = [half - 1, 1, 0, (1 << k) - 1, (1 << k) - (half // 2)]   # +max, 1, 0, -1, -big
+    ok = True
+    detail = ""
+    for z in cases:
+        s_c = secrets.randbelow(1 << k)
+        s_s = (z - s_c) % (1 << k)
+        c_c, c_s = secure_relu(s_c, s_s, k)
+        got = (c_c + c_s) % (1 << k)
+        signed = z - (1 << k) if z >= half else z
+        expect = max(signed, 0)
+        if got != expect:
+            ok = False
+            detail = f"z={signed} got={got} expect={expect}"
+    check("secure_relu matches plaintext ReLU", ok, detail)
+
+    # 3. no-leak spot check: neither party's output share equals the answer
+    ok = True
+    for z in cases[1:3]:
+        s_c = secrets.randbelow(1 << k)
+        s_s = (z - s_c) % (1 << k)
+        c_c, c_s = secure_relu(s_c, s_s, k)
+        answer = max(z - (1 << k) if z >= half else z, 0)
+        if answer != 0 and (c_c == answer or c_s == answer):
+            ok = False
+    check("no-leak spot check (single share != answer)", ok)
+
+    # 4. narrow-window sign: big ring k, small comparison window k_compare
+    K = 10
+    KC = 6
+    ok = True
+    detail = ""
+    for z in range(-31, 32):
+        ring = z % (1 << K)
+        s_c = secrets.randbelow(1 << K)
+        s_s = (ring - s_c) % (1 << K)
+        c_c, c_s = secure_relu(s_c, s_s, K, KC)
+        got = (c_c + c_s) % (1 << K)
+        expect = max(z, 0)
+        if got != expect:
+            ok = False
+            detail = f"z={z} got={got} expect={expect}"
+            break
+    check(f"secure_relu with narrow window (k={K}, k_compare={KC})", ok, detail)
+
+    print("\n" + ("ALL PASS" if failures == 0 else f"{failures} CHECK(S) FAILED"))
+    return 0 if failures == 0 else 1
+
+
+def main() -> int:
+    ap = argparse.ArgumentParser(description="Secure ReLU on additive shares")
+    ap.add_argument("--self-test", action="store_true")
+    ap.add_argument("--bits", type=int, default=6, help="bit width k (self-test)")
+    args = ap.parse_args()
+    if args.self_test:
+        return self_test(args.bits)
+    print("Run with --self-test")
+    return 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())

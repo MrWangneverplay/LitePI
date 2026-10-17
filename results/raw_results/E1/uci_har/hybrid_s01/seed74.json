@@ -1,0 +1,16 @@
+{
+  "exp_id": "E1",
+  "dataset": "uci_har",
+  "method": "hybrid_s01",
+  "seed": 74,
+  "epochs": 30,
+  "git_sha": "f77b1ccb0e0d5e07ea01dc56d782a2f173d48887",
+  "timestamp_utc": "2026-10-06T11:37:40+00:00",
+  "activation": {
+    "layer1": "p2",
+    "layer2": "relu"
+  },
+  "checkpoint": "datas\\uci_har_hybrid_s01_seed74_cnn_train.pt",
+  "test_accuracy": 0.9009161859518154,
+  "note": "trained with per-layer activation (训练即 HE 友好), seed 73"
+}

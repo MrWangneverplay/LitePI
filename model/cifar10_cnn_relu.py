@@ -105,7 +105,7 @@ def get_device() -> torch.device:
     return torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 
-def load_data(batch_size: int) -> tuple[DataLoader, DataLoader]:
+def load_data(batch_size: int, num_workers: int = 0) -> tuple[DataLoader, DataLoader]:
     # Augmentation happens on RGB in the PIL domain; grayscale collapse and
     # normalization are done inside preprocess() so both sides always agree.
     train_transform = transforms.Compose(
@@ -122,9 +122,12 @@ def load_data(batch_size: int) -> tuple[DataLoader, DataLoader]:
     test_dataset = datasets.CIFAR10(
         root=str(DATASET_DIR), train=False, download=True, transform=test_transform
     )
+    pin = torch.cuda.is_available()
     return (
-        DataLoader(train_dataset, batch_size=batch_size, shuffle=True),
-        DataLoader(test_dataset, batch_size=batch_size, shuffle=False),
+        DataLoader(train_dataset, batch_size=batch_size, shuffle=True,
+                   num_workers=num_workers, pin_memory=pin),
+        DataLoader(test_dataset, batch_size=batch_size, shuffle=False,
+                   num_workers=num_workers, pin_memory=pin),
     )
 
 
@@ -171,7 +174,7 @@ def train(
 ) -> dict[str, list[float]]:
     """Same optimizer recipe as the square twin: AdamW (wd 1e-4) + CosineAnnealing."""
     criterion = nn.CrossEntropyLoss()
-    optimizer = optim.Adam(model.parameters(), lr=lr, weight_decay=1e-4)
+    optimizer = optim.AdamW(model.parameters(), lr=lr, weight_decay=1e-4)
     scheduler = CosineAnnealingLR(optimizer, T_max=epochs)
     history: dict[str, list[float]] = {
         "train_loss": [],
@@ -336,6 +339,11 @@ def main() -> None:
         results.append(summary["test_acc_final"])
     else:
         for seed in seeds:
+            # Seed BEFORE constructing the model: otherwise the multi-seed run
+            # shares one initialization and the reported std is meaningless.
+            torch.manual_seed(seed)
+            if torch.cuda.is_available():
+                torch.cuda.manual_seed_all(seed)
             model = ReluCifarNet().to(device)
             _, summary = train_one(model, train_loader, test_loader, device,
                                    args.epochs, args.lr, seed)

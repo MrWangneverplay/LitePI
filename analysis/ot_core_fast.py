@@ -15,8 +15,9 @@ with two changes that remove the latency bottleneck.
 Point addition/subtraction stays in pure Python (one modular inverse per call,
 only 1-2 calls per OT).
 
-Why: a k=16 secure ReLU consumes 6k+1 = 97 base OTs.  At the old ~198 ms per
-OT that is ~19 s; here it is tens of milliseconds.
+Why: a profile-B secure ReLU (k_compare=14) consumes 2k-1 = 27 base OTs after
+the slim carry-chain DReLU.  At the old ~198 ms per OT that is ~5.3 s; here it
+is tens of milliseconds.
 
 Run:
     python analysis/ot_core_fast.py --self-test

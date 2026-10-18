@@ -14,9 +14,10 @@ Pipeline for z = s_c + s_s (mod 2^k, two's complement fixed point):
   4. z * b    additive shares of z*b                   (2 Gilboa OT multiplications)
   5. output   additive shares of ReLU(z) = (c_c, c_s)
 
-Cost per ReLU:  A2B costs 3k AND gates (= 6k base OTs); step 3 costs 1 OT;
-step 4 costs 2k OTs.  Total ~= 8k+1 base OTs, i.e. ~4k+1 1-out-of-4 OTs.
-With the pure-Python curve (~0.5 s per 1-of-4 OT) a k=6 ReLU takes ~25 s.
+Cost per ReLU (slim path): the carry chain uses 1 private-input AND plus
+(k-2) majority gates, i.e. 1 + 2(k-2) = 2k-3 base OTs; the two bit-select
+multiplications add 2.  Total = 2k-1 base OTs (k=14 -> 27, versus 58 for the
+full-adder version).
 
 Run the self-test:
     python mpc_relu_secure.py --self-test
@@ -27,7 +28,7 @@ from __future__ import annotations
 import argparse
 import secrets
 
-from gmw_core import _ot_1of2_inproc, const, wand, wnot, wxor
+from gmw_core import _ot_1of2_inproc, const, ot_count, reset_ot_count, wand, wnot, wxor
 
 
 # ---------------------------------------------------------------- helpers
@@ -132,6 +133,45 @@ def ot_xorbit_mult(x: int, b_self: int, b_other: int, k: int):
 
 # ---------------------------------------------------------------- the protocol
 
+def ot_and_private(a0: int, b1: int):
+    """AND of two bits held by different parties (party0=a0, party1=b1).
+
+    Each party holds one input bit, so a single base 1-of-2 OT suffices
+    (unlike a general GMW AND, which needs a 1-of-4 OT = 2 base OTs).
+    """
+    rho = secrets.randbits(1)
+    got = _ot_1of2_inproc(bytes([rho]), bytes([rho ^ a0]), b1)
+    return rho, got[0]
+
+
+def maj_wire(a, b, c):
+    """majority(a,b,c) as a wire: ((a xor c) & (b xor c)) xor c.
+
+    One general GMW AND per carry, instead of the two ANDs of the full-adder
+    carry recurrence.
+    """
+    return wxor(wand(wxor(a, c), wxor(b, c)), c)
+
+
+def drelu_slim(s_c: int, s_s: int, k: int):
+    """Shared bit b with b = 1 iff (s_c + s_s) mod 2^k is non-negative.
+
+    Only the carry chain is evaluated:
+        c_1 = a_0 & b_0              (1 private-input AND, 1 base OT)
+        c_{i+1} = maj(a_i,b_i,c_i)   (k-2 majority gates, 2 base OTs each)
+        sign = a_{k-1} xor b_{k-1} xor c_{k-1}
+    Base-OT count for the sign: 1 + 2(k-2) = 2k-3.
+    """
+    assert k >= 2, "slim DReLU needs at least 2 bits"
+    a_bits = _bits_of_private(s_c, k, 0)
+    b_bits = _bits_of_private(s_s, k, 1)
+    carry = ot_and_private(a_bits[0][0], b_bits[0][1])
+    for i in range(1, k - 1):
+        carry = maj_wire(a_bits[i], b_bits[i], carry)
+    sign = wxor(a_bits[k - 1], b_bits[k - 1], carry)
+    return wnot(sign)
+
+
 def secure_relu(s_c: int, s_s: int, k: int, k_compare: int | None = None):
     """Secure ReLU on additive shares.  Returns (c_c, c_s) with c_c + c_s == ReLU(z).
 
@@ -145,8 +185,7 @@ def secure_relu(s_c: int, s_s: int, k: int, k_compare: int | None = None):
         k_compare = k
     assert 1 <= k_compare <= k
     mask = (1 << k_compare) - 1
-    bits = a2b(s_c & mask, s_s & mask, k_compare)
-    b0, b1 = wnot(bits[k_compare - 1])             # shared sign/validity bit
+    b0, b1 = drelu_slim(s_c & mask, s_s & mask, k_compare)
 
     # z * b = (s_c + s_s) * (b0 xor b1), via two single-OT "bit-selects".
     a0, a1 = ot_xorbit_mult(s_c, b0, b1, k)        # shares of s_c * b (self=party0)
@@ -181,6 +220,23 @@ def self_test(k: int = 6) -> int:
             ok = False
             detail = f"v={v} got={rec}"
     check("A2B: additive shares -> bit shares", ok, detail)
+
+    # 1b. OT count: full-adder A2B versus the slim carry chain
+    s_c = secrets.randbelow(1 << k)
+    s_s = secrets.randbelow(1 << k)
+    mask = (1 << k) - 1
+    reset_ot_count()
+    bits = a2b(s_c & mask, s_s & mask, k)
+    _ = wnot(bits[k - 1])
+    old_ots = ot_count()
+    reset_ot_count()
+    _ = drelu_slim(s_c & mask, s_s & mask, k)
+    new_ots = ot_count()
+    reset_ot_count()
+    _ = secure_relu(s_c & mask, s_s & mask, k, k)
+    full_ots = ot_count()
+    check("slim DReLU uses fewer base OTs", new_ots < old_ots,
+          f"old_sign={old_ots} new_sign={new_ots} full_slim={full_ots}")
 
     # 2. secure_relu matches plaintext ReLU (signed two's complement)
     half = 1 << (k - 1)

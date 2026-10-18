@@ -34,7 +34,7 @@ import torch
 import torch.nn as nn
 from torch.utils.data import DataLoader, Subset
 
-DEFAULT_ROOT = r"D:\王梓杨\项目组\wzy"
+DEFAULT_ROOT = str(Path(__file__).resolve().parent.parent)
 
 # ---------------------------------------------------------------- 激活函数
 A0, A1, A2 = 0.0625, 0.5, 0.5          # p2(x) = 0.0625 + 0.5x + 0.5x²（与导师脚本一致）

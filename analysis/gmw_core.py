@@ -27,8 +27,24 @@ except Exception:  # pragma: no cover - fall back to the pure-Python secp256k1 c
 
 # --------------------------------------------------------- 1-out-of-2 (in memory)
 
+_OT_COUNT = 0
+
+
+def reset_ot_count() -> None:
+    """Reset the base 1-of-2 OT counter (benchmarking only)."""
+    global _OT_COUNT
+    _OT_COUNT = 0
+
+
+def ot_count() -> int:
+    """Number of base 1-of-2 OTs executed since the last reset."""
+    return _OT_COUNT
+
+
 def _ot_1of2_inproc(m0: bytes, m1: bytes, c: int) -> bytes:
     """One in-process 1-out-of-2 OT; receiver with choice c gets m_c."""
+    global _OT_COUNT
+    _OT_COUNT += 1
     a, A = sender_step1()
     b, B = receiver_step1(c, A)
     e0, e1 = sender_step2(a, A, B, m0, m1)

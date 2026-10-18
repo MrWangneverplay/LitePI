@@ -33,7 +33,7 @@ from pathlib import Path
 import numpy as np
 import torch
 
-DEFAULT_ROOT = r"D:\王梓杨\项目组\wzy"
+DEFAULT_ROOT = str(Path(__file__).resolve().parent.parent)
 
 SPEC = {
     "mnist": dict(module="mnist_cnn_enc.py", ckpt="mnist_relu_cnn_train.pt", classes=10),

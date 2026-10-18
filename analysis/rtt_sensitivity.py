@@ -33,7 +33,7 @@ try:
 except Exception:  # pragma: no cover
     HAS_MPL = False
 
-DEFAULT_ROOT = r"D:\王梓杨\项目组\wzy"
+DEFAULT_ROOT = str(Path(__file__).resolve().parent.parent)
 
 SCHEDULES = [("s=00 (HE-only)", 0), ("s=10 (1 hybrid)", 1), ("s=11 (all-hybrid)", 2)]
 RTT_GRID_MS = [1, 5, 20, 50, 100, 200]

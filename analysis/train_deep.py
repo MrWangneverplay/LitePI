@@ -28,7 +28,7 @@ import torch
 import torch.nn as nn
 import torch.optim as optim
 
-DEFAULT_ROOT = r"D:\王梓杨\项目组\wzy"
+DEFAULT_ROOT = str(Path(__file__).resolve().parent.parent)
 
 A0, A1, A2 = 0.0625, 0.5, 0.5
 BUDGET = 6  # multiplicative-depth budget of the current CKKS parameters

@@ -35,42 +35,46 @@ would otherwise wrap silently.
 from __future__ import annotations
 
 import argparse
+import secrets
 
 import numpy as np
 
 from mpc_relu_secure import secure_relu
+from params_b import F as F_B, K_COMPARE as K_COMPARE_B, K_RING as K_RING_B
 
 
 def _rerandomize(cc: int, cs: int, k_ring: int, f: int, rng) -> tuple[float, float]:
     """Convert ring shares (cc, cs) of a value v into REAL-additive float shares.
 
     Client draws rho in [0, 2^(k_ring-1)); the server's share becomes v - rho.
-    Statistical distance of the server share is 2^(k_compare)/2^(k_ring-1).
+    Statistical distance of the server share is 2^(k_compare-1)/2^(k_ring-1).
     """
     half = 1 << (k_ring - 1)
-    rho = int(rng.integers(0, half))
+    # rho MUST come from the OS CSPRNG: the server's share is v - rho, so a
+    # predictable PRNG would let an attacker strip the mask.
+    rho = secrets.randbelow(half)
     t0 = (cc - rho) % (1 << k_ring)
     t = (t0 + cs) % (1 << k_ring)
     b = t - (1 << k_ring) if t >= half else t
     return rho / (2.0 ** f), b / (2.0 ** f)
 
 
-def secure_relu_fxp(s_c, s_s, k_ring: int = 44, f: int | None = None,
-                    k_compare: int | None = None, rng=None):
+def secure_relu_fxp(s_c, s_s, k_ring: int = K_RING_B, f: int | None = None,
+                    k_compare: int | None = K_COMPARE_B, rng=None):
     """Real secure ReLU on float additive shares (statistical masking).
 
     Args:
         s_c, s_s: float arrays with s_c + s_s = z (the shared activation).
         k_ring:   ring bit width for multiplication and output (>= k_compare).
         f:        fractional bits of the fixed-point encoding.
-        k_compare: sign-comparison window (default k_ring, i.e. no headroom).
+        k_compare: sign-comparison window (default 14, profile B).
     Returns:
         (c_c, c_s) float arrays with c_c + c_s == relu(z) up to 2^-f.
     """
     if k_compare is None:
         k_compare = k_ring
     if f is None:
-        f = 8
+        f = F_B
     assert 1 <= k_compare <= k_ring, "require 1 <= k_compare <= k_ring"
     rng = rng or np.random.default_rng()
     s_c = np.asarray(s_c, dtype=float)
@@ -128,7 +132,7 @@ def leak_tv(k_ring: int, k_compare: int, samples: int = 300000):
     return frac_positive, bound
 
 
-def self_test(k_ring: int = 20, k_compare: int = 14, f: int = 8) -> int:
+def self_test(k_ring: int = K_RING_B, k_compare: int = K_COMPARE_B, f: int = F_B) -> int:
     failures = 0
     sigma = k_ring - k_compare
 
@@ -175,9 +179,9 @@ def self_test(k_ring: int = 20, k_compare: int = 14, f: int = 8) -> int:
 def main() -> int:
     ap = argparse.ArgumentParser(description="Fixed-point secure ReLU bridge self-test")
     ap.add_argument("--self-test", action="store_true")
-    ap.add_argument("--k-ring", type=int, default=20)
-    ap.add_argument("--k-compare", type=int, default=14)
-    ap.add_argument("--frac", type=int, default=8)
+    ap.add_argument("--k-ring", type=int, default=K_RING_B)
+    ap.add_argument("--k-compare", type=int, default=K_COMPARE_B)
+    ap.add_argument("--frac", type=int, default=F_B)
     args = ap.parse_args()
     if args.self_test:
         return self_test(args.k_ring, args.k_compare, args.frac)

@@ -20,9 +20,9 @@ HONESTY NOTE (read before citing anything):
         pipeline / performance runs (E2, RTT, ...).
       - real=True: the real OT/GMW protocol (mpc_relu_fxp.secure_relu_fxp ->
         mpc_relu_secure -> gmw_core -> ot_core). No party ever reconstructs z.
-        This is the drop-in that backs the paper's security claim; it is slow on
-        the pure-Python elliptic curve, so use a small array and k<=10 here and
-        treat IKNP-OT / a C library as the deployment item.
+        Profile B uses k_ring=44, k_compare=14, f=8 (sigma=30); keep the
+        self-test array small, and treat IKNP-OT / a C library as the
+        deployment item.
     The rest of the pipeline (steps 1-2, 4-5) is identical for both.
 """
 
@@ -33,6 +33,17 @@ import secrets
 from pathlib import Path
 
 import numpy as np
+
+from params_b import (
+    COEFF_MOD_BIT_SIZES as COEFF_MOD_BIT_SIZES_B,
+    F as F_B,
+    GLOBAL_SCALE as GLOBAL_SCALE_B,
+    K_COMPARE as K_COMPARE_B,
+    K_RING as K_RING_B,
+    MASK_HALF_WIDTH as MASK_HALF_WIDTH_B,
+    POLY_MODULUS_DEGREE as POLY_MODULUS_DEGREE_B,
+    SIGMA as SIGMA_B,
+)
 
 try:
     import tenseal as ts
@@ -46,26 +57,20 @@ except Exception:  # pragma: no cover - optional, needed only for real=True
 
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
 
-# CKKS parameters mirror model/mnist_cnn_enc.py (7 primes -> 6 mult depth).
-POLY_MODULUS_DEGREE = 8192
-COEFF_MOD_BIT_SIZES = [40, 21, 21, 21, 21, 21, 21, 40]
-GLOBAL_SCALE = 2 ** 21
+# Security profile B (see analysis/params_b.py):
+#   sigma=30, k_ring=44, k_compare=14, f=8.
+# The CKKS chain raises the plaintext bound from 2^18 to roughly 2^36 at scale
+# 2^23; the input-mask domain 8 * 2^30 = 2^33 fits, but the margin is thin.
+POLY_MODULUS_DEGREE = POLY_MODULUS_DEGREE_B
+COEFF_MOD_BIT_SIZES = COEFF_MOD_BIT_SIZES_B
+GLOBAL_SCALE = GLOBAL_SCALE_B
 
-FIXED_FRAC = 12  # fractional bits for fixed-point share arithmetic (E7)
+FIXED_FRAC = F_B  # fractional bits for fixed-point share arithmetic (E7)
 
-# Activation values are bounded by |z| < 8 = 2^3.  The input mask r must range
-# over a domain 2^SIGMA times wider so that the client (which sees z+r) cannot
-# recover z: the total-variation distance between the distributions of z1+r and
-# z2+r is at most |z1-z2| / (16 * 2^SIGMA).
-#
-# SIGMA is capped by the CKKS plaintext bound |m| < q0/(2*scale) = 2^18, so
-# 8 * 2^SIGMA must stay below 2^18, i.e. SIGMA <= 14.  Larger SIGMA needs a
-# bigger first prime (fewer multiplication levels) or the integer-modulus
-# BFV/BGV route.
 VALUE_BITS = 3
 VALUE_DOMAIN = (-8.0, 8.0)
-SIGMA = 14
-MASK_DOMAIN = (-8.0 * (2.0 ** SIGMA), 8.0 * (2.0 ** SIGMA))
+SIGMA = SIGMA_B
+MASK_DOMAIN = (-MASK_HALF_WIDTH_B, MASK_HALF_WIDTH_B)
 
 
 def _crypto_uniform(lo: float, hi: float, size: int) -> np.ndarray:
@@ -86,6 +91,8 @@ def make_context():
         coeff_mod_bit_sizes=COEFF_MOD_BIT_SIZES,
     )
     ctx.global_scale = GLOBAL_SCALE
+    ctx.auto_rescale = True
+    ctx.auto_mod_switch = True
     ctx.generate_galois_keys()
     return ctx
 
@@ -138,7 +145,7 @@ def client_share(ct_zr) -> np.ndarray:
 
 
 def mpc_relu(s_c: np.ndarray, s_s: np.ndarray, rng=None,
-             real: bool = False, k: int = 20, k_compare: int | None = 14,
+             real: bool = False, k: int = K_RING_B, k_compare: int | None = K_COMPARE_B,
              f: int | None = None):
     """Step 3. MPC ReLU on additive shares -> fresh shares (c_c, c_s) of relu(z).
 
@@ -269,14 +276,15 @@ def self_test(real_relu: bool = False) -> int:
         else:
             zs = z[:3]
             sc, ss = _fresh_share(zs, rng)
-            rc, rs = mpc_relu(sc, ss, real=True, k=26, k_compare=14, f=8)
+            rc, rs = mpc_relu(sc, ss, real=True, k=K_RING_B,
+                              k_compare=K_COMPARE_B, f=F_B)
             tol = 3.0 / (2.0 ** 8)
             check("MPC ReLU (REAL OT/GMW protocol, statistical masking)",
                   _abs_err(rc + rs, relu(zs)) <= tol,
                   f"abs_err={_abs_err(rc + rs, relu(zs)):.2e} tol={tol:.2e}")
             ct_out = share_to_he(ctx, rc, rs)
             dec_out = np.asarray(ct_out.decrypt(), dtype=float)
-            check("share->HE recovery (large statistical shares, ~2^17)",
+            check("share->HE recovery (profile-B statistical shares)",
                   _abs_err(dec_out, relu(zs)) <= tol,
                   f"abs_err={_abs_err(dec_out, relu(zs)):.2e} tol={tol:.2e}")
 

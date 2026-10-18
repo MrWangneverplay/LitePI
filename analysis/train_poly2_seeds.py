@@ -31,7 +31,7 @@ from pathlib import Path
 
 import torch
 
-DEFAULT_ROOT = r"D:\王梓杨\项目组\wzy"
+DEFAULT_ROOT = str(Path(__file__).resolve().parent.parent)
 
 SPEC = {
     "mnist": dict(module="mnist_cnn_poly2.py", epochs=10, batch=64,

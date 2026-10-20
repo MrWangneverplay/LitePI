@@ -64,9 +64,9 @@ def prepare_rgb(batch: torch.Tensor) -> torch.Tensor:
 class ConvBlock(nn.Module):
     """Conv3x3 -> optional BN.  BN folds into the conv at inference."""
 
-    def __init__(self, in_ch: int, out_ch: int, use_bn: bool):
+    def __init__(self, in_ch: int, out_ch: int, use_bn: bool, stride: int = 1):
         super().__init__()
-        self.conv = nn.Conv2d(in_ch, out_ch, kernel_size=3, padding=1)
+        self.conv = nn.Conv2d(in_ch, out_ch, kernel_size=3, stride=stride, padding=1)
         self.bn = nn.BatchNorm2d(out_ch) if use_bn else None
 
     def forward(self, x):
@@ -106,6 +106,43 @@ class DeepConvNet(nn.Module):
             x = layer(x)
             if isinstance(layer, ConvBlock):
                 x = self.act(x)
+        x = x.reshape(x.size(0), -1)
+        x = self.act(self.fc1(x))
+        return self.fc2(x)
+
+
+class FastConvNet(nn.Module):
+    """Early-downsampling VGG-lite: ~20.7k ReLU elements for C=32.
+
+    Conv1 stride 2 -> 16x16, Conv2 stride 2 -> 8x8, then two 3x3 convs at
+    8x8, pool to 4x4, FC head.  This keeps the accuracy in the 80-85% range
+    while cutting the MPC element count about 8x versus the 4-conv VGG.
+    """
+
+    def __init__(self, conv_depth: int = 4, channels: int = 32, hidden: int = 256,
+                 activation: str = "relu", classes: int = 10,
+                 in_channels: int = 3, use_bn: bool = True):
+        super().__init__()
+        assert conv_depth == 4, "FastConvNet is a fixed 4-conv topology"
+        self.act = ACTS[activation]
+        c1 = channels
+        c2 = channels * 2
+        self.features = nn.Sequential(
+            ConvBlock(in_channels, c1, use_bn, stride=2),  # 16x16
+            ConvBlock(c1, c2, use_bn, stride=2),           # 8x8
+            ConvBlock(c2, c2, use_bn),                     # 8x8
+            ConvBlock(c2, c2, use_bn),                     # 8x8
+        )
+        self.pool = nn.AvgPool2d(2)                        # 4x4
+        self.fc1 = nn.Linear(c2 * 4 * 4, hidden)
+        self.fc2 = nn.Linear(hidden, classes)
+
+    def forward(self, x):
+        for layer in self.features:
+            x = layer(x)
+            if isinstance(layer, ConvBlock):
+                x = self.act(x)
+        x = self.pool(x)
         x = x.reshape(x.size(0), -1)
         x = self.act(self.fc1(x))
         return self.fc2(x)
@@ -182,7 +219,9 @@ def train_one(cfg, train_loader, test_loader, device, prepare,
     torch.manual_seed(seed)
     if torch.cuda.is_available():
         torch.cuda.manual_seed_all(seed)
-    net = DeepConvNet(**cfg).to(device)
+    cfg = dict(cfg)
+    arch = cfg.pop("arch", "vgg")
+    net = (FastConvNet(**cfg) if arch == "fast" else DeepConvNet(**cfg)).to(device)
     criterion = nn.CrossEntropyLoss(label_smoothing=label_smoothing)
     optimizer = optim.AdamW(net.parameters(), lr=lr, weight_decay=wd)
     scheduler = optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max=epochs)
@@ -203,8 +242,31 @@ def save_record(root: Path, tag: str, seed: int, record: dict) -> Path:
     return path
 
 
-def shape_check(channels: int, hidden: int, rgb: bool, use_bn: bool):
+def count_relu_elements(arch: str, conv_depth: int, channels: int, hidden: int) -> int:
+    if arch == "fast":
+        return channels * 16 * 16 + (channels * 2) * 8 * 8 * 3 + hidden
+    spatial = 32
+    total = 0
+    for i in range(conv_depth):
+        total += channels * spatial * spatial
+        if (i + 1) % 2 == 0:
+            spatial //= 2
+    return total + hidden
+
+
+def shape_check(channels: int, hidden: int, rgb: bool, use_bn: bool, arch: str = "vgg"):
     in_ch = 3 if rgb else 1
+    if arch == "fast":
+        net = FastConvNet(conv_depth=4, channels=channels, hidden=hidden,
+                          activation="relu", in_channels=in_ch, use_bn=use_bn)
+        net.eval()
+        n_params = sum(p.numel() for p in net.parameters())
+        with torch.no_grad():
+            out = net(torch.randn(1, in_ch, 32, 32))
+        elems = count_relu_elements("fast", 4, channels, hidden)
+        print(f"arch=fast  in_ch={in_ch}  bn={use_bn}  relu_elements={elems:,}  "
+              f"mult_depth=10 (EXCEEDS)  out={tuple(out.shape)}  params={n_params:,}")
+        return
     for n in (2, 3, 4, 6):
         net = DeepConvNet(conv_depth=n, channels=channels, hidden=hidden,
                           activation="relu", in_channels=in_ch, use_bn=use_bn)
@@ -224,6 +286,8 @@ def main() -> None:
     ap.add_argument("--root", default=DEFAULT_ROOT)
     ap.add_argument("--conv-depth", default="2,4,6", help="comma list of conv-layer counts")
     ap.add_argument("--activation", default="relu,p2")
+    ap.add_argument("--arch", choices=["vgg", "fast"], default="vgg",
+                    help="vgg = original pooling stack; fast = early downsampling")
     ap.add_argument("--channels", type=int, default=32)
     ap.add_argument("--hidden", type=int, default=256)
     ap.add_argument("--epochs", type=int, default=40)
@@ -248,7 +312,7 @@ def main() -> None:
         check_fold()
         return
     if args.shape_check:
-        shape_check(args.channels, args.hidden, args.rgb, args.bn)
+        shape_check(args.channels, args.hidden, args.rgb, args.bn, args.arch)
         return
 
     root = Path(args.root)
@@ -264,12 +328,14 @@ def main() -> None:
     prepare = prepare_rgb if args.rgb else module.preprocess
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     depths = [int(d) for d in args.conv_depth.split(",") if d.strip()]
+    if args.arch == "fast":
+        depths = [4]
     acts = [a.strip() for a in args.activation.split(",") if a.strip()]
     epochs = 1 if args.smoke else args.epochs
     seeds = list(range(args.seed, args.seed + args.num_seeds))
     in_ch = 3 if args.rgb else 1
 
-    print(f"device={device}  rgb={args.rgb}  bn={args.bn}  "
+    print(f"device={device}  arch={args.arch}  rgb={args.rgb}  bn={args.bn}  "
           f"channels={args.channels}  hidden={args.hidden}  "
           f"epochs={epochs}  seeds={seeds}")
     print("=" * 86)
@@ -277,7 +343,8 @@ def main() -> None:
     for act in acts:
         for n in depths:
             cfg = dict(conv_depth=n, channels=args.channels, hidden=args.hidden,
-                       activation=act, in_channels=in_ch, use_bn=args.bn)
+                       activation=act, in_channels=in_ch, use_bn=args.bn,
+                       arch=args.arch)
             accs = []
             for seed in seeds:
                 _, acc = train_one(cfg, train_loader, test_loader, device, prepare,
@@ -288,6 +355,7 @@ def main() -> None:
                     "exp_id": "E1",
                     "dataset": "cifar10",
                     "method": f"deep_conv_{act}",
+                    "arch": args.arch,
                     "rgb": args.rgb,
                     "bn": args.bn,
                     "conv_depth": n,
@@ -296,6 +364,8 @@ def main() -> None:
                     "epochs": epochs,
                     "seed": seed,
                     "test_acc": acc,
+                    "relu_elements": count_relu_elements(args.arch, n, args.channels,
+                                                         args.hidden),
                     "mult_depth": 2 * n + 2,
                     "fits_budget": (2 * n + 2) <= BUDGET,
                     "timestamp_utc": datetime.now(timezone.utc).isoformat(timespec="seconds"),

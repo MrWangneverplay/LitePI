@@ -1,0 +1,116 @@
+{
+  "exp_id": "E1",
+  "dataset": "cifar10",
+  "method": "deep_conv_rgb_bn",
+  "timestamp_utc": "2026-10-20T00:00:00+08:00",
+  "environment": "Kaggle GPU T4, device=cuda",
+  "config": {
+    "channels": 64,
+    "hidden": 256,
+    "epochs": 50,
+    "seeds": [73, 74, 75],
+    "label_smoothing": 0.1
+  },
+  "runs": [
+    {
+      "activation": "relu",
+      "conv_depth": 2,
+      "channels": 64,
+      "hidden": 256,
+      "epochs": 50,
+      "seeds": [73, 74, 75],
+      "test_acc_mean": 0.8079,
+      "test_acc_std": 0.0019,
+      "mult_depth": 6,
+      "fits_budget": true
+    },
+    {
+      "activation": "p2",
+      "conv_depth": 2,
+      "channels": 64,
+      "hidden": 256,
+      "epochs": 50,
+      "seeds": [73, 74, 75],
+      "test_acc_mean": 0.7857,
+      "test_acc_std": 0.0008,
+      "mult_depth": 6,
+      "fits_budget": true
+    },
+    {
+      "activation": "relu",
+      "conv_depth": 3,
+      "channels": 64,
+      "hidden": 256,
+      "epochs": 50,
+      "seeds": [73, 74, 75],
+      "test_acc_mean": 0.8510,
+      "test_acc_std": 0.0048,
+      "mult_depth": 8,
+      "fits_budget": false
+    },
+    {
+      "activation": "p2",
+      "conv_depth": 3,
+      "channels": 64,
+      "hidden": 256,
+      "epochs": 50,
+      "seeds": [73, 74, 75],
+      "test_acc_mean": 0.7876,
+      "test_acc_std": 0.0103,
+      "mult_depth": 8,
+      "fits_budget": false
+    },
+    {
+      "activation": "relu",
+      "conv_depth": 4,
+      "channels": 64,
+      "hidden": 256,
+      "epochs": 50,
+      "seeds": [73, 74, 75],
+      "test_acc_mean": 0.8855,
+      "test_acc_std": 0.0036,
+      "mult_depth": 10,
+      "fits_budget": false
+    },
+    {
+      "activation": "p2",
+      "conv_depth": 4,
+      "channels": 64,
+      "hidden": 256,
+      "epochs": 50,
+      "seeds": [73, 74, 75],
+      "test_acc_mean": 0.8050,
+      "test_acc_std": 0.0080,
+      "mult_depth": 10,
+      "fits_budget": false
+    },
+    {
+      "activation": "relu",
+      "arch": "fast",
+      "conv_depth": 4,
+      "channels": 32,
+      "hidden": 256,
+      "epochs": 50,
+      "seeds": [73, 74, 75],
+      "test_acc_mean": 0.8509,
+      "test_acc_std": 0.0023,
+      "relu_elements": 20736,
+      "mult_depth": 10,
+      "fits_budget": false
+    }
+  ],
+  "relu_minus_p2": {
+    "conv2": 0.0222,
+    "conv3": 0.0634,
+    "conv4": 0.0805
+  },
+  "fast_vs_vgg": {
+    "fast_acc": 0.8509,
+    "vgg_acc": 0.8855,
+    "accuracy_delta": -0.0346,
+    "fast_elements": 20736,
+    "vgg_elements": 164096,
+    "element_ratio": 7.91
+  },
+  "note": "Per-seed JSONs are in litepi_results/. HE-only deployable baseline: conv2+p2 (depth 6) 78.57%; hybrid conv4+relu 88.55% (+9.98 points)."
+}

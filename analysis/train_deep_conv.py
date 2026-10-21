@@ -215,7 +215,7 @@ def run_epoch(model, loader, criterion, device, prepare, optimizer=None):
 
 
 def train_one(cfg, train_loader, test_loader, device, prepare,
-              epochs, lr, wd, seed, label_smoothing=0.0):
+              epochs, lr, wd, seed, label_smoothing=0.0, verbose=True):
     torch.manual_seed(seed)
     if torch.cuda.is_available():
         torch.cuda.manual_seed_all(seed)
@@ -226,10 +226,16 @@ def train_one(cfg, train_loader, test_loader, device, prepare,
     optimizer = optim.AdamW(net.parameters(), lr=lr, weight_decay=wd)
     scheduler = optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max=epochs)
     test_acc = 0.0
-    for _ in range(epochs):
-        run_epoch(net, train_loader, criterion, device, prepare, optimizer)
-        _, test_acc = run_epoch(net, test_loader, criterion, device, prepare)
+    for ep in range(epochs):
+        train_loss, train_acc = run_epoch(net, train_loader, criterion, device,
+                                          prepare, optimizer)
+        test_loss, test_acc = run_epoch(net, test_loader, criterion, device, prepare)
         scheduler.step()
+        if verbose:
+            print(f"  seed {seed} epoch {ep+1}/{epochs}  "
+                  f"train_loss={train_loss:.4f} train_acc={train_acc:.4f}  "
+                  f"test_loss={test_loss:.4f} test_acc={test_acc:.4f}",
+                  flush=True)
     return net, test_acc
 
 

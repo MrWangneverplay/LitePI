@@ -1,0 +1,16 @@
+{
+  "exp_id": "E1",
+  "dataset": "cifar10",
+  "method": "deep_conv_relu",
+  "rgb": true,
+  "bn": true,
+  "conv_depth": 2,
+  "channels": 64,
+  "hidden": 256,
+  "epochs": 50,
+  "seed": 74,
+  "test_acc": 0.8066,
+  "mult_depth": 6,
+  "fits_budget": true,
+  "timestamp_utc": "2026-10-20T08:32:24+00:00"
+}

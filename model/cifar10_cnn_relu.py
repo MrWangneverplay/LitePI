@@ -172,7 +172,15 @@ def train(
     epochs: int,
     lr: float,
 ) -> dict[str, list[float]]:
-    """Same optimizer recipe as the square twin: AdamW (wd 1e-4) + CosineAnnealing."""
+    """AdamW (decoupled wd 1e-4) + CosineAnnealing.
+
+    NOTE (reproducibility): before commit 7669fe2 this used optim.Adam(weight_decay=1e-4),
+    i.e. L2 regularisation, while the result JSONs said "AdamW".  The existing
+    results/raw_results/E1/cifar10/plain_relu/seed73..77.json were produced by that Adam
+    code, so they are NOT reproduced by this function; re-run them before citing
+    "AdamW" for those numbers.  (The square/poly2 twins still use Adam + L2; their JSON
+    label says "Adam/AdamW" on purpose.)
+    """
     criterion = nn.CrossEntropyLoss()
     optimizer = optim.AdamW(model.parameters(), lr=lr, weight_decay=1e-4)
     scheduler = CosineAnnealingLR(optimizer, T_max=epochs)

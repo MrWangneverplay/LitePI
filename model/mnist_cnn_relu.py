@@ -315,6 +315,11 @@ def main() -> None:
     else:
         # Multi-seed path: N fresh trainings, per-seed JSON + mean+-std (红线②).
         for seed in seeds:
+            # Seed BEFORE constructing the model: otherwise the initial weights do not
+            # depend on `seed` and the multi-seed run is neither independent nor reproducible.
+            torch.manual_seed(seed)
+            if torch.cuda.is_available():
+                torch.cuda.manual_seed_all(seed)
             model = ReluMnistNet().to(device)
             _, summary = train_one(model, train_loader, test_loader, device,
                                    args.epochs, args.lr, seed)

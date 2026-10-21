@@ -17,7 +17,7 @@
     python eval_poly_substitution.py --datasets mnist
     python eval_poly_substitution.py --modes relu,p2
     python eval_poly_substitution.py --smoke          # 只测 200 个样本，快速验证
-    python eval_poly_substitution.py --root "D:\\王梓杨\\项目组\\wzy"
+    python eval_poly_substitution.py --root /path/to/LitePI   # default: the repo root
 """
 
 from __future__ import annotations

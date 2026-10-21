@@ -6,13 +6,13 @@ its own share.
 
 Pipeline for z = s_c + s_s (mod 2^k, two's complement fixed point):
 
-  1. A2B      additive share of z  ->  XOR bit-shares of z
-              (GMW ripple-carry adder; party0 feeds its own bits, party1 the others)
-  2. sign     b = NOT(msb)         ->  a shared bit, b = 1 iff z >= 0
-              (in two's complement the top bit IS the sign; a wire flip is free)
-  3. [b]      XOR bit-share -> ADDITIVE share of b     (1 OT)
-  4. z * b    additive shares of z*b                   (2 Gilboa OT multiplications)
-  5. output   additive shares of ReLU(z) = (c_c, c_s)
+  1. sign     b = 1 iff z >= 0, as a XOR-shared bit.  secure_relu() evaluates only
+              the carry chain of s_c + s_s over the low k_compare bits (drelu_slim);
+              a2b()/drelu_wire() (full ripple-carry adder) are kept for reference
+              and for the self-test OT-count comparison.
+  2. z * b    additive shares of z*b: two single-OT "bit-select" multiplications
+              (ot_xorbit_mult), one per addend.
+  3. output   additive shares of ReLU(z) = (c_c, c_s)
 
 Cost per ReLU (slim path): the carry chain uses 1 private-input AND plus
 (k-2) majority gates, i.e. 1 + 2(k-2) = 2k-3 base OTs; the two bit-select
@@ -237,6 +237,16 @@ def self_test(k: int = 6) -> int:
     full_ots = ot_count()
     check("slim DReLU uses fewer base OTs", new_ots < old_ots,
           f"old_sign={old_ots} new_sign={new_ots} full_slim={full_ots}")
+
+    # 1c. exact OT-count guard: one ReLU = 1 + 2*(kc-2) carry-chain OTs + 2 bit-selects
+    #     = 2*kc - 1  (kc = 14 -> 27).  Fails loudly if the circuit ever changes.
+    ok, detail = True, ""
+    for k_, kc_ in ((8, 2), (10, 6), (20, 14)):
+        reset_ot_count()
+        secure_relu(secrets.randbelow(1 << k_), secrets.randbelow(1 << k_), k_, kc_)
+        if ot_count() != 2 * kc_ - 1:
+            ok, detail = False, f"k={k_} kc={kc_}: {ot_count()} OTs, expected {2 * kc_ - 1}"
+    check("OT count per ReLU == 2*k_compare - 1 (k_compare=14 -> 27)", ok, detail)
 
     # 2. secure_relu matches plaintext ReLU (signed two's complement)
     half = 1 << (k - 1)

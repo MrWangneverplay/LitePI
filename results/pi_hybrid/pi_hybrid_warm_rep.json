@@ -1,0 +1,295 @@
+{
+  "role": "client/party1",
+  "backend": "tenseal",
+  "simulation": false,
+  "profile_name": "pi-demo-sigma30",
+  "paper_profile": false,
+  "poly_modulus_degree": 16384,
+  "coeff_mod_bit_sizes": [
+    60,
+    24,
+    60
+  ],
+  "global_scale_bits": 24,
+  "k_ring": 44,
+  "k_compare": 14,
+  "f": 8,
+  "sigma": 30,
+  "dims": [
+    64,
+    32,
+    10
+  ],
+  "hybrid_layers": 1,
+  "logits": [
+    -0.141967,
+    -1.233477,
+    0.274677,
+    -0.150911,
+    0.515325,
+    -0.675617,
+    -0.268713,
+    0.311403,
+    -0.229709,
+    -0.261926
+  ],
+  "prediction": 4,
+  "reuse_context": true,
+  "repeat": 3,
+  "wall_s": 13.1265,
+  "timings": {
+    "keygen_s": 0.373608,
+    "context_upload_s": 7.22046,
+    "encrypt_input_s": 0.056655,
+    "decrypt_s": 0.00987,
+    "mpc_s": 3.746731,
+    "reencrypt_s": 0.052054,
+    "mpc_elements": 96,
+    "base_ots": 2592
+  },
+  "queries": [
+    {
+      "query_index": 0,
+      "wall_s": 1.9731,
+      "timings": {
+        "encrypt_input_s": 0.025532,
+        "decrypt_s": 0.003719,
+        "mpc_s": 1.346211,
+        "reencrypt_s": 0.020704
+      },
+      "mpc_elements": 32,
+      "base_ots": 864,
+      "bytes_sent": 805776,
+      "bytes_received": 593545,
+      "server": {
+        "role": "server/party0",
+        "backend": "tenseal",
+        "simulation": false,
+        "profile_name": "pi-demo-sigma30",
+        "paper_profile": false,
+        "poly_modulus_degree": 16384,
+        "coeff_mod_bit_sizes": [
+          60,
+          24,
+          60
+        ],
+        "global_scale_bits": 24,
+        "k_ring": 44,
+        "k_compare": 14,
+        "f": 8,
+        "sigma": 30,
+        "dims": [
+          64,
+          32,
+          10
+        ],
+        "hybrid_layers": 1,
+        "query_index": 0,
+        "reused_context": false,
+        "wall_s": 9.5666,
+        "timings": {
+          "linear_s": 0.187091,
+          "hybrid_relu_s": 1.534552,
+          "mpc_s": 1.421655,
+          "mpc_elements": 32,
+          "base_ots": 864,
+          "forward_s": 1.721686
+        },
+        "bytes_sent": 592988,
+        "bytes_received": 35945262
+      }
+    },
+    {
+      "query_index": 1,
+      "wall_s": 1.8104,
+      "timings": {
+        "encrypt_input_s": 0.015579,
+        "decrypt_s": 0.003087,
+        "mpc_s": 1.239593,
+        "reencrypt_s": 0.015626
+      },
+      "mpc_elements": 32,
+      "base_ots": 864,
+      "bytes_sent": 806890,
+      "bytes_received": 593542,
+      "server": {
+        "role": "server/party0",
+        "backend": "tenseal",
+        "simulation": false,
+        "profile_name": "pi-demo-sigma30",
+        "paper_profile": false,
+        "poly_modulus_degree": 16384,
+        "coeff_mod_bit_sizes": [
+          60,
+          24,
+          60
+        ],
+        "global_scale_bits": 24,
+        "k_ring": 44,
+        "k_compare": 14,
+        "f": 8,
+        "sigma": 30,
+        "dims": [
+          64,
+          32,
+          10
+        ],
+        "hybrid_layers": 1,
+        "query_index": 1,
+        "reused_context": true,
+        "wall_s": 1.8105,
+        "timings": {
+          "linear_s": 0.203757,
+          "hybrid_relu_s": 1.423482,
+          "mpc_s": 1.300051,
+          "mpc_elements": 32,
+          "base_ots": 864,
+          "forward_s": 1.627354
+        },
+        "bytes_sent": 592980,
+        "bytes_received": 806890
+      }
+    },
+    {
+      "query_index": 2,
+      "wall_s": 1.7416,
+      "timings": {
+        "encrypt_input_s": 0.015545,
+        "decrypt_s": 0.003064,
+        "mpc_s": 1.160926,
+        "reencrypt_s": 0.015724
+      },
+      "mpc_elements": 32,
+      "base_ots": 864,
+      "bytes_sent": 805599,
+      "bytes_received": 593542,
+      "server": {
+        "role": "server/party0",
+        "backend": "tenseal",
+        "simulation": false,
+        "profile_name": "pi-demo-sigma30",
+        "paper_profile": false,
+        "poly_modulus_degree": 16384,
+        "coeff_mod_bit_sizes": [
+          60,
+          24,
+          60
+        ],
+        "global_scale_bits": 24,
+        "k_ring": 44,
+        "k_compare": 14,
+        "f": 8,
+        "sigma": 30,
+        "dims": [
+          64,
+          32,
+          10
+        ],
+        "hybrid_layers": 1,
+        "query_index": 2,
+        "reused_context": true,
+        "wall_s": 1.7411,
+        "timings": {
+          "linear_s": 0.217847,
+          "hybrid_relu_s": 1.342808,
+          "mpc_s": 1.231503,
+          "mpc_elements": 32,
+          "base_ots": 864,
+          "forward_s": 1.560685
+        },
+        "bytes_sent": 592980,
+        "bytes_received": 805599
+      }
+    }
+  ],
+  "last_query": {
+    "query_index": 2,
+    "wall_s": 1.7416,
+    "timings": {
+      "encrypt_input_s": 0.015545,
+      "decrypt_s": 0.003064,
+      "mpc_s": 1.160926,
+      "reencrypt_s": 0.015724
+    },
+    "mpc_elements": 32,
+    "base_ots": 864,
+    "bytes_sent": 805599,
+    "bytes_received": 593542,
+    "server": {
+      "role": "server/party0",
+      "backend": "tenseal",
+      "simulation": false,
+      "profile_name": "pi-demo-sigma30",
+      "paper_profile": false,
+      "poly_modulus_degree": 16384,
+      "coeff_mod_bit_sizes": [
+        60,
+        24,
+        60
+      ],
+      "global_scale_bits": 24,
+      "k_ring": 44,
+      "k_compare": 14,
+      "f": 8,
+      "sigma": 30,
+      "dims": [
+        64,
+        32,
+        10
+      ],
+      "hybrid_layers": 1,
+      "query_index": 2,
+      "reused_context": true,
+      "wall_s": 1.7411,
+      "timings": {
+        "linear_s": 0.217847,
+        "hybrid_relu_s": 1.342808,
+        "mpc_s": 1.231503,
+        "mpc_elements": 32,
+        "base_ots": 864,
+        "forward_s": 1.560685
+      },
+      "bytes_sent": 592980,
+      "bytes_received": 805599
+    }
+  },
+  "bytes_sent": 37558030,
+  "bytes_received": 1780970,
+  "server": {
+    "role": "server/party0",
+    "backend": "tenseal",
+    "simulation": false,
+    "profile_name": "pi-demo-sigma30",
+    "paper_profile": false,
+    "poly_modulus_degree": 16384,
+    "coeff_mod_bit_sizes": [
+      60,
+      24,
+      60
+    ],
+    "global_scale_bits": 24,
+    "k_ring": 44,
+    "k_compare": 14,
+    "f": 8,
+    "sigma": 30,
+    "dims": [
+      64,
+      32,
+      10
+    ],
+    "hybrid_layers": 1,
+    "query_index": 2,
+    "reused_context": true,
+    "wall_s": 1.7411,
+    "timings": {
+      "linear_s": 0.217847,
+      "hybrid_relu_s": 1.342808,
+      "mpc_s": 1.231503,
+      "mpc_elements": 32,
+      "base_ots": 864,
+      "forward_s": 1.560685
+    },
+    "bytes_sent": 592980,
+    "bytes_received": 805599
+  }
+}

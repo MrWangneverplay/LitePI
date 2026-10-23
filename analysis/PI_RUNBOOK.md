@@ -66,7 +66,7 @@ back to a pure-Python curve that is orders of magnitude slower.
 TenSEAL wheels are not guaranteed for `aarch64`.  Check first; do not assume:
 
 ```bash
-python -m pip install tenseal==0.3.16
+python -m pip install tenseal==0.3.18
 python -c "import tenseal; print(tenseal.__version__)"
 ```
 
@@ -79,7 +79,7 @@ If pip reports "no matching distribution", try in this order:
    conda install -c conda-forge tenseal
    ```
 
-2. **Build from source** (SEAL 3.7.x + TenSEAL 0.3.16).  Expect 1–3 hours on a
+2. **Build from source** (SEAL 3.7.x + TenSEAL 0.3.18).  Expect 1–3 hours on a
    Pi 4/5 and at least 4 GB free disk.  Install `cmake`, `build-essential`,
    `libzstd-dev`, `libprotobuf-dev`, then build SEAL with
    `-DSEAL_USE_ZSTD=ON` and TenSEAL against it.  This path is only worth it if
@@ -138,7 +138,7 @@ python analysis\pi_server.py --host 0.0.0.0 --port 9101 --dims 64,32,10 --backen
 ```
 
 The server exits after one query by default; add `--serve` to keep it listening
-for repeated queries (each query still gets a fresh key setup from the client).
+for repeated connections and persistent sessions.
 
 Pi:
 
@@ -146,6 +146,17 @@ Pi:
 python pi_client.py --host 192.168.1.20 --port 9101 --backend tenseal \
   --out results/pi_hybrid.json
 ```
+
+For a persistent session with one key generation and one context upload:
+
+```bash
+python pi_client.py --host 192.168.1.20 --port 9101 --backend tenseal \
+  --input-seed 0 --repeat 3 --reuse-context \
+  --out results/pi_hybrid_warm.json --verbose
+```
+
+The first query includes key generation and context upload. Later queries report
+`reused_context=true` and only transfer the input/MPC ciphertexts.
 
 Open TCP 9101 on the desktop firewall for the LAN.  For a first connectivity
 check you can use `--backend stub` on both sides, but that traffic contains
@@ -165,6 +176,13 @@ On the Pi, the meaningful end-to-end numbers are the client-side ones from
 sent/received.  `bench_pi.py` is a separate client-only HE microbenchmark and
 uses profile B parameters; label it separately from the Pi-demo end-to-end
 result.
+
+Measured on Pi 5 with `64,32,10` and TenSEAL 0.3.18:
+
+- cold start: 10.452 ± 0.092 s;
+- setup: keygen 0.374 s, context upload 7.220 s;
+- warm queries: 1.742–1.973 s each;
+- post-setup upload: about 0.806 MB per query.
 
 What to report:
 

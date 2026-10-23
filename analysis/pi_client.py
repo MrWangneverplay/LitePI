@@ -74,6 +74,45 @@ def load_input(path: Path | None, dim: int | None, seed: int = 0) -> np.ndarray:
     return arr
 
 
+def _query_once(be, ctx, wire: Wire, x: np.ndarray, timings: dict) -> np.ndarray:
+    """Run one already-authenticated private query over the open session."""
+    t0 = time.perf_counter()
+    ct = be.encrypt(ctx, x)
+    timings["encrypt_input_s"] += time.perf_counter() - t0
+    wire.send(b"CTXT", be.serialize(ct))
+
+    mpc_ctx = wire.mpc_ctx()
+    while True:
+        _, payload = wire.recv(b"CTXT")
+        if not payload:
+            raise ProtocolError("empty ciphertext message")
+        kind, blob = payload[0], payload[1:]
+        ct = be.deserialize(ctx, blob)
+
+        t0 = time.perf_counter()
+        share = be.decrypt(ct)
+        timings["decrypt_s"] += time.perf_counter() - t0
+
+        if kind == 1:
+            return np.asarray(share, dtype=np.float64)
+        if kind != 0:
+            raise ProtocolError(f"unknown ciphertext kind {kind}")
+
+        t0 = time.perf_counter()
+        out_share = np.asarray(
+            run_party_batch(mpc_ctx, share.tolist(), K_RING, F, K_COMPARE),
+            dtype=np.float64,
+        )
+        timings["mpc_s"] += time.perf_counter() - t0
+        timings["mpc_elements"] += int(share.size)
+        timings["base_ots"] += int(share.size) * ots_per_relu()
+
+        t0 = time.perf_counter()
+        ct_out = be.encrypt(ctx, out_share)
+        timings["reencrypt_s"] += time.perf_counter() - t0
+        wire.send(b"CTXT", b"\x00" + be.serialize(ct_out))
+
+
 def run_client(host: str, port: int, x: np.ndarray, backend_name: str,
                timeout: float = 600.0) -> dict:
     """Connect to a server and execute one private inference query."""
@@ -88,6 +127,7 @@ def run_client(host: str, port: int, x: np.ndarray, backend_name: str,
         "decrypt_s": 0.0,
         "mpc_s": 0.0,
         "reencrypt_s": 0.0,
+        "context_upload_s": 0.0,
         "mpc_elements": 0,
         "base_ots": 0,
     }
@@ -111,47 +151,12 @@ def run_client(host: str, port: int, x: np.ndarray, backend_name: str,
         ctx = be.new_context()
         timings["keygen_s"] = time.perf_counter() - t0
 
+        t0 = time.perf_counter()
         wire.send(b"CTXT", be.public_context_bytes(ctx))
         wire.recv(b"REDY")
+        timings["context_upload_s"] = time.perf_counter() - t0
 
-        t0 = time.perf_counter()
-        ct = be.encrypt(ctx, x)
-        timings["encrypt_input_s"] = time.perf_counter() - t0
-        wire.send(b"CTXT", be.serialize(ct))
-
-        logits = None
-        mpc_ctx = wire.mpc_ctx()
-        while True:
-            _, payload = wire.recv(b"CTXT")
-            if not payload:
-                raise ProtocolError("empty ciphertext message")
-            kind, blob = payload[0], payload[1:]
-            ct = be.deserialize(ctx, blob)
-
-            t0 = time.perf_counter()
-            share = be.decrypt(ct)
-            timings["decrypt_s"] += time.perf_counter() - t0
-
-            if kind == 1:  # final logits
-                logits = share
-                break
-            if kind != 0:
-                raise ProtocolError(f"unknown ciphertext kind {kind}")
-
-            # Client side of the same MPC the server is running right now.
-            t0 = time.perf_counter()
-            out_share = np.asarray(
-                run_party_batch(mpc_ctx, share.tolist(), K_RING, F, K_COMPARE),
-                dtype=np.float64,
-            )
-            timings["mpc_s"] += time.perf_counter() - t0
-            timings["mpc_elements"] += int(share.size)
-            timings["base_ots"] += int(share.size) * ots_per_relu()
-
-            t0 = time.perf_counter()
-            ct_out = be.encrypt(ctx, out_share)
-            timings["reencrypt_s"] += time.perf_counter() - t0
-            wire.send(b"CTXT", b"\x00" + be.serialize(ct_out))
+        logits = _query_once(be, ctx, wire, x, timings)
 
         wire.send(b"BYE.")
         server_stats = wire.recv_json(b"STAT")
@@ -175,6 +180,110 @@ def run_client(host: str, port: int, x: np.ndarray, backend_name: str,
         "server": server_stats,
     }
     return result
+
+
+def run_reuse_session(host: str, port: int, x: np.ndarray, backend_name: str,
+                      repeats: int = 3, timeout: float = 600.0) -> dict:
+    """Run repeated queries over one connection with one CKKS context."""
+    if repeats < 1:
+        raise ValueError("repeats must be >= 1")
+    x = np.asarray(x, dtype=np.float64).ravel()
+    if x.size == 0 or not np.all(np.isfinite(x)):
+        raise ValueError("input must be a non-empty finite vector")
+    be = make_backend(backend_name)
+    started = time.perf_counter()
+    timings = {
+        "keygen_s": 0.0,
+        "context_upload_s": 0.0,
+        "encrypt_input_s": 0.0,
+        "decrypt_s": 0.0,
+        "mpc_s": 0.0,
+        "reencrypt_s": 0.0,
+        "mpc_elements": 0,
+        "base_ots": 0,
+    }
+    queries = []
+
+    with socket.create_connection((host, port), timeout=timeout) as conn:
+        conn.settimeout(timeout)
+        wire = Wire(conn, party=1)
+        spec = wire.recv_json(b"SPEC")
+        dims = [int(v) for v in spec["dims"]]
+        if dims[0] != x.size:
+            raise ProtocolError(f"input has {x.size} values, server wants {dims[0]}")
+        if spec.get("profile", {}).get("backend") not in (None, backend_name):
+            raise ProtocolError("server backend does not match --backend")
+
+        wire.send_json(b"INIT", {
+            "input_dim": int(x.size),
+            "backend": backend_name,
+            "persistent": True,
+            "reuse_context": False,
+        })
+        wire.recv(b"REDY")
+
+        t0 = time.perf_counter()
+        ctx = be.new_context()
+        timings["keygen_s"] = time.perf_counter() - t0
+        t0 = time.perf_counter()
+        wire.send(b"CTXT", be.public_context_bytes(ctx))
+        wire.recv(b"REDY")
+        timings["context_upload_s"] = time.perf_counter() - t0
+
+        for i in range(repeats):
+            if i:
+                wire.send_json(b"INIT", {
+                    "input_dim": int(x.size),
+                    "backend": backend_name,
+                    "persistent": True,
+                    "reuse_context": True,
+                })
+                wire.recv(b"REDY")
+
+            query_started = time.perf_counter()
+            sent_before = wire.cc.sent
+            recv_before = wire.cc.recvd
+            t_before = dict(timings)
+            logits = _query_once(be, ctx, wire, x, timings)
+            wire.send(b"BYE.")
+            server_stats = wire.recv_json(b"STAT")
+            queries.append({
+                "query_index": i,
+                "wall_s": round(time.perf_counter() - query_started, 4),
+                "timings": {
+                    k: round(timings[k] - t_before[k], 6)
+                    for k in ("encrypt_input_s", "decrypt_s", "mpc_s", "reencrypt_s")
+                },
+                "mpc_elements": int(timings["mpc_elements"] - t_before["mpc_elements"]),
+                "base_ots": int(timings["base_ots"] - t_before["base_ots"]),
+                "bytes_sent": wire.cc.sent - sent_before,
+                "bytes_received": wire.cc.recvd - recv_before,
+                "server": server_stats,
+            })
+
+        wire.send(b"DONE")
+
+    last = queries[-1]
+    return {
+        "role": "client/party1",
+        **profile_info(backend_name),
+        "dims": dims,
+        "hybrid_layers": len(dims) - 2,
+        "logits": [round(float(v), 6) for v in logits],
+        "prediction": int(np.argmax(logits)),
+        "reuse_context": True,
+        "repeat": repeats,
+        "wall_s": round(time.perf_counter() - started, 4),
+        "timings": {
+            k: (int(v) if k in ("mpc_elements", "base_ots") else round(float(v), 6))
+            for k, v in timings.items()
+        },
+        "queries": queries,
+        "last_query": last,
+        "bytes_sent": wire.cc.sent,
+        "bytes_received": wire.cc.recvd,
+        "server": last["server"],
+    }
 
 
 def loopback_once(backend_name: str, dims: list[int], seed: int = 7,
@@ -253,6 +362,8 @@ def _print_summary(result: dict, verbose: bool) -> None:
     tag = "SIMULATION" if result.get("simulation") else "TENSEAL"
     print(f"[{tag}] dims={result['dims']}  hybrid_layers={result['hybrid_layers']}")
     print(f"  keygen            {t['keygen_s']:8.3f} s")
+    if "context_upload_s" in t:
+        print(f"  context upload    {t['context_upload_s']:8.3f} s")
     print(f"  encrypt input     {t['encrypt_input_s']:8.3f} s")
     print(f"  decrypt (all)     {t['decrypt_s']:8.3f} s")
     print(f"  MPC ReLU (all)    {t['mpc_s']:8.3f} s   "
@@ -261,6 +372,14 @@ def _print_summary(result: dict, verbose: bool) -> None:
     print(f"  wall              {result['wall_s']:8.3f} s")
     print(f"  traffic           up {result['bytes_sent'] / 1e6:.3f} MB  "
           f"down {result['bytes_received'] / 1e6:.3f} MB")
+    if result.get("reuse_context"):
+        print("  queries:")
+        for q in result["queries"]:
+            print(
+                f"    #{q['query_index'] + 1}: wall {q['wall_s']:.3f} s  "
+                f"MPC {q['timings']['mpc_s']:.3f} s  "
+                f"up {q['bytes_sent'] / 1e6:.3f} MB"
+            )
     if "loopback" in result:
         lb = result["loopback"]
         print(f"  logits err        {lb['max_abs_err']:.3e} "
@@ -285,9 +404,18 @@ def main() -> int:
                     help="loopback only: layer sizes")
     ap.add_argument("--seed", type=int, default=7, help="loopback model seed")
     ap.add_argument("--timeout", type=float, default=600.0)
+    ap.add_argument("--repeat", type=int, default=1,
+                    help="number of queries in one persistent session")
+    ap.add_argument("--reuse-context", action="store_true",
+                    help="reuse one CKKS context across --repeat queries")
     ap.add_argument("--out", type=Path, default=None)
     ap.add_argument("--verbose", action="store_true")
     args = ap.parse_args()
+
+    if args.repeat < 1:
+        ap.error("--repeat must be >= 1")
+    if args.loopback and (args.reuse_context or args.repeat != 1):
+        ap.error("--reuse-context/--repeat are for a remote server, not --loopback")
 
     if args.loopback:
         result = loopback_once(args.backend, args.dims, args.seed, args.input_seed)
@@ -295,7 +423,13 @@ def main() -> int:
         # A real client learns the input dimension from the server's SPEC
         # message, so a file input is passed through without a fixed size.
         x = load_input(args.input, None if args.input else args.dim, args.input_seed)
-        result = run_client(args.host, args.port, x, args.backend, args.timeout)
+        if args.reuse_context or args.repeat > 1:
+            result = run_reuse_session(
+                args.host, args.port, x, args.backend,
+                repeats=args.repeat, timeout=args.timeout,
+            )
+        else:
+            result = run_client(args.host, args.port, x, args.backend, args.timeout)
 
     _print_summary(result, args.verbose)
     if args.out:

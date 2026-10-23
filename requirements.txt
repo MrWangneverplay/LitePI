@@ -15,14 +15,14 @@ torchvision>=0.15
 # =====================================================================
 # LitePI 实验环境锁定版（2026-09-12 整理）
 #
-# 导师服务器实测环境：Ubuntu + Python 3.12.3 + TenSEAL 0.3.16
-# 本地建议：Python 3.10 / 3.11 / 3.12 之一（tenseal 0.3.16 没有 3.13/3.14 的轮子）
-# 关键约束：numpy<2 —— TenSEAL 0.3.x 是按 numpy 1.x 编译的，装 numpy 2.x 会出错
+# 导师服务器实测环境：Ubuntu + Python 3.12.3；Pi 5 实测 Python 3.13 + TenSEAL 0.3.18
+# TenSEAL 0.3.18 提供 Python 3.11–3.14 的 Linux aarch64 轮子
+# TenSEAL 0.3.18 的 Python 3.13/aarch64 wheel 使用 NumPy 2.x
 #
 # 安装（CPU 版 torch，体积小、装得快）：
 #   python -m pip install -r requirements.txt --extra-index-url https://download.pytorch.org/whl/cpu
 # =====================================================================
-tenseal==0.3.16
-numpy<2
+tenseal==0.3.18
+numpy>=2,<3
 psutil>=5.9
 matplotlib>=3.7

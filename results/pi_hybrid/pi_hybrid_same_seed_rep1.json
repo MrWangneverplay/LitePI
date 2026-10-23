@@ -1,0 +1,84 @@
+{
+  "role": "client/party1",
+  "backend": "tenseal",
+  "simulation": false,
+  "profile_name": "pi-demo-sigma30",
+  "paper_profile": false,
+  "poly_modulus_degree": 16384,
+  "coeff_mod_bit_sizes": [
+    60,
+    24,
+    60
+  ],
+  "global_scale_bits": 24,
+  "k_ring": 44,
+  "k_compare": 14,
+  "f": 8,
+  "sigma": 30,
+  "dims": [
+    64,
+    32,
+    10
+  ],
+  "hybrid_layers": 1,
+  "logits": [
+    -0.14235,
+    -1.234137,
+    0.277417,
+    -0.148157,
+    0.513499,
+    -0.675897,
+    -0.271022,
+    0.310925,
+    -0.229357,
+    -0.262807
+  ],
+  "prediction": 4,
+  "wall_s": 10.4976,
+  "timings": {
+    "keygen_s": 0.370826,
+    "encrypt_input_s": 0.025716,
+    "decrypt_s": 0.003907,
+    "mpc_s": 1.330743,
+    "reencrypt_s": 0.015745,
+    "mpc_elements": 32,
+    "base_ots": 864
+  },
+  "bytes_sent": 35950917,
+  "bytes_received": 593827,
+  "server": {
+    "role": "server/party0",
+    "backend": "tenseal",
+    "simulation": false,
+    "profile_name": "pi-demo-sigma30",
+    "paper_profile": false,
+    "poly_modulus_degree": 16384,
+    "coeff_mod_bit_sizes": [
+      60,
+      24,
+      60
+    ],
+    "global_scale_bits": 24,
+    "k_ring": 44,
+    "k_compare": 14,
+    "f": 8,
+    "sigma": 30,
+    "dims": [
+      64,
+      32,
+      10
+    ],
+    "hybrid_layers": 1,
+    "wall_s": 10.4586,
+    "timings": {
+      "linear_s": 0.201301,
+      "hybrid_relu_s": 1.51599,
+      "mpc_s": 1.397802,
+      "mpc_elements": 32,
+      "base_ots": 864,
+      "forward_s": 1.717336
+    },
+    "bytes_sent": 593297,
+    "bytes_received": 35950917
+  }
+}

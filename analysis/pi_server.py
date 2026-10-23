@@ -172,63 +172,94 @@ def serve_connection(conn: socket.socket, be, mlp: HybridMLP,
                      reference_input=None, timeout: float = 600.0) -> dict:
     conn.settimeout(timeout)
     wire = Wire(conn, party=0)
-    timings = {
-        "linear_s": 0.0,
-        "hybrid_relu_s": 0.0,
-        "mpc_s": 0.0,
-        "mpc_elements": 0,
-        "base_ots": 0,
-    }
-    started = time.perf_counter()
     try:
         wire.send_json(b"SPEC", {
             "dims": mlp.dims,
             "hybrid_layers": len(mlp.dims) - 2,
             "profile": profile_info(be.name),
         })
-        init = wire.recv_json(b"INIT")
-        if init.get("backend") != be.name:
-            raise ProtocolError(
-                f"backend mismatch: server={be.name} client={init.get('backend')}"
-            )
-        input_dim = int(init.get("input_dim", -1))
-        if input_dim != mlp.dims[0]:
-            raise ProtocolError(
-                f"input dimension {input_dim} does not match model {mlp.dims[0]}"
-            )
-        wire.send(b"REDY")
+        ctx = None
+        pending_init = None
+        query_index = 0
+        while True:
+            if pending_init is None:
+                init = wire.recv_json(b"INIT")
+            else:
+                init = pending_init
+                pending_init = None
 
-        _, blob = wire.recv(b"CTXT")
-        ctx = be.load_public_context(blob)
-        wire.send(b"REDY")
+            if init.get("backend") != be.name:
+                raise ProtocolError(
+                    f"backend mismatch: server={be.name} client={init.get('backend')}"
+                )
+            input_dim = int(init.get("input_dim", -1))
+            if input_dim != mlp.dims[0]:
+                raise ProtocolError(
+                    f"input dimension {input_dim} does not match model {mlp.dims[0]}"
+                )
 
-        _, blob = wire.recv(b"CTXT")
-        ct = be.deserialize(ctx, blob)
-        if be.slot_count(ct) != mlp.dims[0]:
-            raise ProtocolError("input ciphertext has the wrong slot count")
+            persistent = bool(init.get("persistent", False))
+            reused_context = bool(init.get("reuse_context", False))
+            query_started = time.perf_counter()
+            bytes_sent_start = wire.cc.sent
+            bytes_received_start = wire.cc.recvd
 
-        t0 = time.perf_counter()
-        ct_out = mlp.encrypted_forward(be, ctx, ct, wire, timings)
-        timings["forward_s"] = time.perf_counter() - t0
+            if reused_context:
+                if ctx is None:
+                    raise ProtocolError("client requested context reuse before uploading a context")
+                wire.send(b"REDY")
+            else:
+                wire.send(b"REDY")
+                _, blob = wire.recv(b"CTXT")
+                ctx = be.load_public_context(blob)
+                wire.send(b"REDY")
 
-        wire.send(b"CTXT", b"\x01" + be.serialize(ct_out))
-        wire.recv(b"BYE.")
+            _, blob = wire.recv(b"CTXT")
+            ct = be.deserialize(ctx, blob)
+            if be.slot_count(ct) != mlp.dims[0]:
+                raise ProtocolError("input ciphertext has the wrong slot count")
 
-        stats = {
-            "role": "server/party0",
-            **profile_info(be.name),
-            "dims": mlp.dims,
-            "hybrid_layers": len(mlp.dims) - 2,
-            "wall_s": round(time.perf_counter() - started, 4),
-            "timings": {k: round(v, 6) for k, v in timings.items()},
-            "bytes_sent": wire.cc.sent,
-            "bytes_received": wire.cc.recvd,
-        }
-        if reference_input is not None:
-            ref, _ = mlp.plain_forward(reference_input)
-            stats["reference_logits"] = [round(float(v), 6) for v in ref]
-        wire.send_json(b"STAT", stats)
-        return stats
+            timings = {
+                "linear_s": 0.0,
+                "hybrid_relu_s": 0.0,
+                "mpc_s": 0.0,
+                "mpc_elements": 0,
+                "base_ots": 0,
+            }
+            t0 = time.perf_counter()
+            ct_out = mlp.encrypted_forward(be, ctx, ct, wire, timings)
+            timings["forward_s"] = time.perf_counter() - t0
+
+            wire.send(b"CTXT", b"\x01" + be.serialize(ct_out))
+            wire.recv(b"BYE.")
+
+            stats = {
+                "role": "server/party0",
+                **profile_info(be.name),
+                "dims": mlp.dims,
+                "hybrid_layers": len(mlp.dims) - 2,
+                "query_index": query_index,
+                "reused_context": reused_context,
+                "wall_s": round(time.perf_counter() - query_started, 4),
+                "timings": {k: round(v, 6) for k, v in timings.items()},
+                "bytes_sent": wire.cc.sent - bytes_sent_start,
+                "bytes_received": wire.cc.recvd - bytes_received_start,
+            }
+            if reference_input is not None:
+                ref, _ = mlp.plain_forward(reference_input)
+                stats["reference_logits"] = [round(float(v), 6) for v in ref]
+            wire.send_json(b"STAT", stats)
+            query_index += 1
+
+            if not persistent:
+                return stats
+
+            tag, payload = wire.recv()
+            if tag == b"DONE":
+                return stats
+            if tag != b"INIT":
+                raise ProtocolError(f"expected INIT or DONE, got {tag!r}")
+            pending_init = json.loads(payload.decode("utf-8"))
     except Exception as exc:  # tell the peer before the socket dies
         wire.send_error(exc)
         raise

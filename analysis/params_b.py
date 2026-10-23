@@ -4,16 +4,21 @@ This module is the single source of truth for the "B" profile used in the
 paper.  Scripts that need the mask width, the CKKS parameter set, or the
 leakage budget should import from here instead of hard-coding numbers.
 
-Profile B keeps CKKS (route A) and raises the plaintext bound so that the mask
-ring can be 44 bits wide while the comparison window stays at 14 bits:
+Profile B defines the sigma=30 statistical-sharing target and raises the
+plaintext bound so that the mask ring can be 44 bits wide while the comparison
+window stays at 14 bits:
 
     sigma = K_RING - K_COMPARE = 44 - 14 = 30
 
-The CKKS chain below keeps the six multiplicative levels used by the current
-three networks.  It MUST be validated with the SEAL/TenSEAL security estimator
-on the target machine before it is reported in the paper.  If the CKKS error
-exceeds the self-test tolerance, lower SIGMA or raise the scale/outer primes;
-run `hybrid_mpc.py --self-test --real-relu` to check.
+IMPORTANT: the CKKS chain below is retained for protocol/self-test
+compatibility, but it is NOT a feasible end-to-end six-layer precision profile
+for sigma=30.  `sweep_ckks_frontier.py` measures sigma<=21 at depth 6 and
+requires level primes of at least 35 bits; sigma=30 fails at 0.327 relative
+error.  Large statistically masked shares also lose precision when a later
+ciphertext multiplication follows a plaintext addition.  The Pi deployment
+therefore uses the separately labelled `params_pi.py` profile.  Do not quote a
+Pi-demo result as a profile-B result, and do not claim that the chain below
+makes the full sigma=30 CKKS path feasible.
 """
 
 from __future__ import annotations

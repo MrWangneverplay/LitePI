@@ -64,7 +64,11 @@ class FastPerLayer(nn.Module):
 
 def load_data_module(root: Path):
     path = root / "model" / "cifar10_cnn_relu.py"
+    if not path.is_file():
+        raise FileNotFoundError(f"data loader not found: {path}")
     spec = importlib.util.spec_from_file_location("cifar_data", path)
+    if spec is None or spec.loader is None:
+        raise ImportError(f"cannot load data module from {path}")
     module = importlib.util.module_from_spec(spec)
     sys.modules["cifar_data"] = module
     spec.loader.exec_module(module)
@@ -109,7 +113,10 @@ def save_json(root: Path, name: str, payload: dict) -> Path:
 def main() -> int:
     ap = argparse.ArgumentParser(description="E5 layer sensitivity (ReLU -> P2)")
     ap.add_argument("--root", default=str(Path(__file__).resolve().parent.parent))
-    ap.add_argument("--mode", choices=["posthoc", "retrain", "both"], default="posthoc")
+    ap.add_argument("--mode", choices=["posthoc", "retrain", "both", "schedule"],
+                    default="posthoc")
+    ap.add_argument("--activations", default="relu,relu,relu,relu,relu",
+                    help="comma list for conv1,conv2,conv3,conv4,fc1 (relu|p2)")
     ap.add_argument("--epochs", type=int, default=50)
     ap.add_argument("--batch-size", type=int, default=128)
     ap.add_argument("--workers", type=int, default=2)
@@ -122,12 +129,36 @@ def main() -> int:
     ap.add_argument("--retrain-baseline", action="store_true")
     args = ap.parse_args()
 
+    if args.epochs < 1:
+        ap.error("--epochs must be >= 1")
+    if args.batch_size < 1:
+        ap.error("--batch-size must be >= 1")
+    if args.workers < 0:
+        ap.error("--workers must be >= 0")
+    schedule_acts = None
+    if args.mode == "schedule":
+        schedule_acts = tuple(a.strip() for a in args.activations.split(","))
+        if len(schedule_acts) != 5 or any(a not in ACTS for a in schedule_acts):
+            ap.error("--activations must be five comma-separated relu|p2 values")
+
     root = Path(args.root)
     module = load_data_module(root)
     train_loader, test_loader = module.load_data(args.batch_size, args.workers)
     prepare = prepare_rgb
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     print(f"device={device} mode={args.mode} seed={args.seed}", flush=True)
+
+    if args.mode == "schedule":
+        acts = schedule_acts
+        assert acts is not None
+        print(f"training schedule {acts}", flush=True)
+        _, acc = train_variant(acts, args.seed, args, train_loader, test_loader,
+                               device, prepare)
+        save_json(root, f"schedule_{'-'.join(acts)}_seed{args.seed}.json",
+                  {"activations": list(acts), "acc": acc, "seed": args.seed,
+                   "epochs": args.epochs})
+        print(f"schedule {acts}: {acc:.2%}")
+        return 0
 
     baseline_path = root / "datas" / "fast_relu_baseline.pt"
     baseline_acts = ("relu",) * 5

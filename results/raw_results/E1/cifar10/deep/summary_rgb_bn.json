@@ -97,6 +97,43 @@
       "relu_elements": 20736,
       "mult_depth": 10,
       "fits_budget": false
+    },
+    {
+      "run_id": "gpu_20261023",
+      "environment": "RTX 4090, CUDA 13.2, torch 2.13.0+cu130",
+      "activation": "relu",
+      "arch": "fast",
+      "conv_depth": 4,
+      "channels": 32,
+      "hidden": 256,
+      "epochs": 50,
+      "batch_size": 256,
+      "label_smoothing": 0.1,
+      "seeds": [73, 74, 75],
+      "test_acc_mean": 0.8451,
+      "test_acc_std": 0.0043,
+      "test_acc_runs": [0.84, 0.84, 0.85],
+      "relu_elements": 20736,
+      "mult_depth": 10,
+      "fits_budget": false
+    },
+    {
+      "activation": "p2",
+      "arch": "fast",
+      "conv_depth": 4,
+      "channels": 32,
+      "hidden": 256,
+      "epochs": 100,
+      "lr": 0.0005,
+      "batch_size": 128,
+      "seeds": [73],
+      "test_acc_mean": 0.7969,
+      "test_acc_std": null,
+      "test_acc_runs": [0.7969, 0.7907],
+      "relu_elements": 20736,
+      "mult_depth": 10,
+      "fits_budget": false,
+      "note": "P2 needed lr=5e-4 and 100 epochs to stabilize; at 50 epochs it was 77.24%."
     }
   ],
   "relu_minus_p2": {
@@ -111,6 +148,25 @@
     "fast_elements": 20736,
     "vgg_elements": 164096,
     "element_ratio": 7.91
+  },
+  "fast_relu_vs_p2": {
+    "relu_acc": 0.8509,
+    "p2_acc_best": 0.7969,
+    "p2_acc_latest": 0.7907,
+    "p2_acc_at_50_epochs": 0.7724,
+    "gap_best": 0.0540,
+    "gap_latest": 0.0602,
+    "gap_at_50_epochs": 0.0785
+  },
+  "planner_schedule_validation": {
+    "activations": ["p2", "p2", "relu", "p2", "p2"],
+    "predicted_acc": 0.8209,
+    "actual_acc": 0.8287,
+    "mpc_elements": 4096,
+    "hybrid_layers": 1,
+    "seed": 73,
+    "epochs": 50,
+    "note": "Planner predicted 82.09%, actual 82.87%; model conservative by 0.78 points. 4,096 vs 20,736 MPC elements (-80.2%)."
   },
   "note": "Per-seed JSONs are in litepi_results/. HE-only deployable baseline: conv2+p2 (depth 6) 78.57%; hybrid conv4+relu 88.55% (+9.98 points)."
 }

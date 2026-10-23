@@ -3,7 +3,7 @@
 ## What changed
 
 - `params_b.py` — single source of truth: sigma=30, k_ring=44, k_compare=14,
-  f=8, N=16384, scale 2^15.
+  f=8, N=16384, scale 2^23.
 - `hybrid_mpc.py` — uses profile B; input mask sigma=30.
 - `mpc_relu_fxp.py` — default k_ring=44 / k_compare=14 / f=8; output mask uses
   `secrets` (CSPRNG), not numpy PCG64.
@@ -18,6 +18,14 @@
 - `model/cifar10_cnn_relu.py` — seed before model creation; AdamW.
 - Eight analysis scripts — repo-relative `DEFAULT_ROOT` (no hard-coded `D:\`).
 
+> **Current correctness warning (2026-10-22).** The sigma=30 CKKS chain is not
+> feasible for the six-layer network at f=8 precision.  The depth sweep gives
+> sigma<=21 after six multiplications, and the Pi end-to-end path also showed
+> that directly adding a large finalize share as plaintext destroys precision
+> before the next ciphertext multiplication.  MPC share self-tests can still
+> pass because they do not exercise full HE depth.  Use the separately labelled
+> `params_pi.py` for the Raspberry-Pi deployment; do not relabel it as profile B.
+
 ## Run on your machine
 
 ## Verified results (2026-10-18, desktop)
@@ -29,9 +37,10 @@
   sigma=30`; server-share TV `<= 9.31e-10`.
 - `secure_relu_net.py --net-self-test`: ALL PASS; `k=44, k_compare=14, f=8,
   sigma=30`; z = 3.0, -2.0, 5.5, -0.5 all exact.
-- `hybrid_mpc.py --self-test --real-relu`: ALL PASS with the 23-bit chain
-  `[60, 23x6, 60]` and scale 2^23; `share->HE recovery` abs_err=3.09e-4
-  (tol 1.17e-2), `HE->share` 1.70e-3, `share->HE` 1.11e-3.
+- `hybrid_mpc.py --self-test --real-relu`: conversion-only self-test passes
+  with the 23-bit chain; it does not chain six ciphertext multiplications.
+- `check_ckks_depth.py --depth 6`: FAIL for profile B.  The measured depth
+  frontier is scale>=2^35, which limits the mask margin to sigma<=21.
 
 ### 1. MPC self-tests (no TenSEAL)
 
@@ -50,8 +59,14 @@ Expected: `slim DReLU uses fewer base OTs [old=56 new=25]` and
 .venv\Scripts\python.exe analysis\hybrid_mpc.py --self-test --real-relu
 ```
 
-Expected: all PASS with `sigma=30`. If `share->HE recovery` fails, lower SIGMA
-or adjust the scale / outer primes in `params_b.py`.
+Expected: the conversion-only checks pass with `sigma=30`.  That does not
+establish end-to-end precision.  Run the depth check separately:
+
+```powershell
+.venv\Scripts\python.exe analysis\check_ckks_depth.py --depth 6
+```
+
+The current profile-B chain is expected to fail this check.
 
 ### 3. Leakage table
 
@@ -85,8 +100,8 @@ size, and peak RSS. Run the same command on the desktop for the ratio.
 
 ## Caveats
 
-- The CKKS parameter set is a starting point, not a validated final answer:
-  run the lattice estimator and the HE self-test before putting it in the paper.
+- The CKKS parameter set is not validated for full inference.  The measured
+  depth frontier points to sigma<=21, not sigma=30.
 - The bounded-Q theorem must go into the security section:
   `eps <= N * Q * 2^-sigma`, with Q defined as encrypted inference queries.
 - The paper should not claim unlimited/lifetime queries under profile B.

@@ -8,8 +8,8 @@ anywhere.
 
 Roles (protocol roles; the TCP listener/connector choice of the demo is
 arbitrary and only exists so two terminals can find each other):
-    party0 : client, OT sender, holds s_c = z + r   (draws the output mask rho)
-    party1 : server, OT receiver, holds s_s = -r
+    party0 : server, holds s_s = -r
+    party1 : client, holds s_c = z + r  (draws the output mask rho)
 
 Every OT round is one request/response: party0 sends A, party1 replies B, party0
 sends (e0, e1).  The two sides execute the identical circuit, so message order
@@ -58,6 +58,8 @@ except Exception:  # pragma: no cover - fall back to the pure-Python secp256k1 c
     )
 from mpc_relu_secure import _dec, _enc
 from params_b import F as F_B, K_COMPARE as K_COMPARE_B, K_RING as K_RING_B
+
+MAX_FRAME_BYTES = 512 * 1024 * 1024
 
 
 def _bxor(x: bytes, y: bytes) -> bytes:
@@ -115,6 +117,10 @@ class Chan:
 
     def recv(self) -> bytes:
         n = int.from_bytes(self._recv_exact(4), "big")
+        if n > MAX_FRAME_BYTES:
+            raise ValueError(
+                f"frame length {n} exceeds {MAX_FRAME_BYTES} byte limit"
+            )
         data = self._recv_exact(n)
         self.bytes_recv += 4 + n
         self.msgs_recv += 1

@@ -34,7 +34,9 @@ from __future__ import annotations
 
 import argparse
 import itertools
+import json
 from dataclasses import dataclass
+from client_cost import estimate as estimate_client_cost
 
 
 @dataclass(frozen=True)
@@ -56,9 +58,215 @@ class Profile:
     depth_budget: int = 6
     base_acc: float = 0.8509    # all-ReLU accuracy
     p2_penalty_coeff: float = 0.0025
+    # Canonical K=2 schedule order: 00, 01, 10, 11.
+    schedule_accuracies: tuple[float, float, float, float] | None = None
+    encoded_input_slots: int | None = None
 
     def penalty(self, k: int) -> float:
         return self.p2_penalty_coeff * k * (k - 1)
+
+
+@dataclass(frozen=True)
+class ClientProfile:
+    per_element_ms: float = 12.9
+    encrypt_ms: float = 20.0
+    decrypt_ms: float = 20.0
+    peak_memory_mb: float = 512.0
+
+
+@dataclass(frozen=True)
+class NetworkProfile:
+    rtt_ms: float = 50.0
+    bytes_per_element: int = 3996
+    rtts_per_hybrid: int = 41
+
+
+@dataclass(frozen=True)
+class Budget:
+    max_mpc_elements: int | None = None
+    max_rtts: int | None = None
+    max_time_ms: float | None = None
+    max_memory_mb: float | None = None
+
+
+@dataclass(frozen=True)
+class CKKSPlan:
+    name: str
+    poly_modulus_degree: int
+    coeff_mod_bit_sizes: tuple[int, ...]
+    global_scale_bits: int
+    depth_budget: int
+    security_bits: int | None
+
+
+# These are planning presets, not security claims.  The last field must be
+# filled only after running the SEAL/TenSEAL security estimator.
+CKKS_PRESETS = (
+    CKKSPlan("ckks-light", 8192, (40, 21, 21, 21, 21, 21, 21, 40), 21, 2, None),
+    # Current canonical implementation from 实验方案 §4.1: one shared
+    # N=8192 chain with depth 5 and a budget of 6 multiplications.
+    CKKSPlan(
+        "ckks-current-8192",
+        8192,
+        (40, 21, 21, 21, 21, 21, 21, 40),
+        21,
+        6,
+        None,
+    ),
+    CKKSPlan("ckks-mid", 16384, (60, 40, 40, 40, 60), 40, 3, None),
+    CKKSPlan("ckks-deep", 32768, (60, 40, 40, 40, 40, 40, 40, 60), 40, 5, None),
+    CKKSPlan("ckks-full", 65536, tuple([60] + [40] * 9 + [60]), 40, 9, None),
+)
+
+
+def required_depth(bits, layers) -> int:
+    """Maximum linear+polynomial depth between hybrid-ReLU resets."""
+    depth = 0
+    maximum = 0
+    for layer, bit in zip(layers, bits):
+        depth += layer.linear_depth
+        maximum = max(maximum, depth)
+        if bit:
+            depth = 0
+        else:
+            depth += layer.p2_depth
+            maximum = max(maximum, depth)
+    # fc2 follows the second nonlinear layer in all canonical networks.
+    return max(maximum, depth + 1)
+
+
+def choose_ckks_plan(bits, layers,
+                     encoded_input_slots: int | None = None) -> CKKSPlan:
+    need = required_depth(bits, layers)
+    for plan in CKKS_PRESETS:
+        if (
+            plan.depth_budget >= need
+            and plan.poly_modulus_degree // 2 >= (encoded_input_slots or 0)
+        ):
+            return plan
+    return CKKS_PRESETS[-1]
+
+
+def packing_plan(bits, layers, ckks: CKKSPlan,
+                 encoded_input_slots: int | None = None) -> dict:
+    slots = ckks.poly_modulus_degree // 2
+    rows = []
+    for layer, bit in zip(layers, bits):
+        if bit:
+            chunks = (layer.elements + slots - 1) // slots
+            rows.append({
+                "layer": layer.name,
+                "nonlinear": "relu",
+                "elements": layer.elements,
+                "slots": layer.elements,
+                "ciphertext_chunks": chunks,
+                "estimated": True,
+            })
+        else:
+            rows.append({
+                "layer": layer.name,
+                "nonlinear": "p2",
+                "elements": layer.elements,
+                "slots": layer.elements,
+                "ciphertext_chunks": (layer.elements + slots - 1) // slots,
+                "estimated": True,
+            })
+    return {
+        "slot_capacity": slots,
+        "encoded_input_slots": encoded_input_slots,
+        "input_fits_one_ciphertext": (
+            encoded_input_slots is None or encoded_input_slots <= slots
+        ),
+        "layers": rows,
+        "estimated": True,
+    }
+
+
+def plan_result(bits, layers, profile: Profile,
+                client: ClientProfile | None = None,
+                network: NetworkProfile | None = None,
+                budget: Budget | None = None,
+                output_mode: str = "logits") -> dict:
+    """Implement the documented planner interface: inputs -> (s, p, packing)."""
+    client = client or ClientProfile()
+    network = network or NetworkProfile(
+        rtt_ms=profile.rtt_ms,
+        bytes_per_element=profile.bytes_per_element,
+        rtts_per_hybrid=profile.rtts_per_hybrid,
+    )
+    budget = budget or Budget()
+    reference_schedule = evaluate(bits, layers, profile)
+    target_rtts = (
+        2 + reference_schedule.hybrid_layers + int(output_mode == "index")
+    )
+    target_time_ms = (
+        reference_schedule.mpc_elements * client.per_element_ms
+        + target_rtts * network.rtt_ms
+    )
+    # The planner-facing objective uses the §12 target: r_h=1.
+    schedule = Schedule(
+        reference_schedule.bits,
+        reference_schedule.acc,
+        reference_schedule.mpc_elements,
+        target_rtts,
+        target_time_ms,
+        reference_schedule.bytes,
+        reference_schedule.depth_ok,
+    )
+    ckks = choose_ckks_plan(bits, layers, profile.encoded_input_slots)
+    packing = packing_plan(
+        bits, layers, ckks, profile.encoded_input_slots,
+    )
+    reference_rtts = (
+        41 * schedule.hybrid_layers + int(output_mode == "index")
+    )
+    client_cost = estimate_client_cost(
+        schedule.hybrid_layers, schedule.mpc_elements, output_mode,
+    )
+    constraints = {
+        "mpc_elements": budget.max_mpc_elements is None
+        or schedule.mpc_elements <= budget.max_mpc_elements,
+        "rtts": budget.max_rtts is None or schedule.rtts <= budget.max_rtts,
+        "time": budget.max_time_ms is None or schedule.time_ms <= budget.max_time_ms,
+        "memory": budget.max_memory_mb is None
+        or client.peak_memory_mb <= budget.max_memory_mb,
+        "packing": packing["input_fits_one_ciphertext"],
+    }
+    return {
+        "s": list(schedule.bits),
+        "output_mode": output_mode,
+        "accuracy": schedule.acc,
+        "mpc_elements": schedule.mpc_elements,
+        "hybrid_layers": schedule.hybrid_layers,
+        "rtts": schedule.rtts,
+        "time_ms": schedule.time_ms,
+        "time_basis": "protocol-target-r_h=1",
+        "reference_rtts": reference_rtts,
+        "reference_time_ms": (
+            schedule.mpc_elements * client.per_element_ms
+            + reference_rtts * network.rtt_ms
+        ),
+        "bytes": client_cost.total_bytes,
+        "bytes_basis": "protocol-target-§6",
+        "reference_bytes": reference_schedule.bytes,
+        "depth_ok": schedule.depth_ok,
+        "p": {
+            "name": ckks.name,
+            "poly_modulus_degree": ckks.poly_modulus_degree,
+            "coeff_mod_bit_sizes": list(ckks.coeff_mod_bit_sizes),
+            "global_scale_bits": ckks.global_scale_bits,
+            "depth_budget": ckks.depth_budget,
+            "security_bits": ckks.security_bits,
+            "security_validated": False,
+        },
+        "packing": packing,
+        "client_cost": client_cost.__dict__,
+        "client_profile": client.__dict__,
+        "network_profile": network.__dict__,
+        "budget": budget.__dict__,
+        "constraints": constraints,
+        "feasible": schedule.depth_ok and all(constraints.values()),
+    }
 
 
 # Fast early-downsampling net: 20,736 ReLU elements in total.
@@ -78,6 +286,35 @@ VGG_LAYERS = (
     Layer("conv4", 16384, sensitivity=0.025),
     Layer("fc1",    256, sensitivity=0.0105),
 )
+
+# Canonical models from 实验方案 §3.2.1.  Accuracy values are the measured
+# five-seed E1 means from results/raw_results/E1/<dataset>/hybrid_s*/.
+CANONICAL_MODELS = {
+    "mnist": {
+        "layers": (
+            Layer("conv1", 256, sensitivity=0.0000),
+            Layer("fc1", 64, sensitivity=0.0000),
+        ),
+        "accuracies": (0.9797, 0.9790, 0.9789, 0.9771),
+        "slots": 4096,
+    },
+    "cifar10": {
+        "layers": (
+            Layer("conv1", 1200, sensitivity=0.0000),
+            Layer("fc1", 128, sensitivity=0.0000),
+        ),
+        "accuracies": (0.6059, 0.5936, 0.6280, 0.5860),
+        "slots": 3200,
+    },
+    "uci_har": {
+        "layers": (
+            Layer("conv1", 756, sensitivity=0.0000),
+            Layer("fc1", 128, sensitivity=0.0000),
+        ),
+        "accuracies": (0.9034, 0.8867, 0.9081, 0.8975),
+        "slots": 2016,
+    },
+}
 
 
 @dataclass(frozen=True)
@@ -122,7 +359,14 @@ def evaluate(bits, layers, profile: Profile) -> Schedule:
             p2_count += 1
             if depth > profile.depth_budget:
                 ok = False
-    acc = profile.base_acc - profile.penalty(p2_count)
+    # The classification head is a linear layer after the last nonlinearity.
+    depth += 1
+    if depth > profile.depth_budget:
+        ok = False
+    if profile.schedule_accuracies is not None and len(bits) == 2:
+        acc = profile.schedule_accuracies[(int(bits[0]) << 1) | int(bits[1])]
+    else:
+        acc = profile.base_acc - profile.penalty(p2_count)
     time_ms = mpc * profile.per_element_ms + rtts * profile.rtt_ms
     return Schedule(tuple(bits), acc, mpc, rtts, time_ms, nbytes, ok)
 
@@ -201,25 +445,65 @@ def pareto_front(schedules):
 
 def main() -> int:
     ap = argparse.ArgumentParser(description="LitePI per-layer planner")
-    ap.add_argument("--arch", choices=["fast", "vgg"], default="fast")
+    ap.add_argument(
+        "--arch",
+        choices=["mnist", "cifar10", "uci_har", "fast", "vgg"],
+        default="cifar10",
+    )
     ap.add_argument("--strategy", choices=["rule", "greedy", "constrained"],
-                    default="greedy")
-    ap.add_argument("--acc-min", type=float, default=0.82)
+                    default="constrained")
+    ap.add_argument("--acc-min", type=float, default=0.58)
     ap.add_argument("--rtt-ms", type=float, default=50.0)
     ap.add_argument("--per-element-ms", type=float, default=12.9)
+    ap.add_argument("--bytes-per-element", type=int, default=3996)
+    ap.add_argument("--rtts-per-hybrid", type=int, default=1,
+                    help="planner target: one round trip per hybrid layer")
+    ap.add_argument("--client-memory-mb", type=float, default=512.0)
+    ap.add_argument("--max-mpc-elements", type=int, default=None)
+    ap.add_argument("--max-rtts", type=int, default=None)
+    ap.add_argument("--max-time-s", type=float, default=None)
+    ap.add_argument("--max-memory-mb", type=float, default=None)
+    ap.add_argument("--json", action="store_true", help="emit s/p/packing JSON")
+    ap.add_argument("--output-mode", choices=["logits", "index"],
+                    default="logits")
     ap.add_argument("--pareto", action="store_true")
     args = ap.parse_args()
 
-    layers = FAST_LAYERS if args.arch == "fast" else VGG_LAYERS
-    # These are the measured all-ReLU baselines for the two architectures.
-    base_acc = 0.8509 if args.arch == "fast" else 0.8855
+    if args.arch in CANONICAL_MODELS:
+        canonical = CANONICAL_MODELS[args.arch]
+        layers = canonical["layers"]
+        schedule_accuracies = canonical["accuracies"]
+        encoded_input_slots = canonical["slots"]
+        base_acc = schedule_accuracies[-1]
+        accuracy_source = "measured-canonical-schedule"
+    else:
+        layers = FAST_LAYERS if args.arch == "fast" else VGG_LAYERS
+        schedule_accuracies = None
+        encoded_input_slots = None
+        base_acc = 0.8509 if args.arch == "fast" else 0.8855
+        accuracy_source = "fast-net-combination-penalty"
     profile = Profile(
         rtt_ms=args.rtt_ms,
         per_element_ms=args.per_element_ms,
+        bytes_per_element=args.bytes_per_element,
         base_acc=base_acc,
+        schedule_accuracies=schedule_accuracies,
+        encoded_input_slots=encoded_input_slots,
+    )
+    client = ClientProfile(per_element_ms=args.per_element_ms,
+                           peak_memory_mb=args.client_memory_mb)
+    network = NetworkProfile(rtt_ms=args.rtt_ms,
+                             bytes_per_element=args.bytes_per_element,
+                             rtts_per_hybrid=args.rtts_per_hybrid)
+    budget = Budget(
+        max_mpc_elements=args.max_mpc_elements,
+        max_rtts=args.max_rtts,
+        max_time_ms=(args.max_time_s * 1000 if args.max_time_s else None),
+        max_memory_mb=args.max_memory_mb,
     )
     print(f"arch={args.arch} acc_min={args.acc_min:.2%} rtt={args.rtt_ms}ms "
-          f"per_element={args.per_element_ms}ms depth_budget={profile.depth_budget}")
+          f"per_element={args.per_element_ms}ms depth_budget={profile.depth_budget} "
+          f"accuracy={accuracy_source}")
 
     if args.pareto:
         feasible = feasible_schedules(layers, profile, args.acc_min)
@@ -243,12 +527,28 @@ def main() -> int:
         bits = list(sch.bits)
 
     sch = evaluate(bits, layers, profile)
+    plan = plan_result(
+        bits, layers, profile, client, network, budget, args.output_mode,
+    )
+    if args.json:
+        print(json.dumps(plan, indent=2, ensure_ascii=False))
+        return 0 if plan["feasible"] and sch.acc >= args.acc_min else 1
     print(f"schedule: {sch.describe(layers)}")
     print(f"accuracy={sch.acc:.2%}  mpc_elements={sch.mpc_elements:,}  "
-          f"hybrid_layers={sch.hybrid_layers}  rtts={sch.rtts}  "
-          f"time={sch.time_ms/1000:.2f}s  bytes={sch.bytes/1e6:.2f}MB  "
+          f"hybrid_layers={sch.hybrid_layers}  "
+          f"target_rtts={plan['rtts']}  target_time={plan['time_ms']/1000:.2f}s  "
+          f"reference_rtts={plan['reference_rtts']}  "
+          f"reference_time={plan['reference_time_ms']/1000:.2f}s  "
+          f"target_bytes={plan['bytes']/1e6:.2f}MB  "
+          f"reference_bytes={plan['reference_bytes']/1e6:.2f}MB  "
           f"depth_ok={sch.depth_ok}")
-    return 0 if sch.depth_ok and sch.acc >= args.acc_min else 1
+    print(f"ckks={plan['p']['name']}  "
+          f"N={plan['p']['poly_modulus_degree']}  "
+          f"security_validated={plan['p']['security_validated']}")
+    print(f"packing_slots={plan['packing']['slot_capacity']}  "
+          f"packing_estimated={plan['packing']['estimated']}  "
+          f"feasible={plan['feasible']}")
+    return 0 if plan["feasible"] and sch.acc >= args.acc_min else 1
 
 
 if __name__ == "__main__":

@@ -30,6 +30,7 @@ import sys
 from datetime import datetime, timezone
 from pathlib import Path
 
+import numpy as np
 import torch
 import torch.nn as nn
 import torch.optim as optim
@@ -248,6 +249,70 @@ def save_record(root: Path, tag: str, seed: int, record: dict) -> Path:
     return path
 
 
+def save_fast_weights(root: Path, net: FastConvNet, seed: int, test_acc: float,
+                      activation: str, channels: int, hidden: int,
+                      rgb: bool, use_bn: bool) -> Path | None:
+    """Export a BN-folded fast CNN as portable NPZ weights for the Pi server."""
+    if not isinstance(net, FastConvNet):
+        print("weight export currently supports --arch fast only; skipped")
+        return None
+
+    net.eval()
+    fold_bn(net)
+    arrays = {}
+    conv_specs = []
+    conv_index = 0
+    for layer in net.features:
+        if not isinstance(layer, ConvBlock):
+            continue
+        conv = layer.conv
+        if conv.bias is None:
+            conv.bias = nn.Parameter(torch.zeros(conv.out_channels,
+                                                 device=conv.weight.device))
+        weight_key = f"conv{conv_index}_weight"
+        bias_key = f"conv{conv_index}_bias"
+        arrays[weight_key] = conv.weight.detach().cpu().numpy().astype(np.float32)
+        arrays[bias_key] = conv.bias.detach().cpu().numpy().astype(np.float32)
+        conv_specs.append({
+            "weight_key": weight_key,
+            "bias_key": bias_key,
+            "stride": int(conv.stride[0]),
+            "padding": int(conv.padding[0]),
+        })
+        conv_index += 1
+
+    arrays["fc1_weight"] = net.fc1.weight.detach().cpu().numpy().astype(np.float32)
+    arrays["fc1_bias"] = net.fc1.bias.detach().cpu().numpy().astype(np.float32)
+    arrays["fc2_weight"] = net.fc2.weight.detach().cpu().numpy().astype(np.float32)
+    arrays["fc2_bias"] = net.fc2.bias.detach().cpu().numpy().astype(np.float32)
+
+    out_dir = root / "datas" / "weights"
+    out_dir.mkdir(parents=True, exist_ok=True)
+    tag = f"fast_{activation}_{'rgb' if rgb else 'gray'}_{'bn' if use_bn else 'nobn'}_seed{seed}"
+    npz_path = out_dir / f"{tag}.npz"
+    meta_path = out_dir / f"{tag}.json"
+    np.savez_compressed(npz_path, **arrays)
+    meta = {
+        "arch": "fast",
+        "activation": activation,
+        "input_shape": [3 if rgb else 1, 32, 32],
+        "channels": channels,
+        "hidden": hidden,
+        "use_bn": use_bn,
+        "seed": seed,
+        "test_acc": test_acc,
+        "convs": conv_specs,
+        "pool": "avg2",
+        "fc1": {"weight_key": "fc1_weight", "bias_key": "fc1_bias"},
+        "fc2": {"weight_key": "fc2_weight", "bias_key": "fc2_bias"},
+    }
+    meta_path.write_text(json.dumps(meta, indent=2, ensure_ascii=False) + "\n",
+                         encoding="utf-8")
+    print(f"weights -> {npz_path}")
+    print(f"metadata -> {meta_path}")
+    return npz_path
+
+
 def count_relu_elements(arch: str, conv_depth: int, channels: int, hidden: int) -> int:
     if arch == "fast":
         return channels * 16 * 16 + (channels * 2) * 8 * 8 * 3 + hidden
@@ -312,6 +377,8 @@ def main() -> None:
     ap.add_argument("--check-fold", action="store_true", help="verify BN folding")
     ap.add_argument("--smoke", action="store_true", help="1 epoch, quick sanity check")
     ap.add_argument("--shape-check", action="store_true", help="print shapes/params, no training")
+    ap.add_argument("--save-weights", action="store_true",
+                    help="export fast CNN weights as BN-folded NPZ for Pi")
     args = ap.parse_args()
 
     if args.check_fold:
@@ -353,10 +420,15 @@ def main() -> None:
                        arch=args.arch)
             accs = []
             for seed in seeds:
-                _, acc = train_one(cfg, train_loader, test_loader, device, prepare,
-                                   epochs, args.lr, args.wd, seed,
-                                   args.label_smoothing)
+                net, acc = train_one(cfg, train_loader, test_loader, device, prepare,
+                                     epochs, args.lr, args.wd, seed,
+                                     args.label_smoothing)
                 accs.append(acc)
+                if args.save_weights:
+                    save_fast_weights(
+                        root, net, seed, acc, act, args.channels, args.hidden,
+                        args.rgb, args.bn,
+                    )
                 record = {
                     "exp_id": "E1",
                     "dataset": "cifar10",

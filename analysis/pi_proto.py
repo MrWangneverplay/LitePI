@@ -42,6 +42,7 @@ from params_pi import (  # noqa: F401  (re-exported for callers)
     SIGMA,
 )
 from secure_relu_net import Chan, Ctx  # noqa: F401  (Ctx re-exported)
+from protocol_contract import collect as protocol_compliance
 
 MAX_TAG = 4
 
@@ -156,21 +157,60 @@ class TenSEALBackend:
             return ctx.serialize(save_secret_key=False)
 
     def load_public_context(self, blob: bytes):
-        return self.ts.context_from(blob)
+        loader = getattr(self.ts, "context_from", None)
+        if loader is not None:
+            return loader(blob)
+        # Some TenSEAL builds expose deserialization only on Context.
+        return self.ts.Context.load(blob)
 
     def encrypt(self, ctx, values):
         arr = np.asarray(values, dtype=np.float64).ravel()
         return self.ts.ckks_vector(ctx, arr.tolist())
+
+    def im2col_encrypt(self, ctx, values, kernel, stride):
+        arr = np.asarray(values, dtype=np.float64)
+        kh, kw = (int(v) for v in kernel)
+        if isinstance(stride, (tuple, list)):
+            sh, sw = (int(v) for v in stride)
+            if sh != sw:
+                raise ValueError("TenSEAL im2col supports one shared stride")
+            stride_value = sh
+        else:
+            stride_value = int(stride)
+        ct, windows = self.ts.im2col_encoding(
+            ctx, arr.tolist(), kh, kw, stride_value,
+        )
+        return ct, int(windows)
+
+    def conv2d_im2col(self, ct, kernel, windows_nb: int):
+        if not hasattr(ct, "conv2d_im2col"):
+            raise ProtocolError("ciphertext does not retain convolution capabilities")
+        arr = np.asarray(kernel, dtype=np.float64).tolist()
+        return ct.conv2d_im2col(arr, int(windows_nb))
+
+    def pack_vectors(self, vectors):
+        if not vectors:
+            raise ValueError("pack_vectors needs at least one ciphertext")
+        return self.ts.CKKSVector.pack_vectors(list(vectors))
 
     def decrypt(self, ct) -> np.ndarray:
         return np.asarray(ct.decrypt(), dtype=np.float64)
 
     def add_plain(self, ct, values):
         arr = np.asarray(values, dtype=np.float64).ravel()
+        if arr.size == 1:
+            return ct + float(arr[0])
         return ct + arr.tolist()
 
     def add_cipher(self, ct, other):
         return ct + other
+
+    def square(self, ct):
+        return ct.square()
+
+    def mul_plain(self, ct, value):
+        arr = np.asarray(value, dtype=np.float64)
+        return ct * (float(arr) if arr.ndim == 0 else arr.tolist())
 
     def mm(self, ct, matrix):
         mat = np.asarray(matrix, dtype=np.float64)
@@ -217,6 +257,46 @@ class StubBackend:
     def encrypt(self, ctx, values):
         return StubCiphertext(values)
 
+    def im2col_encrypt(self, ctx, values, kernel, stride):
+        arr = np.asarray(values, dtype=np.float64)
+        kh, kw = (int(v) for v in kernel)
+        if isinstance(stride, (tuple, list)):
+            sh, sw = (int(v) for v in stride)
+        else:
+            sh = sw = int(stride)
+        while arr.ndim < 2:
+            arr = arr.reshape(1, -1)
+        rows = (arr.shape[0] - kh) // sh + 1
+        cols = (arr.shape[1] - kw) // sw + 1
+        if rows <= 0 or cols <= 0:
+            raise ValueError("kernel is larger than the encoded input")
+        padded = 1 << max(1, int(np.ceil(np.log2(kh * kw))))
+        windows = []
+        for r in range(rows):
+            for c in range(cols):
+                y, x = r * sh, c * sw
+                patch = arr[y:y + kh, x:x + kw].reshape(-1)
+                windows.extend(patch.tolist())
+                windows.extend([0.0] * (padded - patch.size))
+        return StubCiphertext(windows), rows * cols
+
+    def conv2d_im2col(self, ct, kernel, windows_nb: int):
+        ker = np.asarray(kernel, dtype=np.float64).ravel()
+        if ker.size == 0:
+            raise ValueError("empty convolution kernel")
+        width = int(np.ceil(ct.values.size / int(windows_nb)))
+        if ker.size > width:
+            raise ProtocolError("kernel does not fit the im2col window")
+        view = ct.values.reshape(int(windows_nb), width)
+        return StubCiphertext(view[:, :ker.size] @ ker)
+
+    def pack_vectors(self, vectors):
+        if not vectors:
+            raise ValueError("pack_vectors needs at least one ciphertext")
+        return StubCiphertext(
+            np.concatenate([np.asarray(v.values, dtype=np.float64) for v in vectors])
+        )
+
     def decrypt(self, ct) -> np.ndarray:
         return ct.values.copy()
 
@@ -227,6 +307,13 @@ class StubBackend:
         if ct.values.size != other.values.size:
             raise ProtocolError("stub ciphertext size mismatch")
         return StubCiphertext(ct.values + other.values)
+
+    def square(self, ct):
+        return StubCiphertext(ct.values * ct.values)
+
+    def mul_plain(self, ct, value):
+        arr = np.asarray(value, dtype=np.float64)
+        return StubCiphertext(ct.values * (float(arr) if arr.ndim == 0 else arr))
 
     def mm(self, ct, matrix):
         mat = np.asarray(matrix, dtype=np.float64)
@@ -262,10 +349,18 @@ def make_backend(name: str):
 
 # --------------------------------------------------------------- shared data
 
-def profile_info(backend: str) -> dict:
+def profile_info(backend: str, mask_domain_aligned: bool = False) -> dict:
+    compliance = protocol_compliance()
     return {
         "backend": backend,
         "simulation": backend == "stub",
+        "deployment_compliant": compliance["compliant"],
+        "protocol_failures": compliance["failures"],
+        "mpc_backend": compliance["reference_mpc_backend"],
+        "required_mpc_backend": compliance["required_mpc_backend"],
+        "mask_policy": "prg(seed_session,query,layer)",
+        "mask_domain_aligned": bool(mask_domain_aligned),
+        "mask_resync_policy": "query-counter-gap-or-abort",
         "profile_name": PROFILE_NAME,
         "paper_profile": PAPER_PROFILE,
         "poly_modulus_degree": POLY_MODULUS_DEGREE,

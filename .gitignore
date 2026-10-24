@@ -1,5 +1,8 @@
 # 数据集（673 MB，不纳入版本控制；脚本需要时从 datasets/ 读取）
 datasets/
+# 整理后的数据集副本约 705 MB，只保留在本机，不进入 GitHub
+datasets_organized/
+datasets_organized.path
 
 # 训练产物（权重/日志/曲线）。如需追踪权重，注释掉下一行
 datas/

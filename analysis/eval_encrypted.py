@@ -220,8 +220,13 @@ def main() -> int:
     try:
         for index in range(len(rows), n):
             sample, label = test[index]
-            raw = np.asarray(sample, dtype=np.float64).ravel()
-            prepared = np.asarray(model.prepare_array(raw), dtype=np.float64)
+            if args.dataset == "uci_har":
+                # load_data already z-scores the windows, so prepare_array would
+                # normalise a second time and the plain logits would disagree.
+                prepared = np.asarray(sample, dtype=np.float64)
+            else:
+                raw = np.asarray(sample, dtype=np.float64).ravel()
+                prepared = np.asarray(model.prepare_array(raw), dtype=np.float64)
             prepared = prepared.reshape(model.spec.model_shape)
             if prepared.ndim == 3 and prepared.shape[0] == 1:
                 prepared = prepared[0]
@@ -239,7 +244,8 @@ def main() -> int:
             down = len(be.serialize(logits_ct))
 
             got = be.decrypt(logits_ct)[: model.spec.classes]
-            ref, _ = model.plain_forward(raw)
+            ref, _ = model.plain_forward_prepared(prepared.reshape(1, *model.spec.model_shape))
+            ref = np.ravel(ref)[: model.spec.classes]
             err = float(np.max(np.abs(got - ref)))
             rows.append({
                 "index": index,

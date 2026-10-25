@@ -94,8 +94,12 @@ def main() -> int:
     s_up, s_down = [], []
 
     def run_one(sample, label):
-        raw = np.asarray(sample, dtype=np.float64).ravel()
-        prepared = np.asarray(model.prepare_array(raw), dtype=np.float64)
+        if args.dataset == "uci_har":
+            # load_data already z-scores the windows; prepare_array would normalise twice.
+            prepared = np.asarray(sample, dtype=np.float64)
+        else:
+            raw = np.asarray(sample, dtype=np.float64).ravel()
+            prepared = np.asarray(model.prepare_array(raw), dtype=np.float64)
         prepared = prepared.reshape(model.spec.model_shape)
         if prepared.ndim == 3 and prepared.shape[0] == 1:
             prepared = prepared[0]
@@ -111,7 +115,8 @@ def main() -> int:
         c3 = time.perf_counter()
         pred = int(np.argmax(logits[: model.spec.classes]))
         c4 = time.perf_counter()
-        ref = int(np.argmax(model.plain_forward(raw)[0]))
+        ref_vec = model.plain_forward_prepared(prepared.reshape(1, *model.spec.model_shape))[0]
+        ref = int(np.argmax(np.ravel(ref_vec)[: model.spec.classes]))
         return (c1 - c0, c2 - c1, c3 - c2, c4 - c3, up, down, pred == ref, pred, ref)
 
     try:

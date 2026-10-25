@@ -1,0 +1,17 @@
+{
+  "exp_id": "E10",
+  "dataset": "uci_har",
+  "method": "mia_logits",
+  "seed": 74,
+  "git_sha": "9487bea10d77dd0ad7c4d9b4bcaa08368d1bab8c",
+  "timestamp_utc": "2026-10-25T04:24:11+00:00",
+  "membership_inference": {
+    "auc": 0.7571154959689992,
+    "n_member": 300,
+    "n_non_member": 300,
+    "dim": 6
+  },
+  "output_mode": "full_logits",
+  "member_train_acc": 0.96,
+  "non_member_test_acc": 0.8966666666666666
+}

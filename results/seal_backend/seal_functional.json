@@ -1,0 +1,173 @@
+{
+  "name": "seal_functional",
+  "timestamp_utc": "2026-10-24T11:01:44+00:00",
+  "git_sha": "9487bea",
+  "python": "3.11.17",
+  "profile": {
+    "poly_modulus_degree": 8192,
+    "coeff_mod_bit_sizes": [
+      40,
+      21,
+      21,
+      21,
+      21,
+      21,
+      21,
+      40
+    ],
+    "global_scale_bits": 21
+  },
+  "command": "seal/probes.py seal_functional",
+  "backend": "seal",
+  "seal_version": "3.3.2",
+  "levels": {
+    "fresh_index": 6,
+    "fresh_scale": 2097152.0,
+    "chain_length": 7
+  },
+  "mm": {
+    "got": [
+      7.25823,
+      11.98037
+    ],
+    "exact": [
+      7.0,
+      12.0
+    ],
+    "max_abs_err": 0.25822709097712604,
+    "level_after": 5
+  },
+  "mm64": {
+    "max_abs_err": 0.04050864946390886,
+    "max_abs_value": 2.267582493547442
+  },
+  "im2col_conv": {
+    "windows": 9,
+    "im2col_slots": 144,
+    "im2col_windows_padded_taps": 16,
+    "im2col_max_abs_err_vs_tap_major": 0.00409192815715298,
+    "im2col_layout": "tap-major (padded taps x windows, row-major)",
+    "conv_slots": 9,
+    "got": [
+      -2.7547,
+      -0.46811,
+      1.77047,
+      1.14049,
+      0.60082,
+      -2.0038,
+      2.33239,
+      3.25826,
+      0.84173
+    ],
+    "exact": [
+      -1.82352,
+      -0.33724,
+      1.79214,
+      1.14886,
+      0.58629,
+      -2.00325,
+      2.3192,
+      3.25338,
+      0.82813
+    ],
+    "max_abs_err": 0.9311811108769839,
+    "level_after": 5
+  },
+  "pack": {
+    "slots": 128,
+    "head": [
+      0.32975,
+      0.9872,
+      2.0315
+    ],
+    "mid": [
+      100.00043,
+      101.00351,
+      101.99804
+    ],
+    "max_abs_err": 0.3297450493574253
+  },
+  "residual_source": "mm / conv / pack residuals are dominated by the SEAL 3.3.2 rotation key-switching noise at the 2^21 encoding scale, not by layout or algorithm errors; see seal_rotation_noise.json",
+  "algebra": {
+    "add_plain": {
+      "got": [
+        0.7999,
+        -0.20001,
+        2.50039,
+        0.50026
+      ],
+      "exact": [
+        0.8,
+        -0.2,
+        2.5,
+        0.5
+      ],
+      "level": 6
+    },
+    "mul_plain": {
+      "got": [
+        1.59981,
+        -0.40006,
+        5.00097,
+        1.00021
+      ],
+      "exact": [
+        1.6,
+        -0.4,
+        5.0,
+        1.0
+      ],
+      "level": 5
+    },
+    "square": {
+      "got": [
+        2.55939,
+        0.16004,
+        25.00928,
+        1.00093
+      ],
+      "exact": [
+        2.56,
+        0.16,
+        25.0,
+        1.0
+      ],
+      "level": 4
+    }
+  },
+  "p2_poly": {
+    "got": [
+      0.25737,
+      -0.042514,
+      3.064191,
+      0.062671
+    ],
+    "exact": [
+      0.2575,
+      -0.0425,
+      3.0625,
+      0.0625
+    ],
+    "max_abs_err": 0.0016905266843423306,
+    "level_fresh": 6,
+    "level_after": 4,
+    "levels_consumed": 2,
+    "square_only_level_after": 5,
+    "square_only_levels": 1,
+    "square_only_max_abs_err": 0.004306468344718262
+  },
+  "encrypt_like": {
+    "fresh_level": 6,
+    "target_level": 5,
+    "encrypted_level": 5,
+    "scale_target": 2462709.2264968585,
+    "scale_encrypted": 2462709.2264968585,
+    "add_plain_share_max_abs_err": 7.499455881543327e-05,
+    "level_after_add": 5
+  },
+  "wire": {
+    "serialized_bytes": 786513,
+    "roundtrip_err": 0.0,
+    "server_can_decrypt": "RuntimeError"
+  }
+}

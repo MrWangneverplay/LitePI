@@ -1,0 +1,192 @@
+{
+  "name": "seal_functional",
+  "timestamp_utc": "2026-10-24T12:46:19+00:00",
+  "git_sha": "9487bea",
+  "python": "3.11.17",
+  "profile": {
+    "poly_modulus_degree": 8192,
+    "coeff_mod_bit_sizes": [
+      40,
+      21,
+      21,
+      21,
+      21,
+      21,
+      21,
+      40
+    ],
+    "global_scale_bits": 21
+  },
+  "command": "/mnt/d/王梓杨/项目组/wzy/seal/probes.py all",
+  "backend": "seal",
+  "seal_version": "4.1.2",
+  "levels": {
+    "fresh_index": 6,
+    "fresh_scale": 2097152.0,
+    "chain_length": 7
+  },
+  "mm": {
+    "got": [
+      7.0029,
+      12.00619
+    ],
+    "exact": [
+      7.0,
+      12.0
+    ],
+    "max_abs_err": 0.006192800471650273,
+    "level_after": 5
+  },
+  "mm64": {
+    "max_abs_err": 0.0014974396400148082,
+    "max_abs_value": 2.267582493547442
+  },
+  "im2col_conv": {
+    "windows": 9,
+    "im2col_slots": 144,
+    "im2col_windows_padded_taps": 16,
+    "im2col_max_abs_err_vs_tap_major": 0.0022229263161910665,
+    "im2col_layout": "tap-major (padded taps x windows, row-major)",
+    "conv_slots": 9,
+    "got": [
+      -1.82342,
+      -0.33496,
+      1.7929,
+      1.14876,
+      0.5857,
+      -2.00309,
+      2.32102,
+      3.25302,
+      0.82723
+    ],
+    "exact": [
+      -1.82352,
+      -0.33724,
+      1.79214,
+      1.14886,
+      0.58629,
+      -2.00325,
+      2.3192,
+      3.25338,
+      0.82813
+    ],
+    "max_abs_err": 0.002278939161921789,
+    "level_after": 6,
+    "scale_after": 4398046511104.0,
+    "rescale": "deferred to pack_vectors (rotation at the 2^42 product scale)"
+  },
+  "pack": {
+    "slots": 128,
+    "head": [
+      0.25589,
+      0.92181,
+      1.98949
+    ],
+    "mid": [
+      100.00031,
+      101.00262,
+      102.00168
+    ],
+    "max_abs_err": 0.2558940577327238
+  },
+  "residual_source": "mm / conv residuals are dominated by the plaintext factor and by the fresh-encryption noise, not by the rotation key switch: the operators multiply before rotating, so the rotation runs at the 2^42 product scale.  conv defers its rescale to pack_vectors, which therefore also rotates at 2^42 (see seal_rotation_noise.json for the fresh-scale case).",
+  "algebra": {
+    "add_plain": {
+      "got": [
+        0.79954,
+        -0.20007,
+        2.50139,
+        0.49975
+      ],
+      "exact": [
+        0.8,
+        -0.2,
+        2.5,
+        0.5
+      ],
+      "level": 6
+    },
+    "mul_plain": {
+      "got": [
+        1.59911,
+        -0.40033,
+        5.00178,
+        0.99885
+      ],
+      "exact": [
+        1.6,
+        -0.4,
+        5.0,
+        1.0
+      ],
+      "level": 5
+    },
+    "square": {
+      "got": [
+        2.55715,
+        0.1603,
+        25.01723,
+        0.9971
+      ],
+      "exact": [
+        2.56,
+        0.16,
+        25.0,
+        1.0
+      ],
+      "level": 4
+    }
+  },
+  "p2_poly": {
+    "got": [
+      0.257239,
+      -0.042152,
+      3.06287,
+      0.061546
+    ],
+    "exact": [
+      0.2575,
+      -0.0425,
+      3.0625,
+      0.0625
+    ],
+    "max_abs_err": 0.0009544818295285432,
+    "level_fresh": 6,
+    "level_after": 4,
+    "levels_consumed": 2,
+    "square_only_level_after": 5,
+    "square_only_levels": 1,
+    "square_only_max_abs_err": 0.0011921818104045911
+  },
+  "p2_shifted": {
+    "shift": 0.5,
+    "got": [
+      0.639148,
+      0.040843,
+      6.251506,
+      0.249897
+    ],
+    "exact": [
+      0.64,
+      0.04,
+      6.25,
+      0.25
+    ],
+    "max_abs_err": 0.001506066615020174,
+    "levels_consumed": 1
+  },
+  "encrypt_like": {
+    "fresh_level": 6,
+    "target_level": 5,
+    "encrypted_level": 5,
+    "scale_target": 2462709.2264968585,
+    "scale_encrypted": 2462709.2264968585,
+    "add_plain_share_max_abs_err": 0.00048076573495237085,
+    "level_after_add": 5
+  },
+  "wire": {
+    "serialized_bytes": 917625,
+    "roundtrip_err": 0.0,
+    "server_can_decrypt": "RuntimeError"
+  }
+}

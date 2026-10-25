@@ -3,15 +3,15 @@
   "dataset": "cifar10",
   "method": "mia_logits",
   "seed": 73,
-  "git_sha": "a4eadae8a76c9a77bb3e879380ff0f4b092d146d",
-  "timestamp_utc": "2026-09-16T12:16:31+00:00",
+  "git_sha": "9487bea10d77dd0ad7c4d9b4bcaa08368d1bab8c",
+  "timestamp_utc": "2026-10-25T04:37:41+00:00",
   "membership_inference": {
-    "auc": 0.6746607341490545,
+    "auc": 0.6646051167964405,
     "n_member": 300,
     "n_non_member": 300,
     "dim": 10
   },
   "output_mode": "full_logits",
-  "member_train_acc": 0.63,
+  "member_train_acc": 0.5633333333333334,
   "non_member_test_acc": 0.61
 }

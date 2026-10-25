@@ -1,0 +1,89 @@
+{
+  "name": "seal_noise",
+  "timestamp_utc": "2026-10-24T11:00:06+00:00",
+  "git_sha": "9487bea",
+  "python": "3.11.17",
+  "profile": {
+    "poly_modulus_degree": 8192,
+    "coeff_mod_bit_sizes": [
+      40,
+      21,
+      21,
+      21,
+      21,
+      21,
+      21,
+      40
+    ],
+    "global_scale_bits": 21
+  },
+  "command": "seal/probes.py seal_noise",
+  "backend": "seal",
+  "seal_version": "3.3.2",
+  "fresh": {
+    "ones": {
+      "max_abs_err": 0.0018902824307360788,
+      "max_abs_value": 1.0
+    },
+    "arange": {
+      "max_abs_err": 0.0032237561989383323,
+      "max_abs_value": 63.0
+    },
+    "arange_x1e-2": {
+      "max_abs_err": 0.003121956813932243,
+      "max_abs_value": 0.63
+    },
+    "randn": {
+      "max_abs_err": 0.0022793892356200995,
+      "max_abs_value": 3.3229995166448827
+    },
+    "randn_x1e4": {
+      "max_abs_err": 0.0029853482692487887,
+      "max_abs_value": 25500.34636307906
+    }
+  },
+  "rotation": {
+    "1": {
+      "max_abs_err": 0.10159527099222299,
+      "level": 6
+    },
+    "5": {
+      "max_abs_err": 0.08096085497436256,
+      "level": 6
+    },
+    "64": {
+      "max_abs_err": 0.3645185282644259,
+      "level": 6
+    },
+    "1200": {
+      "max_abs_err": 0.4724347902822299,
+      "level": 6
+    },
+    "4064": {
+      "max_abs_err": 0.17448620792080355,
+      "level": 6
+    }
+  },
+  "rescale_growth": [
+    {
+      "rescales": 1,
+      "level": 5,
+      "max_abs_err": 0.004561839857245786
+    },
+    {
+      "rescales": 2,
+      "level": 4,
+      "max_abs_err": 0.004980200905244203
+    },
+    {
+      "rescales": 3,
+      "level": 3,
+      "max_abs_err": 0.0041639674935112225
+    },
+    {
+      "rescales": 4,
+      "level": 2,
+      "max_abs_err": 0.0040545875761850425
+    }
+  ]
+}

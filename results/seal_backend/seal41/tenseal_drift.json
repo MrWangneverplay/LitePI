@@ -1,0 +1,96 @@
+{
+  "name": "tenseal_drift",
+  "timestamp_utc": "2026-10-24T12:46:13+00:00",
+  "git_sha": "9487bea",
+  "python": "3.11.17",
+  "profile": {
+    "poly_modulus_degree": 8192,
+    "coeff_mod_bit_sizes": [
+      40,
+      21,
+      21,
+      21,
+      21,
+      21,
+      21,
+      40
+    ],
+    "global_scale_bits": 21
+  },
+  "command": "/mnt/d/王梓杨/项目组/wzy/seal/probes.py all",
+  "backend": "tenseal",
+  "tenseal_version": "0.3.18",
+  "auto_rescale": true,
+  "square_ones_trail": [
+    {
+      "levels_consumed": 0,
+      "decrypted": [
+        1.000093,
+        0.999371,
+        1.000306,
+        0.996504
+      ]
+    },
+    {
+      "levels_consumed": 1,
+      "decrypted": [
+        1.174653,
+        1.172854,
+        1.173591,
+        1.163441
+      ]
+    },
+    {
+      "levels_consumed": 2,
+      "decrypted": [
+        1.635593,
+        1.630114,
+        1.630207,
+        1.604937
+      ]
+    },
+    {
+      "levels_consumed": 3,
+      "decrypted": [
+        3.261866,
+        3.238029,
+        3.238749,
+        3.138913
+      ]
+    },
+    {
+      "levels_consumed": 4,
+      "decrypted": [
+        14.040301,
+        13.834576,
+        13.839405,
+        12.99983
+      ]
+    },
+    {
+      "levels_consumed": 5,
+      "decrypted": [
+        300.387716,
+        291.633912,
+        291.630491,
+        257.304847
+      ]
+    }
+  ],
+  "expected_square_trail": [
+    1.0,
+    1.0,
+    1.0,
+    1.0,
+    1.0,
+    1.0
+  ],
+  "x2_plus_1": [
+    3.34841,
+    3.348597,
+    3.3495,
+    3.348588
+  ],
+  "expected_x2_plus_1": 3.0,
+  "gain_per_level_estimate": 1.483049
+}

@@ -1,0 +1,567 @@
+{
+  "name": "seal_rotation_noise",
+  "timestamp_utc": "2026-10-24T12:46:26+00:00",
+  "git_sha": "9487bea",
+  "python": "3.11.17",
+  "profile": {
+    "poly_modulus_degree": 8192,
+    "coeff_mod_bit_sizes": [
+      40,
+      21,
+      21,
+      21,
+      21,
+      21,
+      21,
+      40
+    ],
+    "global_scale_bits": 21
+  },
+  "command": "/mnt/d/王梓杨/项目组/wzy/seal/probes.py all",
+  "backend": "seal",
+  "rotation_steps": [
+    0,
+    1,
+    64,
+    100,
+    1200,
+    4064
+  ],
+  "profiles": {
+    "paper_8prime_21bit": {
+      "fresh_level": 6,
+      "fresh_scale": 2097152.0,
+      "fresh_max_abs_err": 0.003930424394171392,
+      "rotations": {
+        "0": {
+          "max_abs_err": 0.003930424394171392,
+          "argmax_slot": 3948,
+          "top_slots": [
+            [
+              3948,
+              0.003930424394171392
+            ],
+            [
+              2387,
+              0.003503808618362603
+            ],
+            [
+              371,
+              -0.00348845905495007
+            ]
+          ],
+          "level": 6,
+          "scale": 2097152.0,
+          "noise_coeff_units": 8242.697379085323
+        },
+        "1": {
+          "max_abs_err": 0.2305879142347989,
+          "argmax_slot": 0,
+          "top_slots": [
+            [
+              0,
+              0.2305879142347989
+            ],
+            [
+              1,
+              0.1295376445920905
+            ],
+            [
+              1198,
+              -0.06712670293228476
+            ]
+          ],
+          "level": 6,
+          "scale": 2097152.0,
+          "noise_coeff_units": 483577.905513337
+        },
+        "64": {
+          "max_abs_err": 0.3695300930134635,
+          "argmax_slot": 0,
+          "top_slots": [
+            [
+              0,
+              0.3695300930134635
+            ],
+            [
+              1,
+              0.09327324552799954
+            ],
+            [
+              3339,
+              -0.061152573558766465
+            ]
+          ],
+          "level": 6,
+          "scale": 2097152.0,
+          "noise_coeff_units": 774960.773623371
+        },
+        "100": {
+          "max_abs_err": 0.379132380882066,
+          "argmax_slot": 4000,
+          "top_slots": [
+            [
+              4000,
+              0.379132380882066
+            ],
+            [
+              4001,
+              -0.13026181176446824
+            ],
+            [
+              0,
+              -0.09145551635780874
+            ]
+          ],
+          "level": 6,
+          "scale": 2097152.0,
+          "noise_coeff_units": 795098.2308315865
+        },
+        "1200": {
+          "max_abs_err": 0.1714022199938973,
+          "argmax_slot": 2816,
+          "top_slots": [
+            [
+              2816,
+              -0.1714022199938973
+            ],
+            [
+              3072,
+              0.09279448786229877
+            ],
+            [
+              2059,
+              0.07802380616115877
+            ]
+          ],
+          "level": 6,
+          "scale": 2097152.0,
+          "noise_coeff_units": 359456.5084646417
+        },
+        "4064": {
+          "max_abs_err": 0.07177768158979503,
+          "argmax_slot": 3339,
+          "top_slots": [
+            [
+              3339,
+              -0.07177768158979503
+            ],
+            [
+              0,
+              -0.07089320696763299
+            ],
+            [
+              2,
+              0.0485041627028655
+            ]
+          ],
+          "level": 6,
+          "scale": 2097152.0,
+          "noise_coeff_units": 150528.70850140182
+        }
+      },
+      "coeff_mod_bit_sizes": [
+        40,
+        21,
+        21,
+        21,
+        21,
+        21,
+        21,
+        40
+      ],
+      "global_scale_bits": 21,
+      "chain_length": 7
+    },
+    "seal_example_5x40": {
+      "fresh_level": 3,
+      "fresh_scale": 1099511627776.0,
+      "fresh_max_abs_err": 8.708239652125065e-09,
+      "rotations": {
+        "0": {
+          "max_abs_err": 8.708239652125065e-09,
+          "argmax_slot": 914,
+          "top_slots": [
+            [
+              914,
+              8.708239652125065e-09
+            ],
+            [
+              83,
+              -7.0334838864594665e-09
+            ],
+            [
+              873,
+              6.285428418723472e-09
+            ]
+          ],
+          "level": 3,
+          "scale": 1099511627776.0,
+          "noise_coeff_units": 9574.810754971539
+        },
+        "1": {
+          "max_abs_err": 5.614128651395902e-07,
+          "argmax_slot": 1,
+          "top_slots": [
+            [
+              1,
+              -5.614128651395902e-07
+            ],
+            [
+              2,
+              -2.1993222030093073e-07
+            ],
+            [
+              0,
+              1.727088618493237e-07
+            ]
+          ],
+          "level": 3,
+          "scale": 1099511627776.0,
+          "noise_coeff_units": 617279.9732040188
+        },
+        "64": {
+          "max_abs_err": 2.8148069828776043e-07,
+          "argmax_slot": 3339,
+          "top_slots": [
+            [
+              3339,
+              -2.8148069828776043e-07
+            ],
+            [
+              0,
+              -2.1138267924510482e-07
+            ],
+            [
+              3623,
+              1.7760530726823478e-07
+            ]
+          ],
+          "level": 3,
+          "scale": 1099511627776.0,
+          "noise_coeff_units": 309491.3007619006
+        },
+        "100": {
+          "max_abs_err": 9.952792481892984e-07,
+          "argmax_slot": 3968,
+          "top_slots": [
+            [
+              3968,
+              -9.952792481892984e-07
+            ],
+            [
+              0,
+              8.521208629688648e-07
+            ],
+            [
+              1,
+              -6.848673245745448e-07
+            ]
+          ],
+          "level": 3,
+          "scale": 1099511627776.0,
+          "noise_coeff_units": 1094321.106268289
+        },
+        "1200": {
+          "max_abs_err": 1.2362026249688218e-06,
+          "argmax_slot": 2880,
+          "top_slots": [
+            [
+              2880,
+              1.2362026249688218e-06
+            ],
+            [
+              3073,
+              -5.155358933074716e-07
+            ],
+            [
+              2816,
+              -4.268828850373827e-07
+            ]
+          ],
+          "level": 3,
+          "scale": 1099511627776.0,
+          "noise_coeff_units": 1359219.1604404333
+        },
+        "4064": {
+          "max_abs_err": 9.9038113919056e-07,
+          "argmax_slot": 0,
+          "top_slots": [
+            [
+              0,
+              -9.9038113919056e-07
+            ],
+            [
+              1,
+              -2.3978125450078625e-07
+            ],
+            [
+              1198,
+              1.5416964305542387e-07
+            ]
+          ],
+          "level": 3,
+          "scale": 1099511627776.0,
+          "noise_coeff_units": 1088935.5784700618
+        }
+      },
+      "coeff_mod_bit_sizes": [
+        40,
+        40,
+        40,
+        40,
+        40
+      ],
+      "global_scale_bits": 40,
+      "chain_length": 4
+    },
+    "six_30bit": {
+      "fresh_level": 4,
+      "fresh_scale": 1073741824.0,
+      "fresh_max_abs_err": 8.31634419844521e-06,
+      "rotations": {
+        "0": {
+          "max_abs_err": 8.31634419844521e-06,
+          "argmax_slot": 1411,
+          "top_slots": [
+            [
+              1411,
+              -8.31634419844521e-06
+            ],
+            [
+              2666,
+              7.82942082454911e-06
+            ],
+            [
+              2049,
+              -7.308044903062226e-06
+            ]
+          ],
+          "level": 4,
+          "scale": 1073741824.0,
+          "noise_coeff_units": 8929.606588650378
+        },
+        "1": {
+          "max_abs_err": 0.00037188053400565474,
+          "argmax_slot": 1,
+          "top_slots": [
+            [
+              1,
+              0.00037188053400565474
+            ],
+            [
+              0,
+              -0.0002851278928776895
+            ],
+            [
+              3340,
+              0.0001343495275752602
+            ]
+          ],
+          "level": 4,
+          "scale": 1073741824.0,
+          "noise_coeff_units": 399303.68289332575
+        },
+        "64": {
+          "max_abs_err": 0.0006718006518346754,
+          "argmax_slot": 0,
+          "top_slots": [
+            [
+              0,
+              0.0006718006518346754
+            ],
+            [
+              1,
+              0.0006023570852210472
+            ],
+            [
+              3623,
+              -0.00015668267609802154
+            ]
+          ],
+          "level": 4,
+          "scale": 1073741824.0,
+          "noise_coeff_units": 721340.4572653533
+        },
+        "100": {
+          "max_abs_err": 0.0018604548976852435,
+          "argmax_slot": 4000,
+          "top_slots": [
+            [
+              4000,
+              -0.0018604548976852435
+            ],
+            [
+              0,
+              0.0012335639394646554
+            ],
+            [
+              3968,
+              -0.0004950217142608857
+            ]
+          ],
+          "level": 4,
+          "scale": 1073741824.0,
+          "noise_coeff_units": 1997648.2353102867
+        },
+        "1200": {
+          "max_abs_err": 0.0017116021815498524,
+          "argmax_slot": 2816,
+          "top_slots": [
+            [
+              2816,
+              0.0017116021815498524
+            ],
+            [
+              3073,
+              0.0006685659173196587
+            ],
+            [
+              2059,
+              0.0004860504838215755
+            ]
+          ],
+          "level": 4,
+          "scale": 1073741824.0,
+          "noise_coeff_units": 1837818.8483797177
+        },
+        "4064": {
+          "max_abs_err": 0.000523395834015845,
+          "argmax_slot": 0,
+          "top_slots": [
+            [
+              0,
+              -0.000523395834015845
+            ],
+            [
+              1,
+              -0.0003364368139833783
+            ],
+            [
+              3623,
+              -0.00020061207623968028
+            ]
+          ],
+          "level": 4,
+          "scale": 1073741824.0,
+          "noise_coeff_units": 561991.9974901746
+        }
+      },
+      "coeff_mod_bit_sizes": [
+        30,
+        30,
+        30,
+        30,
+        30,
+        30
+      ],
+      "global_scale_bits": 30,
+      "chain_length": 5
+    }
+  },
+  "seal_version": "4.1.2",
+  "paper_profile_rotation_vs_scale": [
+    {
+      "encoding_scale_bits": 21,
+      "scale": 2097152.0,
+      "max_abs_err": 0.18302226517609432,
+      "noise_coeff_units": 383825.50945857656
+    },
+    {
+      "encoding_scale_bits": 26,
+      "scale": 67108864.0,
+      "max_abs_err": 0.005443986708305324,
+      "noise_coeff_units": 365339.76362546964
+    },
+    {
+      "encoding_scale_bits": 31,
+      "scale": 2147483648.0,
+      "max_abs_err": 0.00016986856150904428,
+      "noise_coeff_units": 364789.9581499548
+    },
+    {
+      "encoding_scale_bits": 36,
+      "scale": 68719476736.0,
+      "max_abs_err": 5.155052804078374e-06,
+      "noise_coeff_units": 354252.53124271537
+    },
+    {
+      "encoding_scale_bits": 41,
+      "scale": 2199023255552.0,
+      "max_abs_err": 1.6915220528165776e-07,
+      "noise_coeff_units": 371969.63314227125
+    },
+    {
+      "encoding_scale_bits": 46,
+      "scale": 70368744177664.0,
+      "max_abs_err": 5.042125059198451e-09,
+      "noise_coeff_units": 354808.00840252475
+    },
+    {
+      "encoding_scale_bits": 51,
+      "scale": 2251799813685248.0,
+      "max_abs_err": 1.6955988449534252e-10,
+      "noise_coeff_units": 381814.91631510446
+    }
+  ],
+  "paper_profile_rotation_vs_level": [
+    {
+      "step": 0,
+      "level": 6,
+      "scale": 2097152.0,
+      "max_abs_err": 0.03080640240558591,
+      "noise_coeff_units": 64605.7084176793
+    },
+    {
+      "step": 1,
+      "level": 5,
+      "scale": 2462709.2264968585,
+      "max_abs_err": 0.024341058534527102,
+      "noise_coeff_units": 59944.94943568
+    },
+    {
+      "step": 2,
+      "level": 4,
+      "scale": 3427538.444651461,
+      "max_abs_err": 0.017895686748483828,
+      "noise_coeff_units": 61338.154323868024
+    },
+    {
+      "step": 3,
+      "level": 3,
+      "scale": 6828969.587398955,
+      "max_abs_err": 0.00765934587870085,
+      "noise_coeff_units": 52305.440065017625
+    },
+    {
+      "step": 4,
+      "level": 2,
+      "scale": 29343938.945766114,
+      "max_abs_err": 0.002278526635031648,
+      "noise_coeff_units": 66860.94646467059
+    },
+    {
+      "step": 5,
+      "level": 1,
+      "scale": 625658400.1773282,
+      "max_abs_err": 0.0001092921062954681,
+      "noise_coeff_units": 68379.52437683307
+    }
+  ],
+  "paper_profile_rotation_on_product": {
+    "note": "multiply_plain by 1.0 first, then rotate by 100",
+    "level": 5,
+    "scale": 2462709.2264968585,
+    "max_abs_err": 0.023897030774673568,
+    "noise_coeff_units": 58851.438174667965,
+    "improvement_vs_fresh_scale": 1.2891309676110472
+  },
+  "model": {
+    "rule": "absolute decrypt error = key-switch noise (coefficient units) / ciphertext scale",
+    "fresh_encryption_noise_units": "about 2^13 (measured 7.7e3 at 2^21)",
+    "key_switch_noise_units": "2^18.5-2^20.7 for every coefficient modulus tried",
+    "implication": "the key-switch noise is scale independent, so the operators multiply before rotating: at the 2^42 product scale the same rotation is ~7e-8 instead of ~0.15. pack still rotates fresh ciphertexts at 2^21, which is why the pack residual stays at the 1e-2 level",
+    "tenseal_reference_same_profile": "TenSEAL 0.3.18 at the identical parameters measures 1.2e-2 on the same 4x2 mm and 1.7e-3 on the 64x64 layer; see tenseal_semantics.json",
+    "operator_errors_see": "seal_functional.json (mm, mm64, conv, pack)"
+  }
+}

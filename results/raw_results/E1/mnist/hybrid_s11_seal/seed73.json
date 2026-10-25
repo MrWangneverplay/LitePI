@@ -1,0 +1,168 @@
+{
+  "role": "client/party1",
+  "backend": "seal",
+  "simulation": false,
+  "deployment_compliant": false,
+  "protocol_failures": [
+    "python_runtime"
+  ],
+  "mpc_backend": "python-p256-simplest-ot",
+  "required_mpc_backend": "SCI/CrypTFlow2",
+  "mask_policy": "prg(seed_session,query,layer)",
+  "mask_domain_aligned": true,
+  "mask_resync_policy": "query-counter-gap-or-abort",
+  "profile_name": "paper-profile-B",
+  "paper_profile": true,
+  "poly_modulus_degree": 8192,
+  "coeff_mod_bit_sizes": [
+    40,
+    21,
+    21,
+    21,
+    21,
+    21,
+    21,
+    40
+  ],
+  "global_scale_bits": 21,
+  "k_ring": 44,
+  "k_compare": 14,
+  "f": 8,
+  "sigma": 30,
+  "architecture": "canonical_cnn",
+  "dataset": "mnist",
+  "dims": [
+    784,
+    256,
+    64,
+    10
+  ],
+  "schedule": [
+    1,
+    1
+  ],
+  "hybrid_layers": 2,
+  "prediction": 8,
+  "output_mode": "logits",
+  "wall_s": 24.6977,
+  "timings": {
+    "keygen_s": 1.111991,
+    "encrypt_input_s": 0.010287,
+    "encode_input_s": 0.0,
+    "decrypt_s": 0.010412,
+    "mpc_s": 0.019671,
+    "reencrypt_s": 0.01848,
+    "context_upload_s": 4.409395,
+    "mpc_elements": 320,
+    "base_ots": 0
+  },
+  "bytes_sent": 187387959,
+  "bytes_received": 2362073,
+  "server": {
+    "role": "server/party0",
+    "backend": "seal",
+    "simulation": false,
+    "deployment_compliant": false,
+    "protocol_failures": [
+      "python_runtime"
+    ],
+    "mpc_backend": "python-p256-simplest-ot",
+    "required_mpc_backend": "SCI/CrypTFlow2",
+    "mask_policy": "prg(seed_session,query,layer)",
+    "mask_domain_aligned": true,
+    "mask_resync_policy": "query-counter-gap-or-abort",
+    "profile_name": "paper-profile-B",
+    "paper_profile": true,
+    "poly_modulus_degree": 8192,
+    "coeff_mod_bit_sizes": [
+      40,
+      21,
+      21,
+      21,
+      21,
+      21,
+      21,
+      40
+    ],
+    "global_scale_bits": 21,
+    "k_ring": 44,
+    "k_compare": 14,
+    "f": 8,
+    "sigma": 30,
+    "architecture": "canonical_cnn",
+    "dims": [
+      784,
+      256,
+      64,
+      10
+    ],
+    "hybrid_layers": 2,
+    "schedule": [
+      1,
+      1
+    ],
+    "protocol_online_rounds": 4,
+    "protocol_online_messages": 6,
+    "schedule_obfuscated": false,
+    "hybrid_roundtrips": 2,
+    "hybrid_r_h": 1.0,
+    "output_mode": "logits",
+    "query_index": 0,
+    "reused_context": false,
+    "wall_s": 24.2828,
+    "timings": {
+      "linear_s": 18.623921,
+      "hybrid_relu_s": 0.097209,
+      "mpc_s": 0.039563,
+      "mpc_elements": 320,
+      "base_ots": 0,
+      "hybrid_wire_sends": 2,
+      "hybrid_wire_recvs": 2,
+      "forward_s": 18.721169
+    },
+    "bytes_sent": 2359702,
+    "bytes_received": 187387889,
+    "reference_logits": [
+      0.587835,
+      -6.95616,
+      -5.157251,
+      2.873855,
+      -9.211951,
+      1.886791,
+      -1.927715,
+      -9.178207,
+      6.178977,
+      -3.838438
+    ]
+  },
+  "logits": [
+    0.594078,
+    -6.957431,
+    -5.154811,
+    2.866042,
+    -9.223355,
+    1.886236,
+    -1.922719,
+    -9.18402,
+    6.182699,
+    -3.832186
+  ],
+  "loopback": {
+    "reference_logits": [
+      0.587835,
+      -6.95616,
+      -5.157251,
+      2.873855,
+      -9.211951,
+      1.886791,
+      -1.927715,
+      -9.178207,
+      6.178977,
+      -3.838438
+    ],
+    "max_abs_err": 0.011404048262297906,
+    "tolerance": 0.05,
+    "prediction_matches": true,
+    "passed": true
+  }
+}

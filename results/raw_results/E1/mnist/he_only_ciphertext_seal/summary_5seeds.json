@@ -1,0 +1,51 @@
+{
+  "experiment": "E1",
+  "tier": "HE-only ciphertext",
+  "backend": "SEAL 4.1.2",
+  "dataset": "mnist",
+  "schedule": "00",
+  "seeds": [
+    73,
+    74,
+    75,
+    76,
+    77
+  ],
+  "n_samples_per_seed": 1000,
+  "accuracy": {
+    "mean": 0.9773999999999999,
+    "std": 0.0018165902124584966,
+    "values": [
+      0.975,
+      0.979,
+      0.979,
+      0.978,
+      0.976
+    ]
+  },
+  "max_abs_err_mean": {
+    "mean": 0.016068885241999998,
+    "std": 0.0015500753638947873,
+    "values": [
+      0.01858045036,
+      0.01439979486,
+      0.01600360104,
+      0.016004972819999998,
+      0.015355607129999999
+    ]
+  },
+  "forward_s": {
+    "mean": 13.3726663086,
+    "std": 0.04893866359613995,
+    "values": [
+      13.446160857,
+      13.380177375999999,
+      13.370493266,
+      13.310776738000001,
+      13.355723306
+    ]
+  },
+  "S_up_bytes_mean": 917625.0,
+  "S_down_bytes_mean": 262265.0,
+  "note": "forward_s measured under CPU contention with CIFAR deep training; standalone baseline is ~8.8 s (300-sample run)"
+}

@@ -1,0 +1,94 @@
+{
+  "name": "seal_drift",
+  "timestamp_utc": "2026-10-24T11:00:49+00:00",
+  "git_sha": "9487bea",
+  "python": "3.11.17",
+  "profile": {
+    "poly_modulus_degree": 8192,
+    "coeff_mod_bit_sizes": [
+      40,
+      21,
+      21,
+      21,
+      21,
+      21,
+      21,
+      40
+    ],
+    "global_scale_bits": 21
+  },
+  "command": "seal/probes.py seal_drift",
+  "backend": "seal",
+  "seal_version": "3.3.2",
+  "square_ones_trail": [
+    {
+      "levels_consumed": 0,
+      "decrypted": [
+        1.000479,
+        0.999358,
+        1.000187,
+        0.999601
+      ]
+    },
+    {
+      "levels_consumed": 1,
+      "decrypted": [
+        1.001487,
+        0.998963,
+        0.99964,
+        0.998905
+      ]
+    },
+    {
+      "levels_consumed": 2,
+      "decrypted": [
+        1.002937,
+        0.998264,
+        0.999845,
+        0.997862
+      ]
+    },
+    {
+      "levels_consumed": 3,
+      "decrypted": [
+        1.006186,
+        0.996774,
+        0.999715,
+        0.995815
+      ]
+    },
+    {
+      "levels_consumed": 4,
+      "decrypted": [
+        1.01241,
+        0.993518,
+        0.999417,
+        0.991667
+      ]
+    },
+    {
+      "levels_consumed": 5,
+      "decrypted": [
+        1.024903,
+        0.986989,
+        0.998832,
+        0.983393
+      ]
+    }
+  ],
+  "expected_square_trail": [
+    1.0,
+    1.0,
+    1.0,
+    1.0,
+    1.0,
+    1.0
+  ],
+  "x2_plus_1": [
+    3.002442,
+    2.999706,
+    3.000647,
+    2.999603
+  ],
+  "expected_x2_plus_1": 3.0
+}

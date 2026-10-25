@@ -1,0 +1,94 @@
+{
+  "name": "seal_drift",
+  "timestamp_utc": "2026-10-24T12:46:22+00:00",
+  "git_sha": "9487bea",
+  "python": "3.11.17",
+  "profile": {
+    "poly_modulus_degree": 8192,
+    "coeff_mod_bit_sizes": [
+      40,
+      21,
+      21,
+      21,
+      21,
+      21,
+      21,
+      40
+    ],
+    "global_scale_bits": 21
+  },
+  "command": "/mnt/d/王梓杨/项目组/wzy/seal/probes.py all",
+  "backend": "seal",
+  "seal_version": "4.1.2",
+  "square_ones_trail": [
+    {
+      "levels_consumed": 0,
+      "decrypted": [
+        0.998862,
+        0.999901,
+        0.998633,
+        0.999729
+      ]
+    },
+    {
+      "levels_consumed": 1,
+      "decrypted": [
+        0.998454,
+        1.000085,
+        0.997039,
+        0.999647
+      ]
+    },
+    {
+      "levels_consumed": 2,
+      "decrypted": [
+        0.997297,
+        1.000145,
+        0.995214,
+        0.997935
+      ]
+    },
+    {
+      "levels_consumed": 3,
+      "decrypted": [
+        0.994914,
+        1.000266,
+        0.990462,
+        0.995668
+      ]
+    },
+    {
+      "levels_consumed": 4,
+      "decrypted": [
+        0.98996,
+        1.000525,
+        0.980557,
+        0.991134
+      ]
+    },
+    {
+      "levels_consumed": 5,
+      "decrypted": [
+        0.979916,
+        1.001049,
+        0.959615,
+        0.981404
+      ]
+    }
+  ],
+  "expected_square_trail": [
+    1.0,
+    1.0,
+    1.0,
+    1.0,
+    1.0,
+    1.0
+  ],
+  "x2_plus_1": [
+    3.005841,
+    3.00009,
+    3.002594,
+    3.006456
+  ],
+  "expected_x2_plus_1": 3.0
+}

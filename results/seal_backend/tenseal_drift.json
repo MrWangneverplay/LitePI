@@ -1,0 +1,96 @@
+{
+  "name": "tenseal_drift",
+  "timestamp_utc": "2026-10-24T10:17:40+00:00",
+  "git_sha": "9487bea",
+  "python": "3.11.17",
+  "profile": {
+    "poly_modulus_degree": 8192,
+    "coeff_mod_bit_sizes": [
+      40,
+      21,
+      21,
+      21,
+      21,
+      21,
+      21,
+      40
+    ],
+    "global_scale_bits": 21
+  },
+  "command": "seal/probes.py tenseal_drift",
+  "backend": "tenseal",
+  "tenseal_version": "0.3.18",
+  "auto_rescale": true,
+  "square_ones_trail": [
+    {
+      "levels_consumed": 0,
+      "decrypted": [
+        0.999355,
+        1.000299,
+        0.998096,
+        0.9994
+      ]
+    },
+    {
+      "levels_consumed": 1,
+      "decrypted": [
+        1.173195,
+        1.174851,
+        1.168268,
+        1.172519
+      ]
+    },
+    {
+      "levels_consumed": 2,
+      "decrypted": [
+        1.630941,
+        1.635622,
+        1.614917,
+        1.628487
+      ]
+    },
+    {
+      "levels_consumed": 3,
+      "decrypted": [
+        3.242268,
+        3.262031,
+        3.177941,
+        3.231713
+      ]
+    },
+    {
+      "levels_consumed": 4,
+      "decrypted": [
+        13.872022,
+        14.041395,
+        13.316444,
+        13.782083
+      ]
+    },
+    {
+      "levels_consumed": 5,
+      "decrypted": [
+        293.220966,
+        300.435621,
+        269.542756,
+        289.439556
+      ]
+    }
+  ],
+  "expected_square_trail": [
+    1.0,
+    1.0,
+    1.0,
+    1.0,
+    1.0,
+    1.0
+  ],
+  "x2_plus_1": [
+    3.349173,
+    3.349073,
+    3.353189,
+    3.350376
+  ],
+  "expected_x2_plus_1": 3.0,
+  "gain_per_level_estimate": 1.480072
+}

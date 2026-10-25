@@ -1,0 +1,99 @@
+{
+  "name": "tenseal_semantics",
+  "timestamp_utc": "2026-10-24T10:17:49+00:00",
+  "git_sha": "9487bea",
+  "python": "3.11.17",
+  "profile": {
+    "poly_modulus_degree": 8192,
+    "coeff_mod_bit_sizes": [
+      40,
+      21,
+      21,
+      21,
+      21,
+      21,
+      21,
+      40
+    ],
+    "global_scale_bits": 21
+  },
+  "command": "seal/probes.py tenseal_semantics",
+  "backend": "tenseal",
+  "tenseal_version": "0.3.18",
+  "auto_rescale": false,
+  "mm_cases": {
+    "wrap_m01": {
+      "got": [
+        -0.0,
+        7.0004
+      ],
+      "exact": [
+        0.0,
+        7.0
+      ],
+      "max_abs_err": 0.00040476466299743663
+    },
+    "wrap_m31": {
+      "got": [
+        -0.0,
+        27.9978
+      ],
+      "exact": [
+        0.0,
+        28.0
+      ],
+      "max_abs_err": 0.00216318862120346
+    },
+    "wrap_m10": {
+      "got": [
+        13.997,
+        0.0
+      ],
+      "exact": [
+        14.0,
+        0.0
+      ],
+      "max_abs_err": 0.002986697640888991
+    },
+    "general": {
+      "got": [
+        6.9994,
+        11.9884
+      ],
+      "exact": [
+        7.0,
+        12.0
+      ],
+      "max_abs_err": 0.011628821388057986
+    }
+  },
+  "im2col": {
+    "windows": 9,
+    "slot_count": 144,
+    "err_layout_a_per_window_padded": 3.3766142061939446,
+    "err_layout_b_tap_major": 0.001994355989392349,
+    "layout": "tap-major (padded taps x windows, row-major)"
+  },
+  "conv": {
+    "windows": 9,
+    "max_abs_err_vs_patch_dot": 0.00288575093370369,
+    "output_slot_mapping": "window j -> slot j"
+  },
+  "pack": {
+    "size": 128,
+    "head": [
+      -0.0019,
+      1.0003,
+      2.0009
+    ],
+    "mid": [
+      100.0005,
+      101.0002,
+      101.9995
+    ]
+  },
+  "fc64": {
+    "max_abs_err": 0.0017242050525717572,
+    "size": 64
+  }
+}

@@ -77,7 +77,12 @@ class Wire:
     def __init__(self, conn: socket.socket, party: int) -> None:
         assert party in (0, 1)
         self.party = party
-        conn.setsockopt(socket.IPPROTO_TCP, socket.TCP_NODELAY, 1)
+        try:
+            conn.setsockopt(socket.IPPROTO_TCP, socket.TCP_NODELAY, 1)
+        except OSError:
+            # AF_UNIX socket pairs (used by the local evaluation driver) do not
+            # support TCP options.
+            pass
         self.cc = CountChan(conn)
 
     # -- raw MP C channel -------------------------------------------------
@@ -188,6 +193,10 @@ class TenSEALBackend:
         arr = np.asarray(kernel, dtype=np.float64).tolist()
         return ct.conv2d_im2col(arr, int(windows_nb))
 
+    def add_conv_bias(self, ct, bias, width: int):
+        """Add the conv bias only to the ``width`` valid windows."""
+        return self.add_plain(ct, [float(bias)] * int(width))
+
     def pack_vectors(self, vectors):
         if not vectors:
             raise ValueError("pack_vectors needs at least one ciphertext")
@@ -228,6 +237,151 @@ class TenSEALBackend:
         # TenSEAL's CKKSVector does not implement __len__; size() is the
         # documented slot-count accessor and also works after mm().
         return int(ct.size())
+
+    def encrypt_like(self, ctx, values, like):
+        # TenSEAL auto mod-switches fresh operands to the target chain, so a
+        # plain encryption is already "like" the reference ciphertext.
+        return self.encrypt(ctx, values)
+
+    def poly2(self, ct, a0, a1, a2):
+        squared = self.square(ct)
+        return self.add_plain(
+            self.add_cipher(self.mul_plain(ct, a1), self.mul_plain(squared, a2)),
+            [a0] * self.slot_count(ct),
+        )
+
+    def poly2_shifted(self, ct, shift):
+        # §3.1 one-level form: only the square costs a rescale; the caller folds
+        # a2 and d into the next linear layer's plaintext constants.
+        return self.square(self.add_plain(ct, [float(shift)] * self.slot_count(ct)))
+
+
+class SealBackend:
+    """Real CKKS via the in-tree SEAL 4.x pybind11 layer (``seal/litepi_seal``).
+
+    This is the implementation named in the paper's software table ("SEAL 4.x
+    C++ / pybind11"), so its numbers are the ones that may enter the paper.
+    ``LITEPI_SEAL_DIR`` selects the build directory; ``seal/seal4`` (4.1.2) is
+    preferred and ``seal/`` (3.3.2, the SCI-bundled copy) is the fallback.
+    """
+
+    name = "seal"
+
+    def __init__(self) -> None:
+        import os
+        import sys
+        import sysconfig
+        from pathlib import Path
+
+        repo = Path(__file__).resolve().parent.parent
+        candidates = [repo / "seal" / "seal4", repo / "seal" / "seal4_py310",
+                      repo / "seal"]
+        env = os.environ.get("LITEPI_SEAL_DIR")
+        if env:
+            candidates.insert(0, Path(env))
+        suffix = sysconfig.get_config_var("EXT_SUFFIX") or ".so"
+        for path in candidates:
+            if (path / f"litepi_seal{suffix}").is_file():
+                if str(path) not in sys.path:
+                    sys.path.insert(0, str(path))
+                break
+        else:
+            raise RuntimeError(
+                "no litepi_seal build matches this interpreter "
+                f"({suffix}); run seal/build4.sh with PYTHON=<python>")
+        import litepi_seal as seal  # imported lazily, like TenSEAL above
+
+        self.seal = seal
+        self.ctx = None
+        self.version = getattr(seal, "SEAL_VERSION", "unknown")
+
+    def new_context(self):
+        self.ctx = self.seal.new_context(
+            POLY_MODULUS_DEGREE, COEFF_MOD_BIT_SIZES, 21,
+            max_rot_pow=getattr(self, "max_rot_pow", -1),
+        )
+        return self.ctx
+
+    def public_context_bytes(self, ctx) -> bytes:
+        return self.seal.public_context_bytes(ctx)
+
+    def load_public_context(self, blob: bytes):
+        self.ctx = self.seal.load_public_context(blob)
+        return self.ctx
+
+    def encrypt(self, ctx, values):
+        return ctx.encrypt(np.asarray(values, dtype=np.float64).ravel(), 0.0)
+
+    def im2col_encrypt(self, ctx, values, kernel, stride):
+        arr = np.asarray(values, dtype=np.float64)
+        if arr.ndim == 3 and arr.shape[0] == 1:
+            arr = arr[0]
+        if arr.ndim != 2:
+            raise ValueError("im2col input must be a 2-D image")
+        kh, kw = (int(v) for v in kernel)
+        if isinstance(stride, (tuple, list)):
+            sh, sw = (int(v) for v in stride)
+        else:
+            sh = sw = int(stride)
+        ct, windows = ctx.im2col_encrypt(arr, kh, kw, sh, sw)
+        return ct, int(windows)
+
+    def conv2d_im2col(self, ct, kernel, windows_nb: int):
+        return self.ctx.conv2d_im2col(
+            ct, np.asarray(kernel, dtype=np.float64).ravel(), int(windows_nb),
+        )
+
+    def pack_vectors(self, vectors):
+        if not vectors:
+            raise ValueError("pack_vectors needs at least one ciphertext")
+        return self.ctx.pack_vectors(list(vectors))
+
+    def decrypt(self, ct) -> np.ndarray:
+        return np.asarray(self.ctx.decrypt(ct), dtype=np.float64)
+
+    def add_plain(self, ct, values):
+        return self.ctx.add_plain(ct, np.asarray(values, dtype=np.float64).ravel())
+
+    def add_conv_bias(self, ct, bias, width: int):
+        # Only the width valid windows carry conv output; a broadcast bias would
+        # leak into the wrapped slots and contaminate the later pack rotation.
+        return self.ctx.add_plain(ct, [float(bias)] * int(width))
+
+    def add_cipher(self, ct, other):
+        return self.ctx.add_cipher(ct, other)
+
+    def square(self, ct):
+        return self.ctx.square(ct)
+
+    def mul_plain(self, ct, value):
+        return self.ctx.mul_plain(ct, np.asarray(value, dtype=np.float64).ravel())
+
+    def mm(self, ct, matrix):
+        mat = np.asarray(matrix, dtype=np.float64)
+        if mat.ndim != 2:
+            raise ValueError("mm expects a 2-D matrix")
+        return self.ctx.mm(ct, mat)
+
+    def serialize(self, ct) -> bytes:
+        return bytes(ct.serialize())
+
+    def deserialize(self, ctx, blob: bytes):
+        return ctx.deserialize(blob)
+
+    def slot_count(self, ct) -> int:
+        return int(self.seal.slot_count(ct))
+
+    def encrypt_like(self, ctx, values, like):
+        # SEAL requires equal parms_id and scale for ciphertext addition; a
+        # fresh operand is therefore encrypted at the level/scale of `like`.
+        return ctx.encrypt_like(np.asarray(values, dtype=np.float64).ravel(), like)
+
+    def poly2(self, ct, a0, a1, a2):
+        return self.ctx.poly2_eval(ct, float(a0), float(a1), float(a2))
+
+    def poly2_shifted(self, ct, shift):
+        # §3.1 one-level form: add the shift (no depth), then one square+rescale.
+        return self.ctx.square(self.ctx.add_plain_scalar(ct, float(shift)))
 
 
 class StubCiphertext:
@@ -303,6 +457,11 @@ class StubBackend:
     def add_plain(self, ct, values):
         return StubCiphertext(ct.values + np.asarray(values, dtype=np.float64).ravel())
 
+    def add_conv_bias(self, ct, bias, width: int):
+        out = np.array(ct.values, dtype=np.float64)
+        out[: int(width)] += float(bias)
+        return StubCiphertext(out)
+
     def add_cipher(self, ct, other):
         if ct.values.size != other.values.size:
             raise ProtocolError("stub ciphertext size mismatch")
@@ -338,10 +497,25 @@ class StubBackend:
     def slot_count(self, ct) -> int:
         return int(ct.values.size)
 
+    def encrypt_like(self, ctx, values, like):
+        return StubCiphertext(values)
+
+    def poly2(self, ct, a0, a1, a2):
+        squared = self.square(ct)
+        return self.add_plain(
+            self.add_cipher(self.mul_plain(ct, a1), self.mul_plain(squared, a2)),
+            [a0] * self.slot_count(ct),
+        )
+
+    def poly2_shifted(self, ct, shift):
+        return self.square(self.add_plain(ct, [float(shift)] * self.slot_count(ct)))
+
 
 def make_backend(name: str):
     if name == "tenseal":
         return TenSEALBackend()
+    if name == "seal":
+        return SealBackend()
     if name == "stub":
         return StubBackend()
     raise ValueError(f"unknown backend {name!r}")

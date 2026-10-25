@@ -211,8 +211,16 @@ class CanonicalCNN:
                 raise ValueError(
                     f"{name} shape {actual[name]} does not match canonical {shape}"
                 )
+        attr_map = {
+            "conv1.weight": "conv_weight",
+            "conv1.bias": "conv_bias",
+            "fc1.weight": "fc1_weight",
+            "fc1.bias": "fc1_bias",
+            "fc2.weight": "fc2_weight",
+            "fc2.bias": "fc2_bias",
+        }
         for name in expected:
-            tensor = getattr(self, name.replace(".", "_"))
+            tensor = getattr(self, attr_map[name])
             if not bool(torch.isfinite(tensor).all()):
                 raise ValueError(f"{name} contains NaN or infinity")
 

@@ -21,7 +21,9 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
 import socket
+import sys
 import threading
 import time
 from pathlib import Path
@@ -40,6 +42,7 @@ from pi_proto import (
 )
 from secure_relu_net import run_party_batch
 from secure_argmax import combine_index_share, run_party_argmax
+from sci_relu import SCI_AVAILABLE, SciReLUSession
 
 
 def load_input(path: Path | None, dim: int | None, seed: int = 0) -> np.ndarray:
@@ -120,7 +123,8 @@ def _encode_model_input(be, ctx, x: np.ndarray, spec: dict):
 
 
 def _query_once(be, ctx, wire: Wire, x: np.ndarray, spec: dict,
-                timings: dict, output_mode: str = "logits"):
+                timings: dict, output_mode: str = "logits",
+                sci_session=None):
     """Run one already-authenticated private query over the open session."""
     t0 = time.perf_counter()
     ct, _ = _encode_model_input(be, ctx, x, spec)
@@ -167,14 +171,29 @@ def _query_once(be, ctx, wire: Wire, x: np.ndarray, spec: dict,
         if kind != 0:
             raise ProtocolError(f"unknown ciphertext kind {kind}")
 
+        if os.environ.get("LITEPI_DEBUG"):
+            print(f"[DBG cli] s_c=decrypt(z+r): "
+                  f"{np.round(np.asarray(share, dtype=np.float64).ravel()[:4], 6).tolist()}",
+                  file=sys.stderr, flush=True)
         t0 = time.perf_counter()
-        out_share = np.asarray(
-            run_party_batch(mpc_ctx, share.tolist(), K_RING, F, K_COMPARE),
-            dtype=np.float64,
-        )
+        if sci_session is not None:
+            out_share = np.asarray(
+                sci_session.relu(share.tolist(), F, K_RING),
+                dtype=np.float64,
+            )
+        else:
+            out_share = np.asarray(
+                run_party_batch(mpc_ctx, share.tolist(), K_RING, F, K_COMPARE),
+                dtype=np.float64,
+            )
         timings["mpc_s"] += time.perf_counter() - t0
         timings["mpc_elements"] += int(share.size)
-        timings["base_ots"] += int(share.size) * ots_per_relu()
+        if sci_session is None:
+            timings["base_ots"] += int(share.size) * ots_per_relu()
+        if os.environ.get("LITEPI_DEBUG"):
+            print(f"[DBG cli] c_c out-share: "
+                  f"{np.round(out_share.ravel()[:4], 6).tolist()}",
+                  file=sys.stderr, flush=True)
 
         t0 = time.perf_counter()
         ct_out = be.encrypt(ctx, out_share)
@@ -207,6 +226,9 @@ def run_client(host: str, port: int, x: np.ndarray, backend_name: str,
         wire = Wire(conn, party=1)
 
         spec = wire.recv_json(b"SPEC")
+        sci_session = None
+        if SCI_AVAILABLE and spec.get("sci_port") is not None:
+            sci_session = SciReLUSession(2, int(spec["sci_port"]), host)
         dims = [int(v) for v in spec["dims"]]
         wanted = int(spec.get("input_dim", dims[0]))
         if wanted != x.size:
@@ -232,7 +254,7 @@ def run_client(host: str, port: int, x: np.ndarray, backend_name: str,
         timings["context_upload_s"] = time.perf_counter() - t0
 
         output_kind, output_value = _query_once(
-            be, ctx, wire, x, spec, timings, output_mode,
+            be, ctx, wire, x, spec, timings, output_mode, sci_session,
         )
 
         wire.send(b"BYE.")
@@ -302,6 +324,9 @@ def run_reuse_session(host: str, port: int, x: np.ndarray, backend_name: str,
         conn.settimeout(timeout)
         wire = Wire(conn, party=1)
         spec = wire.recv_json(b"SPEC")
+        sci_session = None
+        if SCI_AVAILABLE and spec.get("sci_port") is not None:
+            sci_session = SciReLUSession(2, int(spec["sci_port"]), host)
         dims = [int(v) for v in spec["dims"]]
         wanted = int(spec.get("input_dim", dims[0]))
         if wanted != x.size:
@@ -342,7 +367,7 @@ def run_reuse_session(host: str, port: int, x: np.ndarray, backend_name: str,
             recv_before = wire.cc.recvd
             t_before = dict(timings)
             output_kind, output_value = _query_once(
-                be, ctx, wire, x, spec, timings, output_mode,
+                be, ctx, wire, x, spec, timings, output_mode, sci_session,
             )
             if output_kind != output_mode:
                 raise ProtocolError(
@@ -518,7 +543,8 @@ def _print_summary(result: dict, verbose: bool) -> None:
         print(json.dumps(result, indent=2, ensure_ascii=False))
         return
     t = result["timings"]
-    tag = "SIMULATION" if result.get("simulation") else "TENSEAL"
+    tag = "SIMULATION" if result.get("simulation") else str(
+        result.get("backend", "tenseal")).upper()
     print(f"[{tag}] dims={result['dims']}  hybrid_layers={result['hybrid_layers']}")
     print(f"  keygen            {t['keygen_s']:8.3f} s")
     if "context_upload_s" in t:
@@ -550,7 +576,7 @@ def main() -> int:
     ap = argparse.ArgumentParser(description="LitePI Raspberry-Pi client (party1)")
     ap.add_argument("--host", default="127.0.0.1")
     ap.add_argument("--port", type=int, default=9101)
-    ap.add_argument("--backend", choices=["tenseal", "stub"], default="tenseal")
+    ap.add_argument("--backend", choices=["tenseal", "seal", "stub"], default="tenseal")
     ap.add_argument("--input", type=Path, default=None,
                     help="optional .npy/.npz/.json/text vector")
     ap.add_argument("--dim", type=int, default=64,

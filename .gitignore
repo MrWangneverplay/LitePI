@@ -10,7 +10,21 @@ datas/
 # 虚拟环境（坏掉的 .venv 也在这里；新环境建议建在 D:\venvs\he_ai）
 .venv/
 .venv310/
+.venv311/
 venv/
+
+# 第三方源码与编译产物（体积大、可复现，不进仓库）
+third_party/
+sci/
+seal/seal4/
+seal/seal4_py310/
+*.so
+*.a
+
+# 临时调试脚本
+_tmp_*.sh
+_tmp_*.py
+analysis/_env_check.sh
 
 # IDE
 .idea/

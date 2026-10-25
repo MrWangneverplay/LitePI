@@ -82,6 +82,14 @@ def rss_mb() -> float:
         return psutil.Process().memory_info().rss / 1048576
     except Exception:
         pass
+    # WSL/Linux 上 py3.10 环境没装 psutil：直接读 /proc/self/status 的 VmRSS。
+    try:
+        with open("/proc/self/status", encoding="utf-8") as fh:
+            for line in fh:
+                if line.startswith("VmRSS:"):
+                    return float(line.split()[1]) / 1024.0
+    except Exception:
+        pass
     if sys.platform.startswith("win"):
         try:
             import ctypes

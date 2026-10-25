@@ -87,7 +87,6 @@ def main() -> int:
     zs: list[list[np.ndarray]] = [[], []]
     logits: list[np.ndarray] = []
     seen = 0
-    model.eval()
     with torch.no_grad():
         for inputs, _ in train_loader:
             prepared = _prepare_for_dataset(args.dataset, module, inputs)

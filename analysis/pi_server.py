@@ -20,8 +20,10 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
 import secrets
 import socket
+import sys
 import time
 from pathlib import Path
 
@@ -42,10 +44,18 @@ from pi_proto import (
 from secure_relu_net import run_party_batch
 from secure_argmax import run_party_argmax
 from mask_session import MaskSession, load_mask_domains
+from sci_relu import SCI_AVAILABLE, SciReLUSession
 
 P2_A0 = 0.0625
 P2_A1 = 0.5
 P2_A2 = 0.5
+
+
+def _dbg(tag, arr, k=4):
+    if os.environ.get("LITEPI_DEBUG"):
+        vals = np.asarray(arr, dtype=np.float64).ravel()[:k]
+        print(f"[DBG srv] {tag}: {np.round(vals, 6).tolist()}",
+              file=sys.stderr, flush=True)
 
 
 def _as_dims(text: str) -> list[int]:
@@ -149,7 +159,7 @@ class HybridMLP:
     # -- encrypted forward ------------------------------------------------
     def encrypted_forward(self, be, ctx, ct, wire: Wire, timings: dict,
                           mask_session: MaskSession | None = None,
-                          query_index: int = 0) -> object:
+                          query_index: int = 0, sci_session=None) -> object:
         mpc_ctx = wire.mpc_ctx()
         for i, (w, b) in enumerate(zip(self.weights, self.biases)):
             t0 = time.perf_counter()
@@ -164,6 +174,7 @@ class HybridMLP:
                         mask_session=mask_session,
                         query_index=query_index,
                         layer_index=i,
+                        sci_session=sci_session,
                     )
                 else:
                     if getattr(self, "schedule_obfuscated", False):
@@ -186,14 +197,30 @@ def draw_mask(n: int) -> np.ndarray:
 
 def he_poly_server(be, ct):
     """s_k=0: P2 activation evaluated entirely on ciphertext."""
-    squared = be.square(ct)
-    return be.add_plain(
-        be.add_cipher(
-            be.mul_plain(ct, P2_A1),
-            be.mul_plain(squared, P2_A2),
-        ),
-        [P2_A0] * be.slot_count(ct),
-    )
+    return be.poly2(ct, P2_A0, P2_A1, P2_A2)
+
+
+def he_poly_layer(be, ctx, ct, wire: Wire, model):
+    """§3.1 1-level P2: return ct_{(z+c)^2} plus the folded (a2, d) coefficients.
+
+    P2(z) = a2(z + c)^2 + d with c = a1/(2a2), d = a0 - a1^2/(4a2), so the
+    expensive part is a single square+rescale.  The a2 multiply and the d shift
+    are folded into the next linear layer's plaintext weight matrix and bias
+    (server-side constants, zero messages, zero extra depth), which is what
+    keeps NonlinearEval at the one level the depth table budgets.
+    """
+    if getattr(model, "schedule_obfuscated", False):
+        ct = dummy_round_server(be, ctx, ct, wire)
+    c = P2_A1 / (2.0 * P2_A2)
+    d = P2_A0 - P2_A1 * P2_A1 / (4.0 * P2_A2)
+    return be.poly2_shifted(ct, c), (P2_A2, d)
+
+
+def fold_poly_into(weight_t, bias, weight, folded) -> tuple:
+    """Absorb (a2, d) from ``he_poly_layer`` into the following mm plaintext."""
+    a2, d = folded
+    row_sum = np.asarray(weight.sum(dim=1).numpy(), dtype=np.float64)
+    return a2 * weight_t, np.asarray(bias, dtype=np.float64) + d * row_sum
 
 
 def dummy_round_server(be, ctx, ct, wire: Wire):
@@ -212,7 +239,8 @@ def dummy_round_server(be, ctx, ct, wire: Wire):
 
 def hybrid_relu_server(be, ctx, ct, wire: Wire, mpc_ctx, timings: dict,
                        mask_session: MaskSession | None = None,
-                       query_index: int = 0, layer_index: int = 0):
+                       query_index: int = 0, layer_index: int = 0,
+                       sci_session=None):
     """One hybrid ReLU, server side (steps 1 and 5 of the five-step flow)."""
     n = be.slot_count(ct)
     if n <= 0:
@@ -227,39 +255,59 @@ def hybrid_relu_server(be, ctx, ct, wire: Wire, mpc_ctx, timings: dict,
         )
     # Protocol step 1: ct_{z+r} = ct_z + Enc_pk(r).  The server has only the
     # public context and therefore encrypts the mask with pk, never with sk.
-    ct_zr = be.add_cipher(ct, be.encrypt(ctx, r))
+    ct_zr = be.add_cipher(ct, be.encrypt_like(ctx, r, ct))
     wire.send(b"CTXT", b"\x00" + be.serialize(ct_zr))
+    timings["hybrid_wire_sends"] += 1
 
     # Step 3: server's input share is -r; it never learns the client's share.
     s_server = -r
+    _dbg("mask r (first 4)", r)
+    _dbg("s_server=-r", s_server)
     t0 = time.perf_counter()
-    c_server = np.asarray(
-        run_party_batch(mpc_ctx, s_server.tolist(), K_RING, F, K_COMPARE),
-        dtype=np.float64,
-    )
+    if sci_session is not None:
+        c_server = np.asarray(
+            sci_session.relu(s_server.tolist(), F, K_RING),
+            dtype=np.float64,
+        )
+    else:
+        c_server = np.asarray(
+            run_party_batch(mpc_ctx, s_server.tolist(), K_RING, F, K_COMPARE),
+            dtype=np.float64,
+        )
     timings["mpc_s"] += time.perf_counter() - t0
     timings["mpc_elements"] += n
-    timings["base_ots"] += n * ots_per_relu()
+    if sci_session is None:
+        timings["base_ots"] += n * ots_per_relu()
+    _dbg("c_server out-share", c_server)
 
     # Step 4 arrives after the client finished its side of the same MPC.
     _, payload = wire.recv(b"CTXT")
     if not payload or payload[0] != 0:
         raise ProtocolError("expected re-encrypted client share")
+    timings["hybrid_wire_recvs"] += 1
     ct_cc = be.deserialize(ctx, payload[1:])
 
-    # Protocol step 5: ct_sigma(z) = ct_{c_c} + c_s (ciphertext plus the
-    # server's plaintext additive share).
-    return be.add_plain(ct_cc, c_server)
+    # Protocol step 5: reconstruct ct_sigma(z) = ct_{c_c} + c_s WITHOUT
+    # consuming CKKS depth (fresh ciphertext stays at the chain top).
+    # TenSEAL's ciphertext+plain add mod-switches to the plaintext's chain
+    # index, which silently spends the freshly reset depth and makes the next
+    # mm overflow once shares are full-ring magnitude.  Encrypting the
+    # server's own share under pk (S already encrypts r the same way in
+    # step 1) and adding two same-level fresh ciphertexts preserves the
+    # level and matches the protocol's depth-reset property; no wire message
+    # changes (this encryption is local), r_h stays 1.
+    return be.add_cipher(ct_cc, be.encrypt_like(ctx, c_server, ct_cc))
 
 
 def _nonlinear_server(be, ctx, ct, wire, timings, model, layer_index,
-                      mask_session, query_index):
+                      mask_session, query_index, sci_session=None):
     if model.schedule[layer_index]:
         return hybrid_relu_server(
             be, ctx, ct, wire, wire.mpc_ctx(), timings,
             mask_session=mask_session,
             query_index=query_index,
             layer_index=layer_index,
+            sci_session=sci_session,
         )
     if getattr(model, "schedule_obfuscated", False):
         ct = dummy_round_server(be, ctx, ct, wire)
@@ -269,7 +317,8 @@ def _nonlinear_server(be, ctx, ct, wire, timings, model, layer_index,
 def canonical_encrypted_forward(model: CanonicalCNN, be, ctx, ct, wire: Wire,
                                 timings: dict,
                                 mask_session: MaskSession | None = None,
-                                query_index: int = 0):
+                                query_index: int = 0,
+                                sci_session=None):
     """Run the canonical Conv -> act -> FC -> act -> FC protocol trace."""
     t0 = time.perf_counter()
     channels = []
@@ -279,7 +328,9 @@ def canonical_encrypted_forward(model: CanonicalCNN, be, ctx, ct, wire: Wire,
         channel = be.conv2d_im2col(
             ct, conv[out_channel, 0], model.windows,
         )
-        channels.append(be.add_plain(channel, [float(conv_bias[out_channel])]))
+        channels.append(
+            be.add_conv_bias(channel, conv_bias[out_channel], model.windows)
+        )
     ct = be.pack_vectors(channels)
     if be.slot_count(ct) != model.spec.conv_flat:
         raise ProtocolError(
@@ -289,40 +340,55 @@ def canonical_encrypted_forward(model: CanonicalCNN, be, ctx, ct, wire: Wire,
     timings["linear_s"] += time.perf_counter() - t0
 
     t0 = time.perf_counter()
-    ct = _nonlinear_server(
-        be, ctx, ct, wire, timings, model, 0, mask_session, query_index,
-    )
+    w1, b1 = model.fc1_weight_t_np, model.fc1_bias_np
+    if model.schedule[0] == 0:
+        ct, folded = he_poly_layer(be, ctx, ct, wire, model)
+        w1, b1 = fold_poly_into(w1, b1, model.fc1_weight, folded)
+    else:
+        ct = _nonlinear_server(
+            be, ctx, ct, wire, timings, model, 0, mask_session, query_index,
+            sci_session,
+        )
     timings["hybrid_relu_s"] += time.perf_counter() - t0
 
     t0 = time.perf_counter()
-    ct = be.mm(ct, model.fc1_weight_t_np)
-    ct = be.add_plain(ct, model.fc1_bias_np)
+    ct = be.mm(ct, w1)
+    ct = be.add_plain(ct, b1)
     timings["linear_s"] += time.perf_counter() - t0
 
     t0 = time.perf_counter()
-    ct = _nonlinear_server(
-        be, ctx, ct, wire, timings, model, 1, mask_session, query_index,
-    )
+    w2, b2 = model.fc2_weight_t_np, model.fc2_bias_np
+    if model.schedule[1] == 0:
+        ct, folded = he_poly_layer(be, ctx, ct, wire, model)
+        w2, b2 = fold_poly_into(w2, b2, model.fc2_weight, folded)
+    else:
+        ct = _nonlinear_server(
+            be, ctx, ct, wire, timings, model, 1, mask_session, query_index,
+            sci_session,
+        )
     timings["hybrid_relu_s"] += time.perf_counter() - t0
 
     t0 = time.perf_counter()
-    ct = be.mm(ct, model.fc2_weight_t_np)
-    ct = be.add_plain(ct, model.fc2_bias_np)
+    ct = be.mm(ct, w2)
+    ct = be.add_plain(ct, b2)
     timings["linear_s"] += time.perf_counter() - t0
     return ct
 
 
 def encrypted_forward(model, be, ctx, ct, wire: Wire, timings: dict,
                       mask_session: MaskSession | None = None,
-                      query_index: int = 0):
+                      query_index: int = 0,
+                      sci_session=None):
     if isinstance(model, CanonicalCNN):
         return canonical_encrypted_forward(
             model, be, ctx, ct, wire, timings, mask_session, query_index,
+            sci_session,
         )
     return model.encrypted_forward(
         be, ctx, ct, wire, timings,
         mask_session=mask_session,
         query_index=query_index,
+        sci_session=sci_session,
     )
 
 
@@ -379,7 +445,17 @@ def serve_connection(conn: socket.socket, be, model,
             },
             "profile": profile_info(be.name, mask_domain_aligned=aligned),
         })
+        sci_port = None
+        if SCI_AVAILABLE:
+            _tmp = socket.socket()
+            _tmp.bind(("0.0.0.0", 0))
+            sci_port = _tmp.getsockname()[1]
+            _tmp.close()
+            spec["sci_port"] = sci_port
         wire.send_json(b"SPEC", spec)
+        sci_session = None
+        if sci_port is not None:
+            sci_session = SciReLUSession(1, sci_port)
         ctx = None
         pending_init = None
         query_index = 0
@@ -441,6 +517,11 @@ def serve_connection(conn: socket.socket, be, model,
                 "mpc_s": 0.0,
                 "mpc_elements": 0,
                 "base_ots": 0,
+                # §4 r_h witness: one ①_k send and one ②_k receive per hybrid
+                # layer.  The MPC (SCI silent-OT extension) runs between them,
+                # so the OT response shares the same round as Enc_pk(c_c).
+                "hybrid_wire_sends": 0,
+                "hybrid_wire_recvs": 0,
             }
             t0 = time.perf_counter()
             mask_session.begin_query(query_index)
@@ -448,6 +529,7 @@ def serve_connection(conn: socket.socket, be, model,
                 model, be, ctx, ct, wire, timings,
                 mask_session=mask_session,
                 query_index=query_index,
+                sci_session=sci_session,
             )
             timings["forward_s"] = time.perf_counter() - t0
 
@@ -485,6 +567,16 @@ def serve_connection(conn: socket.socket, be, model,
                 ),
                 "mask_domain_aligned": aligned,
                 "schedule_obfuscated": bool(obfuscate_schedule),
+                # §4 r_h witness: complete ①_k -> ②_k exchanges.  Real hybrid
+                # layers only; dummy obfuscation legs are not counted.
+                "hybrid_roundtrips": min(
+                    timings["hybrid_wire_sends"], timings["hybrid_wire_recvs"]
+                ),
+                "hybrid_r_h": (
+                    min(timings["hybrid_wire_sends"], timings["hybrid_wire_recvs"])
+                    / model.hybrid_layers
+                    if model.hybrid_layers else 0.0
+                ),
                 "output_mode": requested_output,
                 "query_index": query_index,
                 "reused_context": reused_context,
@@ -555,7 +647,7 @@ def main() -> int:
     ap.add_argument("--dims", type=_as_dims, default=[64, 32, 10],
                     help="comma-separated layer sizes, e.g. 784,128,64,10")
     ap.add_argument("--seed", type=int, default=73)
-    ap.add_argument("--backend", choices=["tenseal", "stub"], default="tenseal")
+    ap.add_argument("--backend", choices=["tenseal", "seal", "stub"], default="tenseal")
     ap.add_argument("--serve", action="store_true",
                     help="keep serving instead of handling one connection")
     ap.add_argument("--weights", type=Path, default=None,

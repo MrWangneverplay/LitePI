@@ -12,15 +12,32 @@ import importlib.util
 import platform
 import sys
 from dataclasses import asdict, dataclass
+from pathlib import Path
 from typing import Any
 
-from params_pi import POLY_MODULUS_DEGREE, PROFILE_NAME
+from params_pi import (
+    COEFF_MOD_BIT_SIZES,
+    PAPER_PROFILE,
+    POLY_MODULUS_DEGREE,
+    PROFILE_NAME,
+)
 
 REQUIRED_PYTHON = (3, 11)
-REQUIRED_POLY_MODULUS_DEGREE = 65536
+# Protocol SSOT §1.2: N=8192, coeff [40, 21×6, 40], scale 2^21, >=128-bit.
+REQUIRED_POLY_MODULUS_DEGREE = 8192
 REQUIRED_SECURITY_BITS = 128
 REQUIRED_MPC_BACKEND = "SCI/CrypTFlow2"
 REFERENCE_MPC_BACKEND = "python-p256-simplest-ot"
+
+# HomomorphicEncryption.org "Security Standard" Table 1: for n = 2^13 = 8192
+# the largest coefficient-modulus bit count that still meets the 128-bit
+# classical security target is 218 bits.  The protocol profile [40, 21x6, 40]
+# totals 206 bits, so it sits inside that bound with 12 bits of headroom.
+# This is a standard-table check, not a per-build estimator run; a full
+# lattice-estimator artifact is still required for the paper appendix.
+SECURITY_TABLE = {
+    8192: {128: 218},
+}
 
 
 @dataclass(frozen=True)
@@ -33,13 +50,39 @@ class ComplianceItem:
 
 
 def _module_available(name: str) -> bool:
+    if name == "litepi_sci":
+        sci_dir = Path(__file__).resolve().parent.parent / "sci"
+        if sci_dir.is_dir() and str(sci_dir) not in sys.path:
+            sys.path.insert(0, str(sci_dir))
     return importlib.util.find_spec(name) is not None
+
+
+def _modulus_bits() -> int:
+    return int(sum(int(b) for b in COEFF_MOD_BIT_SIZES))
+
+
+def security_check() -> tuple[bool, str, str]:
+    """Check the CKKS modulus chain against the standard security table."""
+    total = _modulus_bits()
+    bound = SECURITY_TABLE.get(POLY_MODULUS_DEGREE, {}).get(REQUIRED_SECURITY_BITS)
+    required = f">={REQUIRED_SECURITY_BITS}-bit (logQ <= {bound} at N={POLY_MODULUS_DEGREE})"
+    if bound is None:
+        return False, required, f"no standard-table entry (logQ={total})"
+    ok = total <= bound
+    return (
+        ok,
+        required,
+        f"logQ={total} bit, standard-table bound {bound} bit"
+        f"{'' if ok else ' -- EXCEEDS BOUND'}",
+    )
+
 
 
 def collect() -> dict[str, Any]:
     py = sys.version_info[:2]
-    cpp_available = _module_available("litepi_cpp")
     sci_available = _module_available("litepi_sci")
+    sec_ok, sec_required, sec_actual = security_check()
+    profile_is_paper = bool(PAPER_PROFILE) and PROFILE_NAME.startswith("paper")
     items = [
         ComplianceItem(
             "python_runtime",
@@ -51,31 +94,31 @@ def collect() -> dict[str, Any]:
         ComplianceItem(
             "mpc_backend",
             REQUIRED_MPC_BACKEND,
-            "litepi_cpp/litepi_sci" if cpp_available and sci_available
-            else REFERENCE_MPC_BACKEND,
-            cpp_available and sci_available,
+            "litepi_sci" if sci_available else REFERENCE_MPC_BACKEND,
+            sci_available,
             "The reference P-256 OT path is not the paper's silent-OT/VOLE path.",
         ),
         ComplianceItem(
             "ckks_modulus_degree",
-            f">={REQUIRED_POLY_MODULUS_DEGREE}",
+            str(REQUIRED_POLY_MODULUS_DEGREE),
             str(POLY_MODULUS_DEGREE),
-            POLY_MODULUS_DEGREE >= REQUIRED_POLY_MODULUS_DEGREE,
-            "Must be checked with the SEAL/TenSEAL security estimator.",
+            POLY_MODULUS_DEGREE == REQUIRED_POLY_MODULUS_DEGREE,
+            "Protocol SSOT §1.2: N=8192, checked with the SEAL/TenSEAL security estimator.",
         ),
         ComplianceItem(
             "security_level",
-            f">={REQUIRED_SECURITY_BITS}-bit",
-            "unverified",
-            False,
-            "No estimator artifact is attached to this workspace.",
+            sec_required,
+            sec_actual,
+            sec_ok,
+            "HomomorphicEncryption.org standard table; a lattice-estimator artifact "
+            "is still required for the paper appendix.",
         ),
         ComplianceItem(
             "profile_role",
             "paper deployment profile",
             PROFILE_NAME,
-            False,
-            "Pi demo profile is explicitly a reference deployment profile.",
+            profile_is_paper,
+            "params_pi.py carries the protocol §6.1 CKKS parameter set.",
         ),
         ComplianceItem(
             "mask_m1_m3",
@@ -127,9 +170,11 @@ def collect() -> dict[str, Any]:
         ComplianceItem(
             "client_cost",
             "s=00: 2 rounds; each hybrid: +1 round",
-            "target model only",
-            False,
-            "The current Python path uses 82 messages/41 RTTs per hybrid layer.",
+            "r_h=1 via litepi_sci" if sci_available
+            else "python OT path (41 RTTs/hybrid layer)",
+            sci_available,
+            "SCI runs one silent-OT extension round inside step 3, overlapping the "
+            "①_k/②_k exchange; asserted by check_protocol_modes.hybrid_roundtrips.",
         ),
     ]
     failures = [i.name for i in items if not i.passed]

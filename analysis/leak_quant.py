@@ -318,8 +318,16 @@ def main() -> None:
                       "mia_index_auc": mia["index_only"]["auc"]}
 
     # ---- E10c ----
-    overhead = e10c()
-    print("\n[E10c] 调度混淆（dummy-round padding）的额外代价估算")
+    # 每次假交互的字节取 E4 实测（上行 fresh L7 + 下行 L4），而不是默认的 128 KB 估值。
+    per_layer_bytes = 128 * 1024
+    e4 = root / "results" / "raw_results" / "E4" / "all" / "comm_bytes" / "seed73.json"
+    if e4.exists():
+        ladder = {row["level"]: row["measured_bytes"]
+                  for row in json.loads(e4.read_text(encoding="utf-8"))["ciphertext_ladder"]}
+        per_layer_bytes = int(ladder["L7"] + ladder["L4"])
+    overhead = e10c(per_layer_bytes=per_layer_bytes)
+    print("\n[E10c] 调度混淆（dummy-round padding）的额外代价估算"
+          f"（per-layer={per_layer_bytes/1024:.0f} KB，取自 E4 实测）")
     print(f"  {'K_h':>4}{'HE-only 层':>11}{'额外轮数':>10}{'额外上行':>12}{'额外延迟':>10}")
     for row in overhead["rows"]:
         print(f"  {row['K_h']:>4}{row['he_only_layers']:>11}{row['extra_rounds']:>10}"

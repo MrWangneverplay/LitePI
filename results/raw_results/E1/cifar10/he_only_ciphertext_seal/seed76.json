@@ -1,0 +1,2048 @@
+{
+  "exp_id": "E1",
+  "dataset": "cifar10",
+  "method": "he_only_ciphertext_seal",
+  "seed": 76,
+  "git_sha": "675bc17a45c0",
+  "timestamp_utc": "2026-10-26T11:29:37+00:00",
+  "experiment": "E1",
+  "tier": "HE-only ciphertext",
+  "backend": "seal",
+  "backend_seal_version": "4.1.2",
+  "schedule": "00",
+  "partial": false,
+  "n_samples": 200,
+  "target_samples": 200,
+  "test_set_size": 10000,
+  "accuracy": 0.63,
+  "max_abs_err": {
+    "mean": 0.00477352185,
+    "max": 0.02536765
+  },
+  "timing_s": {
+    "keygen": 0.41,
+    "forward_mean": 16.28259553,
+    "forward_max": 16.770388
+  },
+  "communication": {
+    "S_up_bytes_mean": 917625.0,
+    "S_down_bytes_mean": 262265.0,
+    "bytes_rows": 200
+  },
+  "per_sample": [
+    {
+      "index": 0,
+      "label": 3,
+      "pred": 5,
+      "max_abs_err": 0.00399332,
+      "encrypt_s": 0.004221,
+      "forward_s": 16.328204,
+      "up_bytes": 917625,
+      "down_bytes": 262265
+    },
+    {
+      "index": 1,
+      "label": 8,
+      "pred": 1,
+      "max_abs_err": 0.01385082,
+      "encrypt_s": 0.003796,
+      "forward_s": 16.130756,
+      "up_bytes": 917625,
+      "down_bytes": 262265
+    },
+    {
+      "index": 2,
+      "label": 8,
+      "pred": 8,
+      "max_abs_err": 0.00351143,
+      "encrypt_s": 0.00449,
+      "forward_s": 16.19001,
+      "up_bytes": 917625,
+      "down_bytes": 262265
+    },
+    {
+      "index": 3,
+      "label": 0,
+      "pred": 0,
+      "max_abs_err": 0.00515378,
+      "encrypt_s": 0.004417,
+      "forward_s": 16.371223,
+      "up_bytes": 917625,
+      "down_bytes": 262265
+    },
+    {
+      "index": 4,
+      "label": 6,
+      "pred": 6,
+      "max_abs_err": 0.00500138,
+      "encrypt_s": 0.004366,
+      "forward_s": 16.174395,
+      "up_bytes": 917625,
+      "down_bytes": 262265
+    },
+    {
+      "index": 5,
+      "label": 6,
+      "pred": 6,
+      "max_abs_err": 0.0051006,
+      "encrypt_s": 0.00432,
+      "forward_s": 16.164639,
+      "up_bytes": 917625,
+      "down_bytes": 262265
+    },
+    {
+      "index": 6,
+      "label": 1,
+      "pred": 5,
+      "max_abs_err": 0.00587351,
+      "encrypt_s": 0.004266,
+      "forward_s": 16.17268,
+      "up_bytes": 917625,
+      "down_bytes": 262265
+    },
+    {
+      "index": 7,
+      "label": 6,
+      "pred": 4,
+      "max_abs_err": 0.00315597,
+      "encrypt_s": 0.004373,
+      "forward_s": 16.255634,
+      "up_bytes": 917625,
+      "down_bytes": 262265
+    },
+    {
+      "index": 8,
+      "label": 3,
+      "pred": 3,
+      "max_abs_err": 0.00510939,
+      "encrypt_s": 0.004274,
+      "forward_s": 16.196668,
+      "up_bytes": 917625,
+      "down_bytes": 262265
+    },
+    {
+      "index": 9,
+      "label": 1,
+      "pred": 1,
+      "max_abs_err": 0.00502501,
+      "encrypt_s": 0.004487,
+      "forward_s": 16.202702,
+      "up_bytes": 917625,
+      "down_bytes": 262265
+    },
+    {
+      "index": 10,
+      "label": 0,
+      "pred": 4,
+      "max_abs_err": 0.00403986,
+      "encrypt_s": 0.004442,
+      "forward_s": 16.321158,
+      "up_bytes": 917625,
+      "down_bytes": 262265
+    },
+    {
+      "index": 11,
+      "label": 9,
+      "pred": 9,
+      "max_abs_err": 0.00681595,
+      "encrypt_s": 0.004432,
+      "forward_s": 16.233774,
+      "up_bytes": 917625,
+      "down_bytes": 262265
+    },
+    {
+      "index": 12,
+      "label": 5,
+      "pred": 4,
+      "max_abs_err": 0.00353032,
+      "encrypt_s": 0.004377,
+      "forward_s": 16.201734,
+      "up_bytes": 917625,
+      "down_bytes": 262265
+    },
+    {
+      "index": 13,
+      "label": 7,
+      "pred": 7,
+      "max_abs_err": 0.01071163,
+      "encrypt_s": 0.004357,
+      "forward_s": 16.452288,
+      "up_bytes": 917625,
+      "down_bytes": 262265
+    },
+    {
+      "index": 14,
+      "label": 9,
+      "pred": 9,
+      "max_abs_err": 0.00767124,
+      "encrypt_s": 0.004413,
+      "forward_s": 16.17912,
+      "up_bytes": 917625,
+      "down_bytes": 262265
+    },
+    {
+      "index": 15,
+      "label": 8,
+      "pred": 8,
+      "max_abs_err": 0.00756178,
+      "encrypt_s": 0.00436,
+      "forward_s": 16.556686,
+      "up_bytes": 917625,
+      "down_bytes": 262265
+    },
+    {
+      "index": 16,
+      "label": 5,
+      "pred": 5,
+      "max_abs_err": 0.00433447,
+      "encrypt_s": 0.003807,
+      "forward_s": 16.168423,
+      "up_bytes": 917625,
+      "down_bytes": 262265
+    },
+    {
+      "index": 17,
+      "label": 7,
+      "pred": 2,
+      "max_abs_err": 0.0035606,
+      "encrypt_s": 0.004479,
+      "forward_s": 16.375996,
+      "up_bytes": 917625,
+      "down_bytes": 262265
+    },
+    {
+      "index": 18,
+      "label": 8,
+      "pred": 8,
+      "max_abs_err": 0.00545654,
+      "encrypt_s": 0.004226,
+      "forward_s": 16.216765,
+      "up_bytes": 917625,
+      "down_bytes": 262265
+    },
+    {
+      "index": 19,
+      "label": 6,
+      "pred": 6,
+      "max_abs_err": 0.00454133,
+      "encrypt_s": 0.004287,
+      "forward_s": 16.226449,
+      "up_bytes": 917625,
+      "down_bytes": 262265
+    },
+    {
+      "index": 20,
+      "label": 7,
+      "pred": 7,
+      "max_abs_err": 0.00813947,
+      "encrypt_s": 0.00382,
+      "forward_s": 16.561152,
+      "up_bytes": 917625,
+      "down_bytes": 262265
+    },
+    {
+      "index": 21,
+      "label": 0,
+      "pred": 0,
+      "max_abs_err": 0.01075216,
+      "encrypt_s": 0.0044,
+      "forward_s": 16.181484,
+      "up_bytes": 917625,
+      "down_bytes": 262265
+    },
+    {
+      "index": 22,
+      "label": 4,
+      "pred": 4,
+      "max_abs_err": 0.00350936,
+      "encrypt_s": 0.004368,
+      "forward_s": 16.294806,
+      "up_bytes": 917625,
+      "down_bytes": 262265
+    },
+    {
+      "index": 23,
+      "label": 9,
+      "pred": 1,
+      "max_abs_err": 0.00362961,
+      "encrypt_s": 0.004391,
+      "forward_s": 16.204297,
+      "up_bytes": 917625,
+      "down_bytes": 262265
+    },
+    {
+      "index": 24,
+      "label": 5,
+      "pred": 4,
+      "max_abs_err": 0.00463693,
+      "encrypt_s": 0.004343,
+      "forward_s": 16.194226,
+      "up_bytes": 917625,
+      "down_bytes": 262265
+    },
+    {
+      "index": 25,
+      "label": 2,
+      "pred": 9,
+      "max_abs_err": 0.00228198,
+      "encrypt_s": 0.003794,
+      "forward_s": 16.592848,
+      "up_bytes": 917625,
+      "down_bytes": 262265
+    },
+    {
+      "index": 26,
+      "label": 4,
+      "pred": 4,
+      "max_abs_err": 0.00302986,
+      "encrypt_s": 0.00431,
+      "forward_s": 16.345996,
+      "up_bytes": 917625,
+      "down_bytes": 262265
+    },
+    {
+      "index": 27,
+      "label": 0,
+      "pred": 4,
+      "max_abs_err": 0.00235245,
+      "encrypt_s": 0.004264,
+      "forward_s": 16.393843,
+      "up_bytes": 917625,
+      "down_bytes": 262265
+    },
+    {
+      "index": 28,
+      "label": 9,
+      "pred": 9,
+      "max_abs_err": 0.00284521,
+      "encrypt_s": 0.004303,
+      "forward_s": 16.137395,
+      "up_bytes": 917625,
+      "down_bytes": 262265
+    },
+    {
+      "index": 29,
+      "label": 6,
+      "pred": 6,
+      "max_abs_err": 0.00296198,
+      "encrypt_s": 0.004473,
+      "forward_s": 16.303409,
+      "up_bytes": 917625,
+      "down_bytes": 262265
+    },
+    {
+      "index": 30,
+      "label": 6,
+      "pred": 6,
+      "max_abs_err": 0.00347899,
+      "encrypt_s": 0.003805,
+      "forward_s": 16.17732,
+      "up_bytes": 917625,
+      "down_bytes": 262265
+    },
+    {
+      "index": 31,
+      "label": 5,
+      "pred": 2,
+      "max_abs_err": 0.0017541,
+      "encrypt_s": 0.00442,
+      "forward_s": 16.299013,
+      "up_bytes": 917625,
+      "down_bytes": 262265
+    },
+    {
+      "index": 32,
+      "label": 4,
+      "pred": 0,
+      "max_abs_err": 0.00311199,
+      "encrypt_s": 0.004412,
+      "forward_s": 16.157957,
+      "up_bytes": 917625,
+      "down_bytes": 262265
+    },
+    {
+      "index": 33,
+      "label": 5,
+      "pred": 3,
+      "max_abs_err": 0.00334443,
+      "encrypt_s": 0.003878,
+      "forward_s": 16.211694,
+      "up_bytes": 917625,
+      "down_bytes": 262265
+    },
+    {
+      "index": 34,
+      "label": 9,
+      "pred": 9,
+      "max_abs_err": 0.00327865,
+      "encrypt_s": 0.004386,
+      "forward_s": 16.368312,
+      "up_bytes": 917625,
+      "down_bytes": 262265
+    },
+    {
+      "index": 35,
+      "label": 2,
+      "pred": 1,
+      "max_abs_err": 0.00421773,
+      "encrypt_s": 0.003806,
+      "forward_s": 16.297116,
+      "up_bytes": 917625,
+      "down_bytes": 262265
+    },
+    {
+      "index": 36,
+      "label": 4,
+      "pred": 4,
+      "max_abs_err": 0.00426147,
+      "encrypt_s": 0.003804,
+      "forward_s": 16.148568,
+      "up_bytes": 917625,
+      "down_bytes": 262265
+    },
+    {
+      "index": 37,
+      "label": 1,
+      "pred": 9,
+      "max_abs_err": 0.01663361,
+      "encrypt_s": 0.004378,
+      "forward_s": 16.476962,
+      "up_bytes": 917625,
+      "down_bytes": 262265
+    },
+    {
+      "index": 38,
+      "label": 9,
+      "pred": 9,
+      "max_abs_err": 0.00589372,
+      "encrypt_s": 0.004388,
+      "forward_s": 16.307842,
+      "up_bytes": 917625,
+      "down_bytes": 262265
+    },
+    {
+      "index": 39,
+      "label": 5,
+      "pred": 5,
+      "max_abs_err": 0.00262492,
+      "encrypt_s": 0.004313,
+      "forward_s": 16.168932,
+      "up_bytes": 917625,
+      "down_bytes": 262265
+    },
+    {
+      "index": 40,
+      "label": 4,
+      "pred": 4,
+      "max_abs_err": 0.00496914,
+      "encrypt_s": 0.004388,
+      "forward_s": 16.158982,
+      "up_bytes": 917625,
+      "down_bytes": 262265
+    },
+    {
+      "index": 41,
+      "label": 6,
+      "pred": 6,
+      "max_abs_err": 0.00524942,
+      "encrypt_s": 0.004414,
+      "forward_s": 16.35622,
+      "up_bytes": 917625,
+      "down_bytes": 262265
+    },
+    {
+      "index": 42,
+      "label": 5,
+      "pred": 5,
+      "max_abs_err": 0.00276057,
+      "encrypt_s": 0.004016,
+      "forward_s": 16.158584,
+      "up_bytes": 917625,
+      "down_bytes": 262265
+    },
+    {
+      "index": 43,
+      "label": 6,
+      "pred": 6,
+      "max_abs_err": 0.00194021,
+      "encrypt_s": 0.004426,
+      "forward_s": 16.264723,
+      "up_bytes": 917625,
+      "down_bytes": 262265
+    },
+    {
+      "index": 44,
+      "label": 0,
+      "pred": 0,
+      "max_abs_err": 0.00289876,
+      "encrypt_s": 0.004362,
+      "forward_s": 16.429186,
+      "up_bytes": 917625,
+      "down_bytes": 262265
+    },
+    {
+      "index": 45,
+      "label": 9,
+      "pred": 9,
+      "max_abs_err": 0.00486804,
+      "encrypt_s": 0.004312,
+      "forward_s": 16.373443,
+      "up_bytes": 917625,
+      "down_bytes": 262265
+    },
+    {
+      "index": 46,
+      "label": 3,
+      "pred": 3,
+      "max_abs_err": 0.0036608,
+      "encrypt_s": 0.004393,
+      "forward_s": 16.14498,
+      "up_bytes": 917625,
+      "down_bytes": 262265
+    },
+    {
+      "index": 47,
+      "label": 9,
+      "pred": 3,
+      "max_abs_err": 0.00234901,
+      "encrypt_s": 0.004372,
+      "forward_s": 16.211253,
+      "up_bytes": 917625,
+      "down_bytes": 262265
+    },
+    {
+      "index": 48,
+      "label": 7,
+      "pred": 4,
+      "max_abs_err": 0.00280857,
+      "encrypt_s": 0.003821,
+      "forward_s": 16.327865,
+      "up_bytes": 917625,
+      "down_bytes": 262265
+    },
+    {
+      "index": 49,
+      "label": 6,
+      "pred": 6,
+      "max_abs_err": 0.0033112,
+      "encrypt_s": 0.003834,
+      "forward_s": 16.154622,
+      "up_bytes": 917625,
+      "down_bytes": 262265
+    },
+    {
+      "index": 50,
+      "label": 9,
+      "pred": 9,
+      "max_abs_err": 0.00463708,
+      "encrypt_s": 0.003819,
+      "forward_s": 16.210321,
+      "up_bytes": 917625,
+      "down_bytes": 262265
+    },
+    {
+      "index": 51,
+      "label": 8,
+      "pred": 8,
+      "max_abs_err": 0.00583467,
+      "encrypt_s": 0.004232,
+      "forward_s": 16.269946,
+      "up_bytes": 917625,
+      "down_bytes": 262265
+    },
+    {
+      "index": 52,
+      "label": 0,
+      "pred": 6,
+      "max_abs_err": 0.00416369,
+      "encrypt_s": 0.004494,
+      "forward_s": 16.252358,
+      "up_bytes": 917625,
+      "down_bytes": 262265
+    },
+    {
+      "index": 53,
+      "label": 3,
+      "pred": 3,
+      "max_abs_err": 0.00257714,
+      "encrypt_s": 0.004265,
+      "forward_s": 16.178249,
+      "up_bytes": 917625,
+      "down_bytes": 262265
+    },
+    {
+      "index": 54,
+      "label": 8,
+      "pred": 8,
+      "max_abs_err": 0.00807484,
+      "encrypt_s": 0.003912,
+      "forward_s": 16.17831,
+      "up_bytes": 917625,
+      "down_bytes": 262265
+    },
+    {
+      "index": 55,
+      "label": 8,
+      "pred": 8,
+      "max_abs_err": 0.00263174,
+      "encrypt_s": 0.00425,
+      "forward_s": 16.275918,
+      "up_bytes": 917625,
+      "down_bytes": 262265
+    },
+    {
+      "index": 56,
+      "label": 7,
+      "pred": 7,
+      "max_abs_err": 0.00941856,
+      "encrypt_s": 0.004229,
+      "forward_s": 16.19757,
+      "up_bytes": 917625,
+      "down_bytes": 262265
+    },
+    {
+      "index": 57,
+      "label": 7,
+      "pred": 1,
+      "max_abs_err": 0.00406871,
+      "encrypt_s": 0.004394,
+      "forward_s": 16.271547,
+      "up_bytes": 917625,
+      "down_bytes": 262265
+    },
+    {
+      "index": 58,
+      "label": 4,
+      "pred": 2,
+      "max_abs_err": 0.00470485,
+      "encrypt_s": 0.00448,
+      "forward_s": 16.243316,
+      "up_bytes": 917625,
+      "down_bytes": 262265
+    },
+    {
+      "index": 59,
+      "label": 6,
+      "pred": 5,
+      "max_abs_err": 0.00610282,
+      "encrypt_s": 0.004214,
+      "forward_s": 16.171252,
+      "up_bytes": 917625,
+      "down_bytes": 262265
+    },
+    {
+      "index": 60,
+      "label": 7,
+      "pred": 7,
+      "max_abs_err": 0.00493195,
+      "encrypt_s": 0.00443,
+      "forward_s": 16.181362,
+      "up_bytes": 917625,
+      "down_bytes": 262265
+    },
+    {
+      "index": 61,
+      "label": 3,
+      "pred": 3,
+      "max_abs_err": 0.00448546,
+      "encrypt_s": 0.004242,
+      "forward_s": 16.476438,
+      "up_bytes": 917625,
+      "down_bytes": 262265
+    },
+    {
+      "index": 62,
+      "label": 6,
+      "pred": 1,
+      "max_abs_err": 0.00557455,
+      "encrypt_s": 0.003879,
+      "forward_s": 16.244814,
+      "up_bytes": 917625,
+      "down_bytes": 262265
+    },
+    {
+      "index": 63,
+      "label": 3,
+      "pred": 3,
+      "max_abs_err": 0.00797581,
+      "encrypt_s": 0.004639,
+      "forward_s": 16.181839,
+      "up_bytes": 917625,
+      "down_bytes": 262265
+    },
+    {
+      "index": 64,
+      "label": 6,
+      "pred": 6,
+      "max_abs_err": 0.00189354,
+      "encrypt_s": 0.004342,
+      "forward_s": 16.152463,
+      "up_bytes": 917625,
+      "down_bytes": 262265
+    },
+    {
+      "index": 65,
+      "label": 2,
+      "pred": 6,
+      "max_abs_err": 0.00283838,
+      "encrypt_s": 0.004403,
+      "forward_s": 16.211061,
+      "up_bytes": 917625,
+      "down_bytes": 262265
+    },
+    {
+      "index": 66,
+      "label": 1,
+      "pred": 8,
+      "max_abs_err": 0.00298315,
+      "encrypt_s": 0.003804,
+      "forward_s": 16.207678,
+      "up_bytes": 917625,
+      "down_bytes": 262265
+    },
+    {
+      "index": 67,
+      "label": 2,
+      "pred": 0,
+      "max_abs_err": 0.00267828,
+      "encrypt_s": 0.004309,
+      "forward_s": 16.20723,
+      "up_bytes": 917625,
+      "down_bytes": 262265
+    },
+    {
+      "index": 68,
+      "label": 3,
+      "pred": 3,
+      "max_abs_err": 0.00459557,
+      "encrypt_s": 0.004334,
+      "forward_s": 16.388668,
+      "up_bytes": 917625,
+      "down_bytes": 262265
+    },
+    {
+      "index": 69,
+      "label": 7,
+      "pred": 7,
+      "max_abs_err": 0.00520117,
+      "encrypt_s": 0.004335,
+      "forward_s": 16.189075,
+      "up_bytes": 917625,
+      "down_bytes": 262265
+    },
+    {
+      "index": 70,
+      "label": 2,
+      "pred": 0,
+      "max_abs_err": 0.00244888,
+      "encrypt_s": 0.004402,
+      "forward_s": 16.196423,
+      "up_bytes": 917625,
+      "down_bytes": 262265
+    },
+    {
+      "index": 71,
+      "label": 6,
+      "pred": 6,
+      "max_abs_err": 0.00197891,
+      "encrypt_s": 0.004396,
+      "forward_s": 16.204696,
+      "up_bytes": 917625,
+      "down_bytes": 262265
+    },
+    {
+      "index": 72,
+      "label": 8,
+      "pred": 8,
+      "max_abs_err": 0.00240482,
+      "encrypt_s": 0.004328,
+      "forward_s": 16.294739,
+      "up_bytes": 917625,
+      "down_bytes": 262265
+    },
+    {
+      "index": 73,
+      "label": 8,
+      "pred": 8,
+      "max_abs_err": 0.00194318,
+      "encrypt_s": 0.004404,
+      "forward_s": 16.345832,
+      "up_bytes": 917625,
+      "down_bytes": 262265
+    },
+    {
+      "index": 74,
+      "label": 0,
+      "pred": 9,
+      "max_abs_err": 0.00734204,
+      "encrypt_s": 0.003825,
+      "forward_s": 16.211041,
+      "up_bytes": 917625,
+      "down_bytes": 262265
+    },
+    {
+      "index": 75,
+      "label": 2,
+      "pred": 2,
+      "max_abs_err": 0.00299676,
+      "encrypt_s": 0.003841,
+      "forward_s": 16.194351,
+      "up_bytes": 917625,
+      "down_bytes": 262265
+    },
+    {
+      "index": 76,
+      "label": 9,
+      "pred": 0,
+      "max_abs_err": 0.00407558,
+      "encrypt_s": 0.003815,
+      "forward_s": 16.134212,
+      "up_bytes": 917625,
+      "down_bytes": 262265
+    },
+    {
+      "index": 77,
+      "label": 3,
+      "pred": 3,
+      "max_abs_err": 0.00277913,
+      "encrypt_s": 0.004387,
+      "forward_s": 16.211775,
+      "up_bytes": 917625,
+      "down_bytes": 262265
+    },
+    {
+      "index": 78,
+      "label": 3,
+      "pred": 3,
+      "max_abs_err": 0.00248302,
+      "encrypt_s": 0.004346,
+      "forward_s": 16.225206,
+      "up_bytes": 917625,
+      "down_bytes": 262265
+    },
+    {
+      "index": 79,
+      "label": 8,
+      "pred": 8,
+      "max_abs_err": 0.00601347,
+      "encrypt_s": 0.007555,
+      "forward_s": 16.221337,
+      "up_bytes": 917625,
+      "down_bytes": 262265
+    },
+    {
+      "index": 80,
+      "label": 8,
+      "pred": 8,
+      "max_abs_err": 0.00600502,
+      "encrypt_s": 0.003825,
+      "forward_s": 16.554513,
+      "up_bytes": 917625,
+      "down_bytes": 262265
+    },
+    {
+      "index": 81,
+      "label": 1,
+      "pred": 8,
+      "max_abs_err": 0.00542766,
+      "encrypt_s": 0.00451,
+      "forward_s": 16.276608,
+      "up_bytes": 917625,
+      "down_bytes": 262265
+    },
+    {
+      "index": 82,
+      "label": 1,
+      "pred": 1,
+      "max_abs_err": 0.00386133,
+      "encrypt_s": 0.004341,
+      "forward_s": 16.349001,
+      "up_bytes": 917625,
+      "down_bytes": 262265
+    },
+    {
+      "index": 83,
+      "label": 7,
+      "pred": 7,
+      "max_abs_err": 0.00220019,
+      "encrypt_s": 0.004384,
+      "forward_s": 16.173868,
+      "up_bytes": 917625,
+      "down_bytes": 262265
+    },
+    {
+      "index": 84,
+      "label": 2,
+      "pred": 2,
+      "max_abs_err": 0.00412364,
+      "encrypt_s": 0.004326,
+      "forward_s": 16.188971,
+      "up_bytes": 917625,
+      "down_bytes": 262265
+    },
+    {
+      "index": 85,
+      "label": 5,
+      "pred": 7,
+      "max_abs_err": 0.00300538,
+      "encrypt_s": 0.004313,
+      "forward_s": 16.16627,
+      "up_bytes": 917625,
+      "down_bytes": 262265
+    },
+    {
+      "index": 86,
+      "label": 2,
+      "pred": 4,
+      "max_abs_err": 0.00471188,
+      "encrypt_s": 0.004261,
+      "forward_s": 16.249639,
+      "up_bytes": 917625,
+      "down_bytes": 262265
+    },
+    {
+      "index": 87,
+      "label": 7,
+      "pred": 8,
+      "max_abs_err": 0.00748032,
+      "encrypt_s": 0.003851,
+      "forward_s": 16.184567,
+      "up_bytes": 917625,
+      "down_bytes": 262265
+    },
+    {
+      "index": 88,
+      "label": 8,
+      "pred": 8,
+      "max_abs_err": 0.0053803,
+      "encrypt_s": 0.004452,
+      "forward_s": 16.150921,
+      "up_bytes": 917625,
+      "down_bytes": 262265
+    },
+    {
+      "index": 89,
+      "label": 9,
+      "pred": 9,
+      "max_abs_err": 0.00607664,
+      "encrypt_s": 0.005384,
+      "forward_s": 16.686825,
+      "up_bytes": 917625,
+      "down_bytes": 262265
+    },
+    {
+      "index": 90,
+      "label": 0,
+      "pred": 0,
+      "max_abs_err": 0.00393106,
+      "encrypt_s": 0.004376,
+      "forward_s": 16.287632,
+      "up_bytes": 917625,
+      "down_bytes": 262265
+    },
+    {
+      "index": 91,
+      "label": 3,
+      "pred": 2,
+      "max_abs_err": 0.00395631,
+      "encrypt_s": 0.004475,
+      "forward_s": 16.282987,
+      "up_bytes": 917625,
+      "down_bytes": 262265
+    },
+    {
+      "index": 92,
+      "label": 8,
+      "pred": 8,
+      "max_abs_err": 0.00370422,
+      "encrypt_s": 0.004243,
+      "forward_s": 16.516979,
+      "up_bytes": 917625,
+      "down_bytes": 262265
+    },
+    {
+      "index": 93,
+      "label": 6,
+      "pred": 6,
+      "max_abs_err": 0.00275618,
+      "encrypt_s": 0.004298,
+      "forward_s": 16.290622,
+      "up_bytes": 917625,
+      "down_bytes": 262265
+    },
+    {
+      "index": 94,
+      "label": 4,
+      "pred": 4,
+      "max_abs_err": 0.00483856,
+      "encrypt_s": 0.004476,
+      "forward_s": 16.666838,
+      "up_bytes": 917625,
+      "down_bytes": 262265
+    },
+    {
+      "index": 95,
+      "label": 6,
+      "pred": 6,
+      "max_abs_err": 0.0038258,
+      "encrypt_s": 0.003787,
+      "forward_s": 16.221889,
+      "up_bytes": 917625,
+      "down_bytes": 262265
+    },
+    {
+      "index": 96,
+      "label": 6,
+      "pred": 6,
+      "max_abs_err": 0.0039406,
+      "encrypt_s": 0.004268,
+      "forward_s": 16.208829,
+      "up_bytes": 917625,
+      "down_bytes": 262265
+    },
+    {
+      "index": 97,
+      "label": 0,
+      "pred": 2,
+      "max_abs_err": 0.00408643,
+      "encrypt_s": 0.004312,
+      "forward_s": 16.190232,
+      "up_bytes": 917625,
+      "down_bytes": 262265
+    },
+    {
+      "index": 98,
+      "label": 0,
+      "pred": 0,
+      "max_abs_err": 0.02536765,
+      "encrypt_s": 0.004337,
+      "forward_s": 16.185039,
+      "up_bytes": 917625,
+      "down_bytes": 262265
+    },
+    {
+      "index": 99,
+      "label": 7,
+      "pred": 3,
+      "max_abs_err": 0.0056937,
+      "encrypt_s": 0.004351,
+      "forward_s": 16.19705,
+      "up_bytes": 917625,
+      "down_bytes": 262265
+    },
+    {
+      "index": 100,
+      "label": 4,
+      "pred": 4,
+      "max_abs_err": 0.00308189,
+      "encrypt_s": 0.003771,
+      "forward_s": 16.265249,
+      "up_bytes": 917625,
+      "down_bytes": 262265
+    },
+    {
+      "index": 101,
+      "label": 5,
+      "pred": 4,
+      "max_abs_err": 0.00472406,
+      "encrypt_s": 0.004448,
+      "forward_s": 16.291427,
+      "up_bytes": 917625,
+      "down_bytes": 262265
+    },
+    {
+      "index": 102,
+      "label": 6,
+      "pred": 6,
+      "max_abs_err": 0.00736496,
+      "encrypt_s": 0.004537,
+      "forward_s": 16.200343,
+      "up_bytes": 917625,
+      "down_bytes": 262265
+    },
+    {
+      "index": 103,
+      "label": 3,
+      "pred": 3,
+      "max_abs_err": 0.00410153,
+      "encrypt_s": 0.004412,
+      "forward_s": 16.359381,
+      "up_bytes": 917625,
+      "down_bytes": 262265
+    },
+    {
+      "index": 104,
+      "label": 1,
+      "pred": 1,
+      "max_abs_err": 0.00740766,
+      "encrypt_s": 0.004344,
+      "forward_s": 16.158797,
+      "up_bytes": 917625,
+      "down_bytes": 262265
+    },
+    {
+      "index": 105,
+      "label": 1,
+      "pred": 1,
+      "max_abs_err": 0.01152427,
+      "encrypt_s": 0.003806,
+      "forward_s": 16.229608,
+      "up_bytes": 917625,
+      "down_bytes": 262265
+    },
+    {
+      "index": 106,
+      "label": 3,
+      "pred": 2,
+      "max_abs_err": 0.00564489,
+      "encrypt_s": 0.003809,
+      "forward_s": 16.439266,
+      "up_bytes": 917625,
+      "down_bytes": 262265
+    },
+    {
+      "index": 107,
+      "label": 6,
+      "pred": 6,
+      "max_abs_err": 0.00674908,
+      "encrypt_s": 0.004201,
+      "forward_s": 16.261192,
+      "up_bytes": 917625,
+      "down_bytes": 262265
+    },
+    {
+      "index": 108,
+      "label": 8,
+      "pred": 8,
+      "max_abs_err": 0.00315898,
+      "encrypt_s": 0.003935,
+      "forward_s": 16.175373,
+      "up_bytes": 917625,
+      "down_bytes": 262265
+    },
+    {
+      "index": 109,
+      "label": 7,
+      "pred": 7,
+      "max_abs_err": 0.00512148,
+      "encrypt_s": 0.004374,
+      "forward_s": 16.263594,
+      "up_bytes": 917625,
+      "down_bytes": 262265
+    },
+    {
+      "index": 110,
+      "label": 4,
+      "pred": 4,
+      "max_abs_err": 0.0027544,
+      "encrypt_s": 0.004298,
+      "forward_s": 16.354037,
+      "up_bytes": 917625,
+      "down_bytes": 262265
+    },
+    {
+      "index": 111,
+      "label": 0,
+      "pred": 2,
+      "max_abs_err": 0.01324498,
+      "encrypt_s": 0.004378,
+      "forward_s": 16.177509,
+      "up_bytes": 917625,
+      "down_bytes": 262265
+    },
+    {
+      "index": 112,
+      "label": 6,
+      "pred": 6,
+      "max_abs_err": 0.00371093,
+      "encrypt_s": 0.004371,
+      "forward_s": 16.217666,
+      "up_bytes": 917625,
+      "down_bytes": 262265
+    },
+    {
+      "index": 113,
+      "label": 2,
+      "pred": 2,
+      "max_abs_err": 0.00197848,
+      "encrypt_s": 0.004385,
+      "forward_s": 16.486497,
+      "up_bytes": 917625,
+      "down_bytes": 262265
+    },
+    {
+      "index": 114,
+      "label": 1,
+      "pred": 1,
+      "max_abs_err": 0.0037428,
+      "encrypt_s": 0.004362,
+      "forward_s": 16.231256,
+      "up_bytes": 917625,
+      "down_bytes": 262265
+    },
+    {
+      "index": 115,
+      "label": 3,
+      "pred": 1,
+      "max_abs_err": 0.00351841,
+      "encrypt_s": 0.004358,
+      "forward_s": 16.156258,
+      "up_bytes": 917625,
+      "down_bytes": 262265
+    },
+    {
+      "index": 116,
+      "label": 0,
+      "pred": 2,
+      "max_abs_err": 0.00642378,
+      "encrypt_s": 0.004441,
+      "forward_s": 16.523032,
+      "up_bytes": 917625,
+      "down_bytes": 262265
+    },
+    {
+      "index": 117,
+      "label": 4,
+      "pred": 4,
+      "max_abs_err": 0.0084624,
+      "encrypt_s": 0.00444,
+      "forward_s": 16.318057,
+      "up_bytes": 917625,
+      "down_bytes": 262265
+    },
+    {
+      "index": 118,
+      "label": 2,
+      "pred": 2,
+      "max_abs_err": 0.0047628,
+      "encrypt_s": 0.004363,
+      "forward_s": 16.184793,
+      "up_bytes": 917625,
+      "down_bytes": 262265
+    },
+    {
+      "index": 119,
+      "label": 7,
+      "pred": 5,
+      "max_abs_err": 0.00441727,
+      "encrypt_s": 0.00427,
+      "forward_s": 16.259061,
+      "up_bytes": 917625,
+      "down_bytes": 262265
+    },
+    {
+      "index": 120,
+      "label": 8,
+      "pred": 8,
+      "max_abs_err": 0.00398445,
+      "encrypt_s": 0.003819,
+      "forward_s": 16.383091,
+      "up_bytes": 917625,
+      "down_bytes": 262265
+    },
+    {
+      "index": 121,
+      "label": 3,
+      "pred": 5,
+      "max_abs_err": 0.00671768,
+      "encrypt_s": 0.004426,
+      "forward_s": 16.23606,
+      "up_bytes": 917625,
+      "down_bytes": 262265
+    },
+    {
+      "index": 122,
+      "label": 1,
+      "pred": 1,
+      "max_abs_err": 0.00589633,
+      "encrypt_s": 0.004384,
+      "forward_s": 16.173707,
+      "up_bytes": 917625,
+      "down_bytes": 262265
+    },
+    {
+      "index": 123,
+      "label": 2,
+      "pred": 5,
+      "max_abs_err": 0.00387713,
+      "encrypt_s": 0.004348,
+      "forward_s": 16.491813,
+      "up_bytes": 917625,
+      "down_bytes": 262265
+    },
+    {
+      "index": 124,
+      "label": 8,
+      "pred": 8,
+      "max_abs_err": 0.0046648,
+      "encrypt_s": 0.004455,
+      "forward_s": 16.400277,
+      "up_bytes": 917625,
+      "down_bytes": 262265
+    },
+    {
+      "index": 125,
+      "label": 0,
+      "pred": 2,
+      "max_abs_err": 0.00178581,
+      "encrypt_s": 0.003817,
+      "forward_s": 16.219073,
+      "up_bytes": 917625,
+      "down_bytes": 262265
+    },
+    {
+      "index": 126,
+      "label": 8,
+      "pred": 8,
+      "max_abs_err": 0.00261979,
+      "encrypt_s": 0.00443,
+      "forward_s": 16.226189,
+      "up_bytes": 917625,
+      "down_bytes": 262265
+    },
+    {
+      "index": 127,
+      "label": 3,
+      "pred": 3,
+      "max_abs_err": 0.00499376,
+      "encrypt_s": 0.003813,
+      "forward_s": 16.435085,
+      "up_bytes": 917625,
+      "down_bytes": 262265
+    },
+    {
+      "index": 128,
+      "label": 5,
+      "pred": 5,
+      "max_abs_err": 0.00470622,
+      "encrypt_s": 0.004046,
+      "forward_s": 16.15362,
+      "up_bytes": 917625,
+      "down_bytes": 262265
+    },
+    {
+      "index": 129,
+      "label": 2,
+      "pred": 0,
+      "max_abs_err": 0.00400767,
+      "encrypt_s": 0.004419,
+      "forward_s": 16.201022,
+      "up_bytes": 917625,
+      "down_bytes": 262265
+    },
+    {
+      "index": 130,
+      "label": 4,
+      "pred": 4,
+      "max_abs_err": 0.00244618,
+      "encrypt_s": 0.004474,
+      "forward_s": 16.215114,
+      "up_bytes": 917625,
+      "down_bytes": 262265
+    },
+    {
+      "index": 131,
+      "label": 1,
+      "pred": 1,
+      "max_abs_err": 0.00545972,
+      "encrypt_s": 0.004391,
+      "forward_s": 16.610139,
+      "up_bytes": 917625,
+      "down_bytes": 262265
+    },
+    {
+      "index": 132,
+      "label": 8,
+      "pred": 9,
+      "max_abs_err": 0.00360899,
+      "encrypt_s": 0.004271,
+      "forward_s": 16.166007,
+      "up_bytes": 917625,
+      "down_bytes": 262265
+    },
+    {
+      "index": 133,
+      "label": 9,
+      "pred": 9,
+      "max_abs_err": 0.01079587,
+      "encrypt_s": 0.004434,
+      "forward_s": 16.214044,
+      "up_bytes": 917625,
+      "down_bytes": 262265
+    },
+    {
+      "index": 134,
+      "label": 1,
+      "pred": 6,
+      "max_abs_err": 0.00284154,
+      "encrypt_s": 0.004331,
+      "forward_s": 16.215533,
+      "up_bytes": 917625,
+      "down_bytes": 262265
+    },
+    {
+      "index": 135,
+      "label": 2,
+      "pred": 2,
+      "max_abs_err": 0.00260192,
+      "encrypt_s": 0.004415,
+      "forward_s": 16.157066,
+      "up_bytes": 917625,
+      "down_bytes": 262265
+    },
+    {
+      "index": 136,
+      "label": 9,
+      "pred": 9,
+      "max_abs_err": 0.00548786,
+      "encrypt_s": 0.004193,
+      "forward_s": 16.178016,
+      "up_bytes": 917625,
+      "down_bytes": 262265
+    },
+    {
+      "index": 137,
+      "label": 7,
+      "pred": 4,
+      "max_abs_err": 0.00377521,
+      "encrypt_s": 0.004344,
+      "forward_s": 16.625913,
+      "up_bytes": 917625,
+      "down_bytes": 262265
+    },
+    {
+      "index": 138,
+      "label": 2,
+      "pred": 2,
+      "max_abs_err": 0.00273375,
+      "encrypt_s": 0.003824,
+      "forward_s": 16.591942,
+      "up_bytes": 917625,
+      "down_bytes": 262265
+    },
+    {
+      "index": 139,
+      "label": 9,
+      "pred": 8,
+      "max_abs_err": 0.00179217,
+      "encrypt_s": 0.00439,
+      "forward_s": 16.16757,
+      "up_bytes": 917625,
+      "down_bytes": 262265
+    },
+    {
+      "index": 140,
+      "label": 6,
+      "pred": 6,
+      "max_abs_err": 0.0044803,
+      "encrypt_s": 0.004416,
+      "forward_s": 16.195829,
+      "up_bytes": 917625,
+      "down_bytes": 262265
+    },
+    {
+      "index": 141,
+      "label": 5,
+      "pred": 5,
+      "max_abs_err": 0.00922836,
+      "encrypt_s": 0.003799,
+      "forward_s": 16.349885,
+      "up_bytes": 917625,
+      "down_bytes": 262265
+    },
+    {
+      "index": 142,
+      "label": 6,
+      "pred": 6,
+      "max_abs_err": 0.00444729,
+      "encrypt_s": 0.004382,
+      "forward_s": 16.536506,
+      "up_bytes": 917625,
+      "down_bytes": 262265
+    },
+    {
+      "index": 143,
+      "label": 3,
+      "pred": 7,
+      "max_abs_err": 0.00315448,
+      "encrypt_s": 0.003808,
+      "forward_s": 16.210847,
+      "up_bytes": 917625,
+      "down_bytes": 262265
+    },
+    {
+      "index": 144,
+      "label": 8,
+      "pred": 8,
+      "max_abs_err": 0.00464339,
+      "encrypt_s": 0.004425,
+      "forward_s": 16.168541,
+      "up_bytes": 917625,
+      "down_bytes": 262265
+    },
+    {
+      "index": 145,
+      "label": 7,
+      "pred": 7,
+      "max_abs_err": 0.00305926,
+      "encrypt_s": 0.004399,
+      "forward_s": 16.197903,
+      "up_bytes": 917625,
+      "down_bytes": 262265
+    },
+    {
+      "index": 146,
+      "label": 6,
+      "pred": 6,
+      "max_abs_err": 0.00435372,
+      "encrypt_s": 0.004229,
+      "forward_s": 16.276899,
+      "up_bytes": 917625,
+      "down_bytes": 262265
+    },
+    {
+      "index": 147,
+      "label": 2,
+      "pred": 5,
+      "max_abs_err": 0.00428538,
+      "encrypt_s": 0.004243,
+      "forward_s": 16.185342,
+      "up_bytes": 917625,
+      "down_bytes": 262265
+    },
+    {
+      "index": 148,
+      "label": 5,
+      "pred": 5,
+      "max_abs_err": 0.00843226,
+      "encrypt_s": 0.004397,
+      "forward_s": 16.182793,
+      "up_bytes": 917625,
+      "down_bytes": 262265
+    },
+    {
+      "index": 149,
+      "label": 2,
+      "pred": 2,
+      "max_abs_err": 0.00463178,
+      "encrypt_s": 0.003809,
+      "forward_s": 16.175905,
+      "up_bytes": 917625,
+      "down_bytes": 262265
+    },
+    {
+      "index": 150,
+      "label": 8,
+      "pred": 4,
+      "max_abs_err": 0.00368323,
+      "encrypt_s": 0.003794,
+      "forward_s": 16.221528,
+      "up_bytes": 917625,
+      "down_bytes": 262265
+    },
+    {
+      "index": 151,
+      "label": 9,
+      "pred": 9,
+      "max_abs_err": 0.00454841,
+      "encrypt_s": 0.003849,
+      "forward_s": 16.360651,
+      "up_bytes": 917625,
+      "down_bytes": 262265
+    },
+    {
+      "index": 152,
+      "label": 6,
+      "pred": 6,
+      "max_abs_err": 0.005306,
+      "encrypt_s": 0.004407,
+      "forward_s": 16.179068,
+      "up_bytes": 917625,
+      "down_bytes": 262265
+    },
+    {
+      "index": 153,
+      "label": 0,
+      "pred": 4,
+      "max_abs_err": 0.00624484,
+      "encrypt_s": 0.004194,
+      "forward_s": 16.192073,
+      "up_bytes": 917625,
+      "down_bytes": 262265
+    },
+    {
+      "index": 154,
+      "label": 0,
+      "pred": 5,
+      "max_abs_err": 0.00403488,
+      "encrypt_s": 0.004273,
+      "forward_s": 16.716846,
+      "up_bytes": 917625,
+      "down_bytes": 262265
+    },
+    {
+      "index": 155,
+      "label": 5,
+      "pred": 5,
+      "max_abs_err": 0.00342163,
+      "encrypt_s": 0.004393,
+      "forward_s": 16.722037,
+      "up_bytes": 917625,
+      "down_bytes": 262265
+    },
+    {
+      "index": 156,
+      "label": 2,
+      "pred": 2,
+      "max_abs_err": 0.00352707,
+      "encrypt_s": 0.004419,
+      "forward_s": 16.16848,
+      "up_bytes": 917625,
+      "down_bytes": 262265
+    },
+    {
+      "index": 157,
+      "label": 9,
+      "pred": 9,
+      "max_abs_err": 0.00516796,
+      "encrypt_s": 0.004371,
+      "forward_s": 16.203112,
+      "up_bytes": 917625,
+      "down_bytes": 262265
+    },
+    {
+      "index": 158,
+      "label": 5,
+      "pred": 4,
+      "max_abs_err": 0.00342355,
+      "encrypt_s": 0.003815,
+      "forward_s": 16.38683,
+      "up_bytes": 917625,
+      "down_bytes": 262265
+    },
+    {
+      "index": 159,
+      "label": 4,
+      "pred": 4,
+      "max_abs_err": 0.00393689,
+      "encrypt_s": 0.004459,
+      "forward_s": 16.192246,
+      "up_bytes": 917625,
+      "down_bytes": 262265
+    },
+    {
+      "index": 160,
+      "label": 2,
+      "pred": 2,
+      "max_abs_err": 0.00400999,
+      "encrypt_s": 0.00391,
+      "forward_s": 16.609053,
+      "up_bytes": 917625,
+      "down_bytes": 262265
+    },
+    {
+      "index": 161,
+      "label": 1,
+      "pred": 1,
+      "max_abs_err": 0.00697785,
+      "encrypt_s": 0.004499,
+      "forward_s": 16.344315,
+      "up_bytes": 917625,
+      "down_bytes": 262265
+    },
+    {
+      "index": 162,
+      "label": 6,
+      "pred": 4,
+      "max_abs_err": 0.00857435,
+      "encrypt_s": 0.003795,
+      "forward_s": 16.268968,
+      "up_bytes": 917625,
+      "down_bytes": 262265
+    },
+    {
+      "index": 163,
+      "label": 6,
+      "pred": 6,
+      "max_abs_err": 0.00162145,
+      "encrypt_s": 0.004343,
+      "forward_s": 16.191945,
+      "up_bytes": 917625,
+      "down_bytes": 262265
+    },
+    {
+      "index": 164,
+      "label": 8,
+      "pred": 9,
+      "max_abs_err": 0.00540391,
+      "encrypt_s": 0.004347,
+      "forward_s": 16.26045,
+      "up_bytes": 917625,
+      "down_bytes": 262265
+    },
+    {
+      "index": 165,
+      "label": 4,
+      "pred": 4,
+      "max_abs_err": 0.0023349,
+      "encrypt_s": 0.004365,
+      "forward_s": 16.337403,
+      "up_bytes": 917625,
+      "down_bytes": 262265
+    },
+    {
+      "index": 166,
+      "label": 8,
+      "pred": 8,
+      "max_abs_err": 0.00219599,
+      "encrypt_s": 0.003806,
+      "forward_s": 16.182208,
+      "up_bytes": 917625,
+      "down_bytes": 262265
+    },
+    {
+      "index": 167,
+      "label": 4,
+      "pred": 6,
+      "max_abs_err": 0.0025888,
+      "encrypt_s": 0.004442,
+      "forward_s": 16.199769,
+      "up_bytes": 917625,
+      "down_bytes": 262265
+    },
+    {
+      "index": 168,
+      "label": 5,
+      "pred": 2,
+      "max_abs_err": 0.00245853,
+      "encrypt_s": 0.004368,
+      "forward_s": 16.423203,
+      "up_bytes": 917625,
+      "down_bytes": 262265
+    },
+    {
+      "index": 169,
+      "label": 0,
+      "pred": 0,
+      "max_abs_err": 0.00712409,
+      "encrypt_s": 0.004154,
+      "forward_s": 16.214409,
+      "up_bytes": 917625,
+      "down_bytes": 262265
+    },
+    {
+      "index": 170,
+      "label": 9,
+      "pred": 9,
+      "max_abs_err": 0.00582538,
+      "encrypt_s": 0.00379,
+      "forward_s": 16.169106,
+      "up_bytes": 917625,
+      "down_bytes": 262265
+    },
+    {
+      "index": 171,
+      "label": 9,
+      "pred": 0,
+      "max_abs_err": 0.00916177,
+      "encrypt_s": 0.004413,
+      "forward_s": 16.547806,
+      "up_bytes": 917625,
+      "down_bytes": 262265
+    },
+    {
+      "index": 172,
+      "label": 9,
+      "pred": 8,
+      "max_abs_err": 0.00468863,
+      "encrypt_s": 0.003836,
+      "forward_s": 16.322484,
+      "up_bytes": 917625,
+      "down_bytes": 262265
+    },
+    {
+      "index": 173,
+      "label": 8,
+      "pred": 0,
+      "max_abs_err": 0.00432521,
+      "encrypt_s": 0.004213,
+      "forward_s": 16.16429,
+      "up_bytes": 917625,
+      "down_bytes": 262265
+    },
+    {
+      "index": 174,
+      "label": 9,
+      "pred": 9,
+      "max_abs_err": 0.00486283,
+      "encrypt_s": 0.004378,
+      "forward_s": 16.590648,
+      "up_bytes": 917625,
+      "down_bytes": 262265
+    },
+    {
+      "index": 175,
+      "label": 9,
+      "pred": 9,
+      "max_abs_err": 0.00355846,
+      "encrypt_s": 0.003974,
+      "forward_s": 16.770388,
+      "up_bytes": 917625,
+      "down_bytes": 262265
+    },
+    {
+      "index": 176,
+      "label": 3,
+      "pred": 6,
+      "max_abs_err": 0.00488075,
+      "encrypt_s": 0.004385,
+      "forward_s": 16.198772,
+      "up_bytes": 917625,
+      "down_bytes": 262265
+    },
+    {
+      "index": 177,
+      "label": 7,
+      "pred": 7,
+      "max_abs_err": 0.00692037,
+      "encrypt_s": 0.004285,
+      "forward_s": 16.134567,
+      "up_bytes": 917625,
+      "down_bytes": 262265
+    },
+    {
+      "index": 178,
+      "label": 5,
+      "pred": 2,
+      "max_abs_err": 0.00192584,
+      "encrypt_s": 0.004282,
+      "forward_s": 16.543762,
+      "up_bytes": 917625,
+      "down_bytes": 262265
+    },
+    {
+      "index": 179,
+      "label": 0,
+      "pred": 2,
+      "max_abs_err": 0.00383085,
+      "encrypt_s": 0.004461,
+      "forward_s": 16.699143,
+      "up_bytes": 917625,
+      "down_bytes": 262265
+    },
+    {
+      "index": 180,
+      "label": 0,
+      "pred": 8,
+      "max_abs_err": 0.00753248,
+      "encrypt_s": 0.006261,
+      "forward_s": 16.334494,
+      "up_bytes": 917625,
+      "down_bytes": 262265
+    },
+    {
+      "index": 181,
+      "label": 5,
+      "pred": 5,
+      "max_abs_err": 0.00720229,
+      "encrypt_s": 0.004309,
+      "forward_s": 16.228849,
+      "up_bytes": 917625,
+      "down_bytes": 262265
+    },
+    {
+      "index": 182,
+      "label": 2,
+      "pred": 2,
+      "max_abs_err": 0.00304404,
+      "encrypt_s": 0.004399,
+      "forward_s": 16.164641,
+      "up_bytes": 917625,
+      "down_bytes": 262265
+    },
+    {
+      "index": 183,
+      "label": 2,
+      "pred": 2,
+      "max_abs_err": 0.00195808,
+      "encrypt_s": 0.004316,
+      "forward_s": 16.22886,
+      "up_bytes": 917625,
+      "down_bytes": 262265
+    },
+    {
+      "index": 184,
+      "label": 3,
+      "pred": 0,
+      "max_abs_err": 0.00385395,
+      "encrypt_s": 0.00439,
+      "forward_s": 16.193092,
+      "up_bytes": 917625,
+      "down_bytes": 262265
+    },
+    {
+      "index": 185,
+      "label": 8,
+      "pred": 8,
+      "max_abs_err": 0.00198152,
+      "encrypt_s": 0.004178,
+      "forward_s": 16.179654,
+      "up_bytes": 917625,
+      "down_bytes": 262265
+    },
+    {
+      "index": 186,
+      "label": 6,
+      "pred": 6,
+      "max_abs_err": 0.00553857,
+      "encrypt_s": 0.004355,
+      "forward_s": 16.345801,
+      "up_bytes": 917625,
+      "down_bytes": 262265
+    },
+    {
+      "index": 187,
+      "label": 3,
+      "pred": 3,
+      "max_abs_err": 0.00561797,
+      "encrypt_s": 0.004469,
+      "forward_s": 16.381408,
+      "up_bytes": 917625,
+      "down_bytes": 262265
+    },
+    {
+      "index": 188,
+      "label": 4,
+      "pred": 3,
+      "max_abs_err": 0.00673196,
+      "encrypt_s": 0.004502,
+      "forward_s": 16.200246,
+      "up_bytes": 917625,
+      "down_bytes": 262265
+    },
+    {
+      "index": 189,
+      "label": 0,
+      "pred": 8,
+      "max_abs_err": 0.00750368,
+      "encrypt_s": 0.003799,
+      "forward_s": 16.433326,
+      "up_bytes": 917625,
+      "down_bytes": 262265
+    },
+    {
+      "index": 190,
+      "label": 5,
+      "pred": 7,
+      "max_abs_err": 0.00299659,
+      "encrypt_s": 0.003863,
+      "forward_s": 16.154297,
+      "up_bytes": 917625,
+      "down_bytes": 262265
+    },
+    {
+      "index": 191,
+      "label": 8,
+      "pred": 1,
+      "max_abs_err": 0.00257451,
+      "encrypt_s": 0.0038,
+      "forward_s": 16.171201,
+      "up_bytes": 917625,
+      "down_bytes": 262265
+    },
+    {
+      "index": 192,
+      "label": 0,
+      "pred": 0,
+      "max_abs_err": 0.00527919,
+      "encrypt_s": 0.0038,
+      "forward_s": 16.515786,
+      "up_bytes": 917625,
+      "down_bytes": 262265
+    },
+    {
+      "index": 193,
+      "label": 1,
+      "pred": 1,
+      "max_abs_err": 0.00530558,
+      "encrypt_s": 0.00421,
+      "forward_s": 16.292496,
+      "up_bytes": 917625,
+      "down_bytes": 262265
+    },
+    {
+      "index": 194,
+      "label": 7,
+      "pred": 7,
+      "max_abs_err": 0.00287841,
+      "encrypt_s": 0.004352,
+      "forward_s": 16.146463,
+      "up_bytes": 917625,
+      "down_bytes": 262265
+    },
+    {
+      "index": 195,
+      "label": 2,
+      "pred": 4,
+      "max_abs_err": 0.00258507,
+      "encrypt_s": 0.004423,
+      "forward_s": 16.196987,
+      "up_bytes": 917625,
+      "down_bytes": 262265
+    },
+    {
+      "index": 196,
+      "label": 8,
+      "pred": 8,
+      "max_abs_err": 0.00364115,
+      "encrypt_s": 0.004431,
+      "forward_s": 16.389052,
+      "up_bytes": 917625,
+      "down_bytes": 262265
+    },
+    {
+      "index": 197,
+      "label": 8,
+      "pred": 5,
+      "max_abs_err": 0.0034324,
+      "encrypt_s": 0.004488,
+      "forward_s": 16.204493,
+      "up_bytes": 917625,
+      "down_bytes": 262265
+    },
+    {
+      "index": 198,
+      "label": 7,
+      "pred": 7,
+      "max_abs_err": 0.00688719,
+      "encrypt_s": 0.003783,
+      "forward_s": 16.205578,
+      "up_bytes": 917625,
+      "down_bytes": 262265
+    },
+    {
+      "index": 199,
+      "label": 8,
+      "pred": 8,
+      "max_abs_err": 0.00242332,
+      "encrypt_s": 0.004323,
+      "forward_s": 16.462054,
+      "up_bytes": 917625,
+      "down_bytes": 262265
+    }
+  ],
+  "params": {
+    "poly_modulus_degree": 8192,
+    "coeff_mod_bit_sizes": [
+      40,
+      21,
+      21,
+      21,
+      21,
+      21,
+      21,
+      40
+    ],
+    "global_scale_bits": 21
+  }
+}

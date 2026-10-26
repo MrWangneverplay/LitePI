@@ -1,0 +1,135 @@
+{
+  "exp_id": "E4",
+  "dataset": "all",
+  "method": "comm_bytes",
+  "seed": 76,
+  "git_sha": "675bc17a45c0",
+  "timestamp_utc": "2026-10-26T08:00:18+00:00",
+  "experiment": "E4",
+  "tier": "measured bytes",
+  "backend": "seal",
+  "backend_seal_version": "4.1.2",
+  "params": {
+    "poly_modulus_degree": 8192,
+    "coeff_mod_bit_sizes": [
+      40,
+      21,
+      21,
+      21,
+      21,
+      21,
+      21,
+      40
+    ],
+    "global_scale_bits": 21
+  },
+  "keys": {
+    "public_key_bytes": 1048689,
+    "galois_keys_bytes": 176245344,
+    "relin_keys_bytes": 7340887,
+    "secret_key_bytes": 524376,
+    "public_context_bytes": 184634972
+  },
+  "ciphertext_ladder": [
+    {
+      "level": "L7",
+      "chain_index": 6,
+      "modulus_bits": 166,
+      "measured_bytes": 917625,
+      "protocol_table_bytes": 344064,
+      "rns_ratio": 2.667,
+      "downlink_role": "M1 up / ②_k re-encrypt (fresh)"
+    },
+    {
+      "level": "L6",
+      "chain_index": 5,
+      "modulus_bits": 145,
+      "measured_bytes": 786553,
+      "protocol_table_bytes": 311296,
+      "rns_ratio": 2.5267,
+      "downlink_role": "s=10,11 downlink"
+    },
+    {
+      "level": "L5",
+      "chain_index": 4,
+      "modulus_bits": 124,
+      "measured_bytes": 655481,
+      "protocol_table_bytes": 262144,
+      "rns_ratio": 2.5005,
+      "downlink_role": "——"
+    },
+    {
+      "level": "L4",
+      "chain_index": 3,
+      "modulus_bits": 103,
+      "measured_bytes": 524409,
+      "protocol_table_bytes": 212992,
+      "rns_ratio": 2.4621,
+      "downlink_role": "s=01 downlink"
+    },
+    {
+      "level": "L3",
+      "chain_index": 2,
+      "modulus_bits": 82,
+      "measured_bytes": 393337,
+      "protocol_table_bytes": 180224,
+      "rns_ratio": 2.1825,
+      "downlink_role": "——"
+    },
+    {
+      "level": "L2",
+      "chain_index": 1,
+      "modulus_bits": 61,
+      "measured_bytes": 262265,
+      "protocol_table_bytes": 131072,
+      "rns_ratio": 2.0009,
+      "downlink_role": "s=00 (HE-only) result"
+    }
+  ],
+  "online_totals": {
+    "S_up_bytes": 917625,
+    "S_down_bytes_by_schedule": {
+      "00": {
+        "level": "L2",
+        "chain_index": 1,
+        "modulus_bits": 61,
+        "measured_bytes": 262265,
+        "protocol_table_bytes": 131072,
+        "rns_ratio": 2.0009,
+        "downlink_role": "s=00 (HE-only) result",
+        "round_trips": 0
+      },
+      "01": {
+        "level": "L4",
+        "chain_index": 3,
+        "modulus_bits": 103,
+        "measured_bytes": 524409,
+        "protocol_table_bytes": 212992,
+        "rns_ratio": 2.4621,
+        "downlink_role": "s=01 downlink",
+        "round_trips": 2
+      },
+      "10": {
+        "level": "L6",
+        "chain_index": 5,
+        "modulus_bits": 145,
+        "measured_bytes": 786553,
+        "protocol_table_bytes": 311296,
+        "rns_ratio": 2.5267,
+        "downlink_role": "s=10,11 downlink",
+        "round_trips": 2
+      },
+      "11": {
+        "level": "L6",
+        "chain_index": 5,
+        "modulus_bits": 145,
+        "measured_bytes": 786553,
+        "protocol_table_bytes": 311296,
+        "rns_ratio": 2.5267,
+        "downlink_role": "s=10,11 downlink",
+        "round_trips": 2
+      }
+    },
+    "note": "hybrid 岔路的 ①_k 下行落在 L4/L6，②_k 上行是 fresh L7（重加密）；00 无岔路，只有 M1 上行与 M3 下行"
+  }
+}

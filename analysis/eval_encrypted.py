@@ -172,6 +172,15 @@ def main() -> int:
     rows: list[dict] = []
     if args.resume and out_path.exists():
         prev = json.loads(out_path.read_text(encoding="utf-8"))
+        # 续跑前必须确认磁盘上那份是同一个配置，否则会把两个配置的样本混进同一份 JSON。
+        if (prev.get("dataset") != args.dataset
+                or prev.get("schedule") != args.schedule
+                or prev.get("backend") != args.backend):
+            raise SystemExit(
+                f"refuse to resume {out_path}: on disk "
+                f"{prev.get('dataset')}/{prev.get('schedule')}/{prev.get('backend')} "
+                f"!= {args.dataset}/{args.schedule}/{args.backend}"
+            )
         rows = prev.get("per_sample", [])
         print(f"resume: {len(rows)} samples already on disk", flush=True)
 

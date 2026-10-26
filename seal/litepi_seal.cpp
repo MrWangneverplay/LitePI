@@ -26,9 +26,12 @@
 //
 // Level policy (protocol SSOT section 5.3 counts one rescale per linear layer):
 //   * add_plain / add_cipher: no rescale
-//   * mul_plain, square, mm, conv2d_im2col: one rescale for the whole op
-//   * pack_vectors: rotations only, no rescale (the channel supports are
-//     disjoint, so no masking multiplication is needed)
+//   * mul_plain, square, mm: one rescale for the whole op
+//   * conv2d_im2col: no rescale, it returns the sum of at most k tap products so
+//     its scale is global^2.  pack_vectors then consumes that one rescale (it
+//     rescales once when the accumulated scale is far above global_scale).
+//     Keeping the product un-rescaled is what lets the two ops share one level,
+//     which is exactly the one-level-per-conv accounting of the protocol.
 //
 // Multiplication plaintexts are encoded at the ciphertext's *current* scale.
 // SEAL tracks that scale exactly (it is 2^21 only on a fresh ciphertext and

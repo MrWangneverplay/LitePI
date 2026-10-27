@@ -6,13 +6,13 @@
   "rgb": true,
   "bn": true,
   "conv_depth": 3,
-  "channels": 32,
+  "channels": 64,
   "hidden": 256,
-  "epochs": 20,
+  "epochs": 50,
   "seed": 73,
-  "test_acc": 0.7957,
-  "relu_elements": 73984,
+  "test_acc": 0.8499,
+  "relu_elements": 147712,
   "mult_depth": 8,
   "fits_budget": false,
-  "timestamp_utc": "2026-10-26T13:34:26+00:00"
+  "timestamp_utc": "2026-10-26T14:27:21+00:00"
 }

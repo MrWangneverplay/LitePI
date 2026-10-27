@@ -8,11 +8,11 @@
   "conv_depth": 4,
   "channels": 64,
   "hidden": 256,
-  "epochs": 50,
+  "epochs": 100,
   "seed": 76,
-  "test_acc": 0.794,
+  "test_acc": 0.8231,
   "relu_elements": 164096,
   "mult_depth": 10,
   "fits_budget": false,
-  "timestamp_utc": "2026-10-26T14:58:24+00:00"
+  "timestamp_utc": "2026-10-27T04:45:25+00:00"
 }

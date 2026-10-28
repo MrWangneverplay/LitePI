@@ -1,0 +1,116 @@
+{
+  "exp_id": "E9",
+  "timestamp_utc": "2026-10-28T10:29:10+00:00",
+  "git_sha": "88acee282e34",
+  "model": "E[T] = C + R*RTT/(1-p); T_p95 = E[T] + 1.645*sqrt(R*((2J)^2/12 + RTT^2*p/(1-p)^2))",
+  "grid": {
+    "rtt_ms": [
+      1,
+      5,
+      20,
+      50,
+      100,
+      200
+    ],
+    "bandwidth_mbps": [
+      10.0,
+      50.0,
+      100.0
+    ],
+    "loss_pct": [
+      0.0,
+      1.0,
+      5.0
+    ],
+    "jitter_ms": [
+      0.0,
+      30.0
+    ]
+  },
+  "flights": {
+    "s=00 (HE-only)": 2,
+    "s=10 (1 hybrid)": 3,
+    "s=11 (all-hybrid)": 4
+  },
+  "s_hybrid_per_layer_kb": 1410.236,
+  "t_server_hybrid_ms": 48.605,
+  "hybrid_cost_source": "results\\raw_results\\E4\\all\\comm_bytes\\seed73.json + results\\raw_results\\E1\\mnist\\hybrid_s11_seal\\seed73.json",
+  "measured_sources": {
+    "mnist": "litepi_seal/seed{73,74,75,76,77}（5 seeds, mean±std）",
+    "cifar10": "litepi_seal/seed{74,75,76,77}（4 seeds, mean±std）",
+    "uci_har": "litepi_seal/seed{74,75,76,77}（4 seeds, mean±std）"
+  },
+  "measured_seeds": {
+    "mnist": [
+      73,
+      74,
+      75,
+      76,
+      77
+    ],
+    "cifar10": [
+      74,
+      75,
+      76,
+      77
+    ],
+    "uci_har": [
+      74,
+      75,
+      76,
+      77
+    ]
+  },
+  "note": "解析模型换算值（丢包/jitter 项为模型项，非 netem 实测）；计算/字节项全部来自 E2 五种子聚合与 E4 密文阶梯。总 flight 数上界 R=4（canonical 2 层）或 7（VGG 5 层），这是放大因子的真正上限来源。",
+  "r_h_1_vs_per_element": [
+    {
+      "loss_pct": 0.0,
+      "scheme": "r_h=1 (protocol)",
+      "flights": 4,
+      "expected_ms": 7825.52,
+      "p95_ms": 7882.501,
+      "added_p95_vs_clean_link_ms": 56.981
+    },
+    {
+      "loss_pct": 0.0,
+      "scheme": "per-element (108/layer)",
+      "flights": 218,
+      "expected_ms": 29225.52,
+      "p95_ms": 29646.177,
+      "added_p95_vs_clean_link_ms": 21820.657
+    },
+    {
+      "loss_pct": 1.0,
+      "scheme": "r_h=1 (protocol)",
+      "flights": 4,
+      "expected_ms": 7829.561,
+      "p95_ms": 7895.523,
+      "added_p95_vs_clean_link_ms": 70.003
+    },
+    {
+      "loss_pct": 1.0,
+      "scheme": "per-element (108/layer)",
+      "flights": 218,
+      "expected_ms": 29445.722,
+      "p95_ms": 29932.687,
+      "added_p95_vs_clean_link_ms": 22107.166
+    },
+    {
+      "loss_pct": 5.0,
+      "scheme": "r_h=1 (protocol)",
+      "flights": 4,
+      "expected_ms": 7846.573,
+      "p95_ms": 7942.713,
+      "added_p95_vs_clean_link_ms": 117.192
+    },
+    {
+      "loss_pct": 5.0,
+      "scheme": "per-element (108/layer)",
+      "flights": 218,
+      "expected_ms": 30372.889,
+      "p95_ms": 31082.631,
+      "added_p95_vs_clean_link_ms": 23257.111
+    }
+  ],
+  "rows": 972
+}

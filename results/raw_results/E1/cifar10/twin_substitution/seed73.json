@@ -1,0 +1,14 @@
+{
+  "exp_id": "E1",
+  "dataset": "cifar10",
+  "method": "twin_substitution",
+  "seed": 73,
+  "n_samples": 10000,
+  "checkpoint": "datas/cifar10_hybrid_s11_seed73_cnn_train.pt",
+  "accuracy_pct": {
+    "11": 58.3,
+    "10": 23.14,
+    "01": 49.7,
+    "00": 14.98
+  }
+}

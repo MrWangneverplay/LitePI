@@ -1,0 +1,14 @@
+{
+  "exp_id": "E1",
+  "dataset": "uci_har",
+  "method": "twin_substitution",
+  "seed": 77,
+  "n_samples": 2947,
+  "checkpoint": "datas/uci_har_hybrid_s11_seed77_cnn_train.pt",
+  "accuracy_pct": {
+    "11": 91.0757,
+    "10": 61.2827,
+    "01": 86.0536,
+    "00": 48.0489
+  }
+}

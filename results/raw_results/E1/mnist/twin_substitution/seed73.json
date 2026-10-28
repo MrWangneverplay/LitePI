@@ -1,0 +1,14 @@
+{
+  "exp_id": "E1",
+  "dataset": "mnist",
+  "method": "twin_substitution",
+  "seed": 73,
+  "n_samples": 10000,
+  "checkpoint": "datas/mnist_hybrid_s11_seed73_cnn_train.pt",
+  "accuracy_pct": {
+    "11": 97.63,
+    "10": 70.79,
+    "01": 71.96,
+    "00": 23.65
+  }
+}

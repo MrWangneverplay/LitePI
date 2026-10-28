@@ -1,0 +1,40 @@
+{
+  "experiment": "E1",
+  "method": "twin_substitution",
+  "note": "固定 hybrid_s11（两层 ReLU 孪生）权重，逐层替换为 P2 后的明文精度",
+  "timestamp_utc": "2026-10-28T07:32:04+00:00",
+  "datasets": {
+    "uci_har": {
+      "n_samples": 2947,
+      "seeds": [
+        73,
+        74,
+        75,
+        76,
+        77
+      ],
+      "rows": {
+        "11": {
+          "mean": 89.7523,
+          "std": 0.9896,
+          "vs_baseline": 0.0
+        },
+        "10": {
+          "mean": 63.6987,
+          "std": 9.166,
+          "vs_baseline": -26.0536
+        },
+        "01": {
+          "mean": 84.7438,
+          "std": 1.4215,
+          "vs_baseline": -5.0085
+        },
+        "00": {
+          "mean": 53.5867,
+          "std": 14.5463,
+          "vs_baseline": -36.1656
+        }
+      }
+    }
+  }
+}

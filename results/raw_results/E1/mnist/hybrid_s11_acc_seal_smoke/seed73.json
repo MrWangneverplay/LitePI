@@ -1,0 +1,120 @@
+{
+  "exp_id": "E1",
+  "git_sha": "88acee282e34",
+  "timestamp_utc": "2026-10-28T05:31:23+00:00",
+  "experiment": "E1",
+  "tier": "Hybrid ciphertext accuracy",
+  "dataset": "mnist",
+  "schedule": "11",
+  "schedule_bits": [
+    1,
+    1
+  ],
+  "seed": 73,
+  "backend": "seal",
+  "partial": false,
+  "n_samples": 2,
+  "target_samples": 2,
+  "test_set_size": 10000,
+  "accuracy": 1.0,
+  "accuracy_pct": 100.0,
+  "mpc_runtime": "litepi_sci",
+  "checkpoint": "/mnt/d/王梓杨/项目组/wzy/datas/mnist_hybrid_s11_seed73_cnn_train.pt",
+  "max_abs_err": {
+    "mean": 0.01904439,
+    "max": 0.02027164
+  },
+  "rel_err": {
+    "mean": 0.0018056721,
+    "max": 0.0022444997
+  },
+  "prediction_mismatches": 0,
+  "timing_s": {
+    "keygen": 0.6927,
+    "context_upload": 3.1815,
+    "amortized_setup_s_per_sample": 1.9371,
+    "wall_mean": 10.43745,
+    "wall_max": 10.4735,
+    "forward_mean": 10.4127255,
+    "forward_max": 10.448984,
+    "mpc_mean": 0.023753999999999997,
+    "encrypt_mean": 0.0065965,
+    "decrypt_mean": 0.0064125,
+    "reencrypt_mean": 0.0122765,
+    "online_total_s": 20.875
+  },
+  "communication": {
+    "S_up_bytes_mean": 2752909.0,
+    "S_down_bytes_mean": 2360808.5,
+    "bytes_rows": 2,
+    "context_up_bytes": 184634980,
+    "note": "S_up/S_down 为单次查询的客户端上下行字节（不含一次性上下文上传）"
+  },
+  "session": {
+    "reuse_context": true,
+    "queries": 2,
+    "sessions": 1,
+    "mpc_runtime": "litepi_sci",
+    "note": "同一次 server 会话内跑多个样本；keygen 与上下文上传只付一次"
+  },
+  "params": {
+    "poly_modulus_degree": 8192,
+    "coeff_mod_bit_sizes": [
+      40,
+      21,
+      21,
+      21,
+      21,
+      21,
+      21,
+      40
+    ],
+    "global_scale_bits": 21
+  },
+  "per_sample": [
+    {
+      "index": 0,
+      "label": 1,
+      "pred": 1,
+      "max_abs_err": 0.02027164,
+      "rel_err": 0.0022444997,
+      "ref_max_abs": 9.031698,
+      "wall_s": 10.4014,
+      "forward_s": 10.376467,
+      "mpc_s": 0.0237,
+      "encrypt_s": 0.006468,
+      "decrypt_s": 0.007115,
+      "reencrypt_s": 0.012218,
+      "up_bytes": 2752909,
+      "down_bytes": 2360809,
+      "hybrid_roundtrips": 2,
+      "mpc_runtime": "litepi_sci"
+    },
+    {
+      "index": 1,
+      "label": 0,
+      "pred": 0,
+      "max_abs_err": 0.01781714,
+      "rel_err": 0.0013668445,
+      "ref_max_abs": 13.035236,
+      "wall_s": 10.4735,
+      "forward_s": 10.448984,
+      "mpc_s": 0.023808,
+      "encrypt_s": 0.006725,
+      "decrypt_s": 0.00571,
+      "reencrypt_s": 0.012335,
+      "up_bytes": 2752909,
+      "down_bytes": 2360808,
+      "hybrid_roundtrips": 2,
+      "mpc_runtime": "litepi_sci"
+    }
+  ],
+  "setup": {
+    "mpc_runtime": "litepi_sci",
+    "keygen_s": 0.6927,
+    "context_upload_s": 3.1815,
+    "context_up_bytes": 184634980,
+    "queries": 2,
+    "sessions": 1
+  }
+}

@@ -1,0 +1,256 @@
+{
+  "experiment": "E1",
+  "tier": "Adaptive (measured schedules)",
+  "acc_floor_pp": 1.0,
+  "rtt_grid_ms": [
+    1,
+    5,
+    20,
+    50,
+    100,
+    200
+  ],
+  "rule": "acc >= best - floor; minimize wall + (2+K_h)*RTT",
+  "timestamp_utc": "2026-10-28T05:36:26+00:00",
+  "datasets": {
+    "mnist": {
+      "best_acc_pct": 99.0625,
+      "feasible_schedules": [
+        "00",
+        "10"
+      ],
+      "accuracy_pct": {
+        "mean": 98.125,
+        "min": 98.125,
+        "max": 98.125
+      },
+      "rows": [
+        {
+          "rtt_ms": 1,
+          "schedule": "00",
+          "K_h": 0,
+          "accuracy_pct": 98.125,
+          "accuracy_std": 2.5674,
+          "wall_s": 4.752,
+          "end_to_end_s": 4.754,
+          "S_up_bytes": 917641,
+          "S_down_bytes": 263401
+        },
+        {
+          "rtt_ms": 5,
+          "schedule": "00",
+          "K_h": 0,
+          "accuracy_pct": 98.125,
+          "accuracy_std": 2.5674,
+          "wall_s": 4.752,
+          "end_to_end_s": 4.762,
+          "S_up_bytes": 917641,
+          "S_down_bytes": 263401
+        },
+        {
+          "rtt_ms": 20,
+          "schedule": "00",
+          "K_h": 0,
+          "accuracy_pct": 98.125,
+          "accuracy_std": 2.5674,
+          "wall_s": 4.752,
+          "end_to_end_s": 4.792,
+          "S_up_bytes": 917641,
+          "S_down_bytes": 263401
+        },
+        {
+          "rtt_ms": 50,
+          "schedule": "00",
+          "K_h": 0,
+          "accuracy_pct": 98.125,
+          "accuracy_std": 2.5674,
+          "wall_s": 4.752,
+          "end_to_end_s": 4.852,
+          "S_up_bytes": 917641,
+          "S_down_bytes": 263401
+        },
+        {
+          "rtt_ms": 100,
+          "schedule": "00",
+          "K_h": 0,
+          "accuracy_pct": 98.125,
+          "accuracy_std": 2.5674,
+          "wall_s": 4.752,
+          "end_to_end_s": 4.952,
+          "S_up_bytes": 917641,
+          "S_down_bytes": 263401
+        },
+        {
+          "rtt_ms": 200,
+          "schedule": "00",
+          "K_h": 0,
+          "accuracy_pct": 98.125,
+          "accuracy_std": 2.5674,
+          "wall_s": 4.752,
+          "end_to_end_s": 5.152,
+          "S_up_bytes": 917641,
+          "S_down_bytes": 263401
+        }
+      ]
+    },
+    "cifar10": {
+      "best_acc_pct": 59.6875,
+      "feasible_schedules": [
+        "10"
+      ],
+      "accuracy_pct": {
+        "mean": 59.6875,
+        "min": 59.6875,
+        "max": 59.6875
+      },
+      "rows": [
+        {
+          "rtt_ms": 1,
+          "schedule": "10",
+          "K_h": 1,
+          "accuracy_pct": 59.6875,
+          "accuracy_std": 4.8664,
+          "wall_s": 27.5597,
+          "end_to_end_s": 27.5627,
+          "S_up_bytes": 1835275,
+          "S_down_bytes": 1312123
+        },
+        {
+          "rtt_ms": 5,
+          "schedule": "10",
+          "K_h": 1,
+          "accuracy_pct": 59.6875,
+          "accuracy_std": 4.8664,
+          "wall_s": 27.5597,
+          "end_to_end_s": 27.5747,
+          "S_up_bytes": 1835275,
+          "S_down_bytes": 1312123
+        },
+        {
+          "rtt_ms": 20,
+          "schedule": "10",
+          "K_h": 1,
+          "accuracy_pct": 59.6875,
+          "accuracy_std": 4.8664,
+          "wall_s": 27.5597,
+          "end_to_end_s": 27.6197,
+          "S_up_bytes": 1835275,
+          "S_down_bytes": 1312123
+        },
+        {
+          "rtt_ms": 50,
+          "schedule": "10",
+          "K_h": 1,
+          "accuracy_pct": 59.6875,
+          "accuracy_std": 4.8664,
+          "wall_s": 27.5597,
+          "end_to_end_s": 27.7097,
+          "S_up_bytes": 1835275,
+          "S_down_bytes": 1312123
+        },
+        {
+          "rtt_ms": 100,
+          "schedule": "10",
+          "K_h": 1,
+          "accuracy_pct": 59.6875,
+          "accuracy_std": 4.8664,
+          "wall_s": 27.5597,
+          "end_to_end_s": 27.8597,
+          "S_up_bytes": 1835275,
+          "S_down_bytes": 1312123
+        },
+        {
+          "rtt_ms": 200,
+          "schedule": "10",
+          "K_h": 1,
+          "accuracy_pct": 59.6875,
+          "accuracy_std": 4.8664,
+          "wall_s": 27.5597,
+          "end_to_end_s": 28.1597,
+          "S_up_bytes": 1835275,
+          "S_down_bytes": 1312123
+        }
+      ]
+    },
+    "uci_har": {
+      "best_acc_pct": 91.875,
+      "feasible_schedules": [
+        "00",
+        "10"
+      ],
+      "accuracy_pct": {
+        "mean": 91.875,
+        "min": 91.875,
+        "max": 91.875
+      },
+      "rows": [
+        {
+          "rtt_ms": 1,
+          "schedule": "00",
+          "K_h": 0,
+          "accuracy_pct": 91.875,
+          "accuracy_std": 3.563,
+          "wall_s": 14.533,
+          "end_to_end_s": 14.535,
+          "S_up_bytes": 917641,
+          "S_down_bytes": 263405
+        },
+        {
+          "rtt_ms": 5,
+          "schedule": "00",
+          "K_h": 0,
+          "accuracy_pct": 91.875,
+          "accuracy_std": 3.563,
+          "wall_s": 14.533,
+          "end_to_end_s": 14.543,
+          "S_up_bytes": 917641,
+          "S_down_bytes": 263405
+        },
+        {
+          "rtt_ms": 20,
+          "schedule": "00",
+          "K_h": 0,
+          "accuracy_pct": 91.875,
+          "accuracy_std": 3.563,
+          "wall_s": 14.533,
+          "end_to_end_s": 14.573,
+          "S_up_bytes": 917641,
+          "S_down_bytes": 263405
+        },
+        {
+          "rtt_ms": 50,
+          "schedule": "00",
+          "K_h": 0,
+          "accuracy_pct": 91.875,
+          "accuracy_std": 3.563,
+          "wall_s": 14.533,
+          "end_to_end_s": 14.633,
+          "S_up_bytes": 917641,
+          "S_down_bytes": 263405
+        },
+        {
+          "rtt_ms": 100,
+          "schedule": "00",
+          "K_h": 0,
+          "accuracy_pct": 91.875,
+          "accuracy_std": 3.563,
+          "wall_s": 14.533,
+          "end_to_end_s": 14.733,
+          "S_up_bytes": 917641,
+          "S_down_bytes": 263405
+        },
+        {
+          "rtt_ms": 200,
+          "schedule": "00",
+          "K_h": 0,
+          "accuracy_pct": 91.875,
+          "accuracy_std": 3.563,
+          "wall_s": 14.533,
+          "end_to_end_s": 14.933,
+          "S_up_bytes": 917641,
+          "S_down_bytes": 263405
+        }
+      ]
+    }
+  }
+}

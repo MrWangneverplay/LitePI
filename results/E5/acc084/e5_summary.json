@@ -1,0 +1,12 @@
+{
+  "fast": {
+    "pareto_front_h1": 2,
+    "planner_solve_ms": 0.0664,
+    "schedule_space": 32
+  },
+  "vgg": {
+    "pareto_front_h1": 4,
+    "planner_solve_ms": 0.0659,
+    "schedule_space": 32
+  }
+}

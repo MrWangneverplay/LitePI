@@ -486,6 +486,7 @@ def main() -> int:
         rtt_ms=args.rtt_ms,
         per_element_ms=args.per_element_ms,
         bytes_per_element=args.bytes_per_element,
+        rtts_per_hybrid=args.rtts_per_hybrid,
         base_acc=base_acc,
         schedule_accuracies=schedule_accuracies,
         encoded_input_slots=encoded_input_slots,

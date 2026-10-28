@@ -1,0 +1,7 @@
+strategy,schedule,naming,accuracy,mpc_elements,hybrid_layers,rtts,time_s,bytes_mb,on_pareto_front
+all_relu,11111,conv1=ReLU conv2=ReLU conv3=ReLU conv4=ReLU fc1=ReLU,0.8855,164096,5,5,2117.088,655.728,False
+all_p2,00000,conv1=P2 conv2=P2 conv3=P2 conv4=P2 fc1=P2,0.8355,0,0,0,0.0,0.0,False
+rule,11001,conv1=ReLU conv2=ReLU conv3=P2 conv4=P2 fc1=ReLU,0.8805,131328,3,3,1694.281,524.787,False
+greedy,11001,conv1=ReLU conv2=ReLU conv3=P2 conv4=P2 fc1=ReLU,0.8805,131328,3,3,1694.281,524.787,False
+cons_time,00100,conv1=P2 conv2=P2 conv3=ReLU conv4=P2 fc1=P2,0.8555,16384,1,1,211.404,65.47,True
+cons_mpc,00100,conv1=P2 conv2=P2 conv3=ReLU conv4=P2 fc1=P2,0.8555,16384,1,1,211.404,65.47,True

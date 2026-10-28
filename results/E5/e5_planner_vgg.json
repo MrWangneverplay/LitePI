@@ -1,0 +1,190 @@
+{
+  "arch": "vgg",
+  "acc_min": 0.8,
+  "rtt_ms": 50.0,
+  "per_element_ms": 12.9,
+  "bytes_per_element": 3996,
+  "accuracy_source": "combination-penalty-0.0025*k*(k-1)",
+  "strategies": {
+    "all_relu": {
+      "schedule": "11111",
+      "naming": "conv1=ReLU conv2=ReLU conv3=ReLU conv4=ReLU fc1=ReLU",
+      "accuracy": 0.8855,
+      "mpc_elements": 164096,
+      "hybrid_layers": 5,
+      "rtts": 5,
+      "time_s": 2117.088,
+      "bytes_mb": 655.728,
+      "depth_ok": true,
+      "meets_acc_min": true,
+      "on_pareto_front": false
+    },
+    "all_p2": {
+      "schedule": "00000",
+      "naming": "conv1=P2 conv2=P2 conv3=P2 conv4=P2 fc1=P2",
+      "accuracy": 0.8355,
+      "mpc_elements": 0,
+      "hybrid_layers": 0,
+      "rtts": 0,
+      "time_s": 0.0,
+      "bytes_mb": 0.0,
+      "depth_ok": false,
+      "meets_acc_min": true,
+      "on_pareto_front": false
+    },
+    "rule": {
+      "schedule": "11100",
+      "naming": "conv1=ReLU conv2=ReLU conv3=ReLU conv4=P2 fc1=P2",
+      "accuracy": 0.8805,
+      "mpc_elements": 147456,
+      "hybrid_layers": 3,
+      "rtts": 3,
+      "time_s": 1902.332,
+      "bytes_mb": 589.234,
+      "depth_ok": true,
+      "meets_acc_min": true,
+      "on_pareto_front": false
+    },
+    "greedy": {
+      "schedule": "11100",
+      "naming": "conv1=ReLU conv2=ReLU conv3=ReLU conv4=P2 fc1=P2",
+      "accuracy": 0.8805,
+      "mpc_elements": 147456,
+      "hybrid_layers": 3,
+      "rtts": 3,
+      "time_s": 1902.332,
+      "bytes_mb": 589.234,
+      "depth_ok": true,
+      "meets_acc_min": true,
+      "on_pareto_front": false
+    },
+    "cons_time": {
+      "schedule": "00100",
+      "naming": "conv1=P2 conv2=P2 conv3=ReLU conv4=P2 fc1=P2",
+      "accuracy": 0.8555,
+      "mpc_elements": 16384,
+      "hybrid_layers": 1,
+      "rtts": 1,
+      "time_s": 211.404,
+      "bytes_mb": 65.47,
+      "depth_ok": true,
+      "meets_acc_min": true,
+      "on_pareto_front": true
+    },
+    "cons_mpc": {
+      "schedule": "00100",
+      "naming": "conv1=P2 conv2=P2 conv3=ReLU conv4=P2 fc1=P2",
+      "accuracy": 0.8555,
+      "mpc_elements": 16384,
+      "hybrid_layers": 1,
+      "rtts": 1,
+      "time_s": 211.404,
+      "bytes_mb": 65.47,
+      "depth_ok": true,
+      "meets_acc_min": true,
+      "on_pareto_front": true
+    }
+  },
+  "pareto": {
+    "r_h_1": {
+      "feasible_count": 24,
+      "front": [
+        {
+          "schedule": "00100",
+          "naming": "conv1=P2 conv2=P2 conv3=ReLU conv4=P2 fc1=P2",
+          "accuracy": 0.8555,
+          "mpc_elements": 16384,
+          "hybrid_layers": 1,
+          "rtts": 1,
+          "time_s": 211.404,
+          "bytes_mb": 65.47,
+          "depth_ok": true
+        },
+        {
+          "schedule": "00101",
+          "naming": "conv1=P2 conv2=P2 conv3=ReLU conv4=P2 fc1=ReLU",
+          "accuracy": 0.8705,
+          "mpc_elements": 16640,
+          "hybrid_layers": 2,
+          "rtts": 2,
+          "time_s": 214.756,
+          "bytes_mb": 66.493,
+          "depth_ok": true
+        },
+        {
+          "schedule": "00111",
+          "naming": "conv1=P2 conv2=P2 conv3=ReLU conv4=ReLU fc1=ReLU",
+          "accuracy": 0.8805,
+          "mpc_elements": 33024,
+          "hybrid_layers": 3,
+          "rtts": 3,
+          "time_s": 426.16,
+          "bytes_mb": 131.964,
+          "depth_ok": true
+        },
+        {
+          "schedule": "01111",
+          "naming": "conv1=P2 conv2=ReLU conv3=ReLU conv4=ReLU fc1=ReLU",
+          "accuracy": 0.8855,
+          "mpc_elements": 98560,
+          "hybrid_layers": 4,
+          "rtts": 4,
+          "time_s": 1271.624,
+          "bytes_mb": 393.846,
+          "depth_ok": true
+        }
+      ]
+    },
+    "r_h_41": {
+      "feasible_count": 24,
+      "front": [
+        {
+          "schedule": "00100",
+          "naming": "conv1=P2 conv2=P2 conv3=ReLU conv4=P2 fc1=P2",
+          "accuracy": 0.8555,
+          "mpc_elements": 16384,
+          "hybrid_layers": 1,
+          "rtts": 41,
+          "time_s": 213.404,
+          "bytes_mb": 65.47,
+          "depth_ok": true
+        },
+        {
+          "schedule": "00101",
+          "naming": "conv1=P2 conv2=P2 conv3=ReLU conv4=P2 fc1=ReLU",
+          "accuracy": 0.8705,
+          "mpc_elements": 16640,
+          "hybrid_layers": 2,
+          "rtts": 82,
+          "time_s": 218.756,
+          "bytes_mb": 66.493,
+          "depth_ok": true
+        },
+        {
+          "schedule": "00111",
+          "naming": "conv1=P2 conv2=P2 conv3=ReLU conv4=ReLU fc1=ReLU",
+          "accuracy": 0.8805,
+          "mpc_elements": 33024,
+          "hybrid_layers": 3,
+          "rtts": 123,
+          "time_s": 432.16,
+          "bytes_mb": 131.964,
+          "depth_ok": true
+        },
+        {
+          "schedule": "01111",
+          "naming": "conv1=P2 conv2=ReLU conv3=ReLU conv4=ReLU fc1=ReLU",
+          "accuracy": 0.8855,
+          "mpc_elements": 98560,
+          "hybrid_layers": 4,
+          "rtts": 164,
+          "time_s": 1279.624,
+          "bytes_mb": 393.846,
+          "depth_ok": true
+        }
+      ]
+    }
+  },
+  "planner_solve_ms": 0.087,
+  "schedule_space": 32
+}

@@ -297,19 +297,20 @@ std::shared_ptr<SealCtx> new_context(std::size_t poly_modulus_degree,
     }
     else
     {
-        // §6.4: 只生成 plan 实际用到的 ±2^i（i <= max_rot_pow）Galois 元素，
-        // 更小的位移由 SEAL 在这些元素上组合得到。
-        const std::uint32_t modulus = static_cast<std::uint32_t>(poly_modulus_degree);
-        std::vector<std::uint32_t> elts;
-        // step 0 = conjugation (rotate_columns); conv2d_im2col needs it.
-        elts.push_back(2u * modulus - 1u);
+        // §6.4: 只生成 plan 实际用到的 ±2^i（i <= max_rot_pow）旋转步，其余
+        // 非 2 幂位移由 SEAL 在这些元素上做 NAF 分解组合得到。SEAL 的
+        // create_galois_keys(steps) 内部经 get_elts_from_steps/get_elt_from_step
+        // 正确映射到 3^step（旧实现手写 2*step+1 的 Galois 元素是错误的，导致
+        // rotate_vector 找不到 key）。
+        std::vector<int> steps;
+        steps.reserve(static_cast<std::size_t>(2 * (max_rot_pow + 1)));
         for (int i = 0; i <= max_rot_pow; ++i)
         {
-            const std::uint32_t step = 1u << i;
-            elts.push_back(2u * step + 1u);
-            elts.push_back(2u * (modulus - step) + 1u);
+            const int step = 1 << i;
+            steps.push_back(step);
+            steps.push_back(-step);
         }
-        keygen.create_galois_keys(elts, handle->galois_keys_);
+        keygen.create_galois_keys(steps, handle->galois_keys_);
     }
     handle->has_secret_ = true;
     handle->encryptor_ =
@@ -340,6 +341,7 @@ py::dict key_sizes(const SealCtx &ctx)
     py::dict out;
     out["public_key_bytes"] = size_of(ctx.public_key_);
     out["galois_keys_bytes"] = size_of(ctx.galois_keys_);
+    out["galois_key_count"] = static_cast<std::int64_t>(ctx.galois_keys_.size());
     out["relin_keys_bytes"] = size_of(ctx.relin_keys_);
     out["secret_key_bytes"] = size_of(ctx.secret_key_);
     out["public_context_bytes"] = static_cast<std::int64_t>(public_context_bytes(ctx).cast<std::string>().size());
@@ -631,6 +633,14 @@ std::shared_ptr<SealCtxt> mm(const SealCtx &ctx, const SealCtxt &ctxt,
         }
         Plaintext plain;
         ctx.encode_at(diagonal, ctxt.ct_, plain);
+        if (plain.is_zero())
+        {
+            // A diagonal whose entries are below the encoding resolution of this
+            // level round to an all-zero plaintext; SEAL then rejects the
+            // product as transparent.  Dropping the term is exact: it would
+            // contribute zero after decoding anyway.
+            return;
+        }
         Ciphertext product;
         ctx.evaluator_->multiply_plain(ctxt.ct_, plain, product);
         Ciphertext moved =

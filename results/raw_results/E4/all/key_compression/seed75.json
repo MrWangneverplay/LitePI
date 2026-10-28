@@ -1,0 +1,129 @@
+{
+  "exp_id": "E4",
+  "dataset": "all",
+  "method": "key_compression",
+  "seed": 75,
+  "timestamp_utc": "2026-10-27T09:06:23+00:00",
+  "backend": "seal 4.1.2",
+  "profile": "N=8192, [40,21x6,40], scale=2^21",
+  "full_key_set": {
+    "galois_key_count": 24,
+    "galois_keys_bytes": 176245344,
+    "public_key_bytes": 1048689,
+    "relin_keys_bytes": 7340887,
+    "s_key_bytes": 184634920,
+    "s_key_mb": 176.082
+  },
+  "note": "按 plan 裁剪覆盖 R_conv ∪ R_mm；conv2d_im2col 的大窗口位移 (taps-1)·windows 已把所需幂次推到 2^11，等于全集旋转键，因此 S_key 裁剪收益受限于去掉未使用的 conjugation 元素。",
+  "curve": [
+    {
+      "max_rot_pow": 0,
+      "galois_key_count": 2,
+      "galois_keys_bytes": 14747238,
+      "s_key_bytes": 23136814
+    },
+    {
+      "max_rot_pow": 1,
+      "galois_key_count": 4,
+      "galois_keys_bytes": 29428884,
+      "s_key_bytes": 37818460
+    },
+    {
+      "max_rot_pow": 2,
+      "galois_key_count": 6,
+      "galois_keys_bytes": 44110530,
+      "s_key_bytes": 52500106
+    },
+    {
+      "max_rot_pow": 3,
+      "galois_key_count": 8,
+      "galois_keys_bytes": 58792176,
+      "s_key_bytes": 67181752
+    },
+    {
+      "max_rot_pow": 4,
+      "galois_key_count": 10,
+      "galois_keys_bytes": 73473822,
+      "s_key_bytes": 81863398
+    },
+    {
+      "max_rot_pow": 5,
+      "galois_key_count": 12,
+      "galois_keys_bytes": 88155468,
+      "s_key_bytes": 96545044
+    },
+    {
+      "max_rot_pow": 6,
+      "galois_key_count": 14,
+      "galois_keys_bytes": 102837114,
+      "s_key_bytes": 111226690
+    },
+    {
+      "max_rot_pow": 7,
+      "galois_key_count": 16,
+      "galois_keys_bytes": 117518760,
+      "s_key_bytes": 125908336
+    },
+    {
+      "max_rot_pow": 8,
+      "galois_key_count": 18,
+      "galois_keys_bytes": 132200406,
+      "s_key_bytes": 140589982
+    },
+    {
+      "max_rot_pow": 9,
+      "galois_key_count": 20,
+      "galois_keys_bytes": 146882052,
+      "s_key_bytes": 155271628
+    },
+    {
+      "max_rot_pow": 10,
+      "galois_key_count": 22,
+      "galois_keys_bytes": 161563698,
+      "s_key_bytes": 169953274
+    },
+    {
+      "max_rot_pow": 11,
+      "galois_key_count": 23,
+      "galois_keys_bytes": 168904521,
+      "s_key_bytes": 177294097
+    }
+  ],
+  "per_dataset": {
+    "mnist": {
+      "R_mm": 256,
+      "R_conv_max": 3072,
+      "max_rot_pow": 11,
+      "galois_key_count": 23,
+      "s_key_bytes": 177294097,
+      "s_key_mb": 169.081,
+      "saving_vs_full_pct": 3.98
+    },
+    "cifar10": {
+      "R_mm": 1200,
+      "R_conv_max": 2400,
+      "max_rot_pow": 11,
+      "galois_key_count": 23,
+      "s_key_bytes": 177294097,
+      "s_key_mb": 169.081,
+      "saving_vs_full_pct": 3.98
+    },
+    "uci_har": {
+      "R_mm": 756,
+      "R_conv_max": 1638,
+      "max_rot_pow": 11,
+      "galois_key_count": 23,
+      "s_key_bytes": 177294097,
+      "s_key_mb": 169.081,
+      "saving_vs_full_pct": 3.98
+    }
+  },
+  "probe": {
+    "dataset": "mnist",
+    "max_rot_pow": 11,
+    "samples": 3,
+    "prediction_matches": 3,
+    "max_abs_logit_error": 0.024328967448778938,
+    "seconds": 22.11
+  }
+}

@@ -285,6 +285,7 @@ def run_client(host: str, port: int, x: np.ndarray, backend_name: str,
         "bytes_sent": wire.cc.sent,
         "bytes_received": wire.cc.recvd,
         "server": server_stats,
+        "mpc_runtime": "litepi_sci" if sci_session is not None else "python-ot",
     }
     result["mask_domain_aligned"] = bool(
         spec.get("profile", {}).get("mask_domain_aligned", False)
@@ -418,6 +419,7 @@ def run_reuse_session(host: str, port: int, x: np.ndarray, backend_name: str,
         "bytes_sent": wire.cc.sent,
         "bytes_received": wire.cc.recvd,
         "server": last["server"],
+        "mpc_runtime": "litepi_sci" if sci_session is not None else "python-ot",
     }
     result["mask_domain_aligned"] = bool(
         spec.get("profile", {}).get("mask_domain_aligned", False)
@@ -521,6 +523,8 @@ def loopback_once(backend_name: str, dims: list[int], seed: int = 7,
         "prediction_matches": prediction_matches,
         "passed": err <= tol and prediction_matches,
     }
+    result["seed"] = int(seed)
+    result["input_seed"] = int(input_seed)
     return result
 
 
@@ -665,6 +669,7 @@ def main() -> int:
                 output_mode=args.output_mode,
             )
 
+    result.setdefault("seed", int(args.seed))
     _print_summary(result, args.verbose)
     if args.out:
         args.out.parent.mkdir(parents=True, exist_ok=True)

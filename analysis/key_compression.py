@@ -1,14 +1,17 @@
 """E4: rotation-key pruning for S_key (protocol SSOT §6.4).
 
-R = R_conv ∪ R_mm; R_mm is the input dimension of FC1 (MNIST 256, UCI-HAR 756,
-CIFAR-10 1200).  SEAL realises every rotation from the Galois elements of
-+-2^i, so a plan only needs i <= ceil(log2(|R_mm|)).  This script measures the
-serialized key bytes for
+§6.4 定义 R = R_conv ∪ R_mm：
+    * R_mm    —— FC1 输入维度（对角线法位移量级：MNIST 256 / CIFAR 1200 / HAR 756）
+    * R_conv  —— im2col 窗口位移 {k·windows : k=1..taps-1}，最大步 (taps-1)·windows
 
-    * the full key set (what new_context() creates by default), and
-    * the pruned set the plan actually queries (max_rot_pow = ceil(log2 |R_mm|)),
+SEAL 只用 ±2^i 的 Galois 元素就能通过 NAF 分解实现任意旋转，所以 plan 需要的
+最高幂次是 ceil(log2(max(|R_conv|, |R_mm|)))，上限 2^11=2048（2^12=4096=N/2 已
+属"无旋转"，SEAL 拒绝生成）。本脚本实测：
 
-and probes that pruning does not change the encrypted forward.
+    * 全集字节（new_context() 默认 create_galois_keys()），和
+    * 按 plan 裁剪后的字节（max_rot_pow = ceil(log2 max(|R_conv|,|R_mm|))），
+
+并 probe 确认裁剪不改变密文前向结果。
 
 Run:
     python analysis/key_compression.py            # bytes + 3-sample MNIST probe
@@ -32,13 +35,23 @@ from eval_encrypted import _timings, load_test_set
 from pi_proto import Wire, make_backend
 from pi_server import encrypted_forward
 
-# §6.4: R_mm is the FC1 input dimension of each canonical network.
+# §6.4: R_mm 是各 canonical 网络 FC1 的输入维度。
 R_MM = {"mnist": 256, "cifar10": 1200, "uci_har": 756}
-FULL_POW = 12  # +-2^0 .. +-2^12 (the +-4096 element collapses: 24 keys)
+# R_conv 的最大位移 = (taps-1)·windows，由 canonical 几何直接算得：
+#   mnist (7x7 kernel, windows 64)  -> 48·64  = 3072
+#   cifar10 (5x5 kernel, windows 100) -> 24·100 = 2400
+#   uci_har (3x9 kernel, windows 63) -> 26·63 = 1638
+R_CONV_MAX = {"mnist": (7 * 7 - 1) * 64,
+              "cifar10": (5 * 5 - 1) * 100,
+              "uci_har": (3 * 9 - 1) * 63}
+# 最大合法 2 幂旋转步：2^11 = 2048（2^12 = 4096 = N/2 已属"无旋转"，SEAL 拒绝生成）。
+FULL_POW = 11
 
 
-def plan_pow(dim: int) -> int:
-    return max(0, math.ceil(math.log2(max(1, dim))))
+def plan_pow(ds: str) -> int:
+    """裁剪所需的最高 ±2^i 幂次，覆盖 R_conv 与 R_mm 的最大位移。"""
+    step = max(1, R_CONV_MAX[ds], R_MM[ds])
+    return min(FULL_POW, max(0, math.ceil(math.log2(step))))
 
 
 def main() -> int:
@@ -58,7 +71,7 @@ def main() -> int:
         keys = be.seal.key_sizes(ctx)
         curve.append({
             "max_rot_pow": pow_i,
-            "galois_elements": 2 * (pow_i + 1) + 1,  # +-2^i plus conjugation
+            "galois_key_count": int(keys.get("galois_key_count", 2 * (pow_i + 1))),
             "galois_keys_bytes": int(keys["galois_keys_bytes"]),
             "s_key_bytes": int(keys["public_key_bytes"]) + int(keys["galois_keys_bytes"])
             + int(keys["relin_keys_bytes"]),
@@ -69,22 +82,24 @@ def main() -> int:
         + int(full["relin_keys_bytes"])
 
     per_dataset = {}
-    for ds, dim in R_MM.items():
-        p = plan_pow(dim)
+    for ds in R_MM:
+        p = plan_pow(ds)
         row = next(r for r in curve if r["max_rot_pow"] == p)
         per_dataset[ds] = {
-            "R_mm": dim,
+            "R_mm": R_MM[ds],
+            "R_conv_max": R_CONV_MAX[ds],
             "max_rot_pow": p,
-            "galois_elements": row["galois_elements"],
+            "galois_key_count": row["galois_key_count"],
             "s_key_bytes": row["s_key_bytes"],
             "s_key_mb": round(row["s_key_bytes"] / 2**20, 3),
             "saving_vs_full_pct": round(100.0 * (1 - row["s_key_bytes"] / full_s_key), 2),
         }
 
-    print("%8s %10s %16s %12s" % ("dataset", "R_mm", "pruned S_key", "vs full"))
+    print("%8s %10s %12s %10s %13s %12s" % ("dataset", "R_mm", "R_conv", "rot_pow", "pruned S_key", "vs full"))
     for ds, row in per_dataset.items():
-        print("%8s %10d %13.1f MB %11.1f%%"
-              % (ds, row["R_mm"], row["s_key_mb"], -row["saving_vs_full_pct"]))
+        print("%8s %10d %12d %10d %13.1f MB %11.1f%%"
+              % (ds, row["R_mm"], row["R_conv_max"], row["max_rot_pow"],
+                 row["s_key_mb"], -row["saving_vs_full_pct"]))
     print("full key set: %.1f MB" % (full_s_key / 2**20))
 
     probe = None
@@ -93,7 +108,7 @@ def main() -> int:
         # key set, compared with the plaintext prediction of the same model.
         model = load_canonical_model(root, "mnist", (0, 0), args.seed, None)
         test = load_test_set(root, "mnist")
-        be.max_rot_pow = plan_pow(R_MM["mnist"])
+        be.max_rot_pow = plan_pow("mnist")
         ctx = be.new_context()
         left, right = socket.socketpair()
         wire = Wire(left, 1)
@@ -130,13 +145,16 @@ def main() -> int:
         "backend": f"seal {be.version}",
         "profile": "N=8192, [40,21x6,40], scale=2^21",
         "full_key_set": {
-            "galois_elements": 24,
+            "galois_key_count": int(full.get("galois_key_count", 25)),
             "galois_keys_bytes": int(full["galois_keys_bytes"]),
             "public_key_bytes": int(full["public_key_bytes"]),
             "relin_keys_bytes": int(full["relin_keys_bytes"]),
             "s_key_bytes": full_s_key,
             "s_key_mb": round(full_s_key / 2**20, 3),
         },
+        "note": ("按 plan 裁剪覆盖 R_conv ∪ R_mm；conv2d_im2col 的大窗口位移 "
+                 "(taps-1)·windows 已把所需幂次推到 2^11，等于全集旋转键，"
+                 "因此 S_key 裁剪收益受限于去掉未使用的 conjugation 元素。"),
         "curve": curve,
         "per_dataset": per_dataset,
         "probe": probe,

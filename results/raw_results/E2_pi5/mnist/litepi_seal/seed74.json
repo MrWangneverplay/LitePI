@@ -1,0 +1,99 @@
+{
+  "exp_id": "E2",
+  "dataset": "mnist",
+  "method": "litepi_seal",
+  "seed": 74,
+  "git_sha": "",
+  "timestamp_utc": "2026-10-27T11:17:17+00:00",
+  "experiment": "E2",
+  "tier": "client overhead",
+  "backend": "seal",
+  "backend_seal_version": "4.1.2",
+  "schedule": "00",
+  "network": "64->10, 1 conv + P2 + fc1 + P2 + fc2 (canonical)",
+  "client_metrics": {
+    "T_encode_enc_total": {
+      "n": 25,
+      "mean_ms": 18.4594632799417,
+      "std_ms": 0.203532024002404,
+      "min_ms": 18.311589999939315,
+      "max_ms": 19.169851999322418
+    },
+    "T_encode": {
+      "n": 25,
+      "mean_ms": 0.5163276400708128,
+      "std_ms": 0.17654867355051992,
+      "min_ms": 0.0014079996617510915,
+      "max_ms": 1.08181500036153,
+      "derived": true,
+      "note": "= im2col_encrypt − 同槽位零向量加密；SEAL 把编码与加密放在一次调用里，相减后分辨率受两次 ~10 ms 测量抖动限制，只作量级参考"
+    },
+    "T_enc": {
+      "n": 25,
+      "mean_ms": 17.94313563987089,
+      "std_ms": 0.24123899403769672,
+      "min_ms": 17.762843999662437,
+      "max_ms": 18.873017999794683
+    },
+    "T_dec": {
+      "n": 25,
+      "mean_ms": 1.7144579198065912,
+      "std_ms": 0.04472958061095463,
+      "min_ms": 1.6844060010043904,
+      "max_ms": 1.8879279996326659
+    },
+    "T_post": {
+      "n": 25,
+      "mean_ms": 0.027797160073532723,
+      "std_ms": 0.0028106252400016112,
+      "min_ms": 0.025130000722128898,
+      "max_ms": 0.03787100104091223
+    },
+    "M_client_peak_mb": 531.109375,
+    "RSS_baseline_mb": 531.15625,
+    "E_client": "n/a（E6 能耗实验未做）"
+  },
+  "communication": {
+    "S_up_bytes": {
+      "n": 25,
+      "mean_bytes": 917625.0,
+      "std_bytes": 0.0,
+      "min_bytes": 917625.0,
+      "max_bytes": 917625.0
+    },
+    "S_down_bytes": {
+      "n": 25,
+      "mean_bytes": 262265.0,
+      "std_bytes": 0.0,
+      "min_bytes": 262265.0,
+      "max_bytes": 262265.0
+    },
+    "S_key_bytes": 184634920,
+    "S_key_detail": {
+      "public_key_bytes": 1048689,
+      "galois_keys_bytes": 176245344,
+      "galois_key_count": 24,
+      "relin_keys_bytes": 7340887,
+      "secret_key_bytes": 524376,
+      "public_context_bytes": 184634972
+    },
+    "note": "S_key = pk + galois + relin（不含 sk）；S_up 为 im2col 输入密文"
+  },
+  "reference": {
+    "T_server": {
+      "n": 25,
+      "mean_ms": 26096.71312256025,
+      "std_ms": 2.8668501665718864,
+      "min_ms": 26090.79756400024,
+      "max_ms": 26103.992323000057
+    },
+    "context_setup_s": 1.2105421729993395,
+    "encoded_slots": 4096
+  },
+  "hyperparams": {
+    "samples": 5,
+    "repeats": 5,
+    "warmup": 3,
+    "seed": 74
+  }
+}

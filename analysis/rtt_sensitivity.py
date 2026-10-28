@@ -23,6 +23,7 @@ from __future__ import annotations
 import argparse
 import csv
 import json
+import statistics
 import subprocess
 from datetime import datetime, timezone
 from pathlib import Path
@@ -44,6 +45,17 @@ BW_GRID = [10.0, 50.0, 100.0]
 # 这两个常数在 main() 里会被实测值覆盖（§6.3 的 550–650 KB 是紧凑口径，实测是 RNS 编码）。
 S_HYBRID_PER_LAYER_KB = 600.0
 T_SERVER_HYBRID_MS = 0.0
+
+SEEDS = (73, 74, 75, 76, 77)
+
+# E2 采样期间有评测进程并发的种子：T_enc / T_server 被放大，不能与空载种子并表
+# （docs/实验数据审计.md §5.3）。MNIST 的 5 个种子一致（4106.7 / 3993.8 / 4061.5 /
+# 4044.0 / 4101.1 ms），无需剔除；CIFAR-10 与 UCI-HAR 的 seed73 是 5 个评测进程并发时
+# 测的，T_enc 约 2.5×、T_server 约 2×，必须剔除，否则 E3 曲线会整体抬高。
+EXCLUDED_SEEDS = {
+    "cifar10": {73: "并发污染：T_enc 9.46 vs 3.63 ms、T_server 34.5 vs 15.5 s（审计 §5.3）"},
+    "uci_har": {73: "并发污染：T_enc 9.34 vs 3.64 ms、T_server 25.2 vs 12.5 s（审计 §5.3）"},
+}
 
 FALLBACK = {
     "mnist": dict(T_client=12.8, T_enc=5.484, T_dec=1.701, T_server=574.775,
@@ -98,26 +110,66 @@ def load_hybrid_cost(root: Path) -> dict:
 
 
 def load_measured(root: Path, dataset: str) -> dict:
-    """E2 实测常数：优先论文主实现（litepi_seal，SEAL 4.x），回退 TenSEAL naive 基线。"""
-    cands = [root / "results" / "raw_results" / "E2" / dataset / tag / f"seed{s}.json"
-             for tag in ("litepi_seal", "he_only") for s in (73, 74, 75, 76, 77)]
-    path = _first_existing(cands)
-    if path is None:
-        return dict(FALLBACK[dataset], source="fallback", backend="none")
-    d = json.loads(path.read_text(encoding="utf-8"))
-    cm, co, rf = d["client_metrics"], d["communication"], d["reference"]
-    t_client = (cm["T_encode_enc_total"]["mean_ms"] + cm["T_dec"]["mean_ms"]
-                + cm["T_post"]["mean_ms"])
-    return dict(
-        T_client=t_client,
-        T_enc=cm["T_enc"]["mean_ms"],
-        T_dec=cm["T_dec"]["mean_ms"],
-        T_server=rf["T_server"]["mean_ms"],
-        S_up=co["S_up_bytes"]["mean_bytes"],
-        S_down=co["S_down_bytes"]["mean_bytes"],
-        source=str(path.relative_to(root)),
-        backend=d.get("backend", "?"),
+    """E2 实测常数：论文主实现 litepi_seal（SEAL 4.1.2），按 seed73–77 聚合 mean±std。
+
+    逐种子先算 T_client = T_encode+enc + T_dec + T_post，再对种子求均值（分项缺失时
+    "先平均再相加"会失真）。并发污染的种子按 EXCLUDED_SEEDS 剔除并记入 excluded，
+    JSON 里保留剔除理由，保证可复核、可回溯。
+    """
+    ex = EXCLUDED_SEEDS.get(dataset, {})
+    recs, excluded, source_tag = [], [], None
+    for tag in ("litepi_seal", "he_only"):
+        cand = []
+        for s in SEEDS:
+            path = root / "results" / "raw_results" / "E2" / dataset / tag / f"seed{s}.json"
+            if not path.exists():
+                continue
+            if s in ex:
+                excluded.append(dict(seed=s, path=str(path.relative_to(root)), reason=ex[s]))
+                continue
+            d = json.loads(path.read_text(encoding="utf-8"))
+            cm, co, rf = d["client_metrics"], d["communication"], d["reference"]
+            cand.append(dict(
+                seed=s,
+                T_client=float(cm["T_encode_enc_total"]["mean_ms"]) + float(cm["T_dec"]["mean_ms"])
+                         + float(cm["T_post"]["mean_ms"]),
+                T_enc=float(cm["T_enc"]["mean_ms"]),
+                T_dec=float(cm["T_dec"]["mean_ms"]),
+                T_server=float(rf["T_server"]["mean_ms"]),
+                S_up=float(co["S_up_bytes"]["mean_bytes"]),
+                S_down=float(co["S_down_bytes"]["mean_bytes"]),
+                backend=d.get("backend", "?"),
+                file=str(path.relative_to(root)),
+            ))
+        if cand:
+            recs, source_tag = cand, tag
+            break
+
+    if not recs:
+        return dict(FALLBACK[dataset], source="fallback", backend="none",
+                    n_seeds=0, seeds=[], excluded=excluded, std={})
+
+    def agg(key):
+        vals = [r[key] for r in recs]
+        mean = sum(vals) / len(vals)
+        std = statistics.stdev(vals) if len(vals) > 1 else 0.0
+        return mean, std
+
+    out = {}
+    std = {}
+    for k in ("T_client", "T_enc", "T_dec", "T_server", "S_up", "S_down"):
+        out[k], std[k] = agg(k)
+    out.update(
+        std=std,
+        n_seeds=len(recs),
+        seeds=[r["seed"] for r in recs],
+        excluded=excluded,
+        source="%s/seed{%s}（%d seeds, mean±std）"
+               % (source_tag, ",".join(str(r["seed"]) for r in recs), len(recs)),
+        files=[r["file"] for r in recs],
+        backend=recs[0]["backend"],
     )
+    return out
 
 
 def e2e_ms(m: dict, k_h: int, rtt_ms: float, bw_mbps: float) -> float:
@@ -162,12 +214,19 @@ def main() -> None:
     all_rows = []
     adaptive_rows = []
     curves = {}
+    measured = {ds: load_measured(root, ds) for ds in datasets}
     for ds in datasets:
-        m = load_measured(root, ds)
+        m = measured[ds]
         curves[ds] = {}
         print("")
-        print("### %s   (T_client=%.1f ms, T_server=%.0f ms, backend=%s, src=%s)"
-              % (ds, m["T_client"], m["T_server"], m.get("backend", "?"), m["source"]))
+        print("### %s   (T_client=%.2f±%.2f ms, T_server=%.0f±%.0f ms, n=%d seeds, backend=%s)"
+              % (ds, m["T_client"], m["std"].get("T_client", 0.0),
+                 m["T_server"], m["std"].get("T_server", 0.0),
+                 m.get("n_seeds", 0), m.get("backend", "?")))
+        print("    src: %s" % m["source"])
+        if m.get("excluded"):
+            print("    excluded: " + "; ".join("seed%d (%s)" % (e["seed"], e["reason"])
+                                               for e in m["excluded"]))
         head = "%9s" % "RTT (ms)" + "".join("%20s" % name for name, _ in SCHEDULES) + "%16s" % "allH - HE"
         print(head)
         for rtt in RTT_GRID_MS:
@@ -212,7 +271,8 @@ def main() -> None:
     if not args.no_save:
         out_dir.mkdir(parents=True, exist_ok=True)
         payload = {
-            "exp_id": "E3", "dataset": "all", "method": "rtt_scan", "seed": 73,
+            "exp_id": "E3", "dataset": "all", "method": "rtt_scan", "seed": None,
+            "seed_note": "E3 是确定性解析模型，无随机种子；输入为 E2 的 seed73–77 聚合值",
             "timestamp_utc": datetime.now(timezone.utc).isoformat(timespec="seconds"),
             "git_sha": _git_sha(root),
             "model": "T_e2e = T_client(s) + T_server(s) + (2+K_h)*RTT + bytes(s)/BW",
@@ -222,16 +282,20 @@ def main() -> None:
             "s_hybrid_per_layer_kb": S_HYBRID_PER_LAYER_KB,
             "t_server_hybrid_ms": T_SERVER_HYBRID_MS,
             "hybrid_cost_source": cost["source"],
-            "measured_sources": {ds: load_measured(root, ds)["source"] for ds in datasets},
+            "measured_inputs": {ds: {k: measured[ds].get(k) for k in
+                                     ("source", "n_seeds", "seeds", "excluded", "backend", "std")}
+                                for ds in datasets},
+            "measured_sources": {ds: measured[ds]["source"] for ds in datasets},
             "note": "per-hybrid-layer bytes from E4 ciphertext ladder (L4 down + L7 fresh up + 2KB OT); "
-                    "per-layer server MPC time from E1 s=11; r_h=1 per protocol §7.1",
+                    "per-layer server MPC time from E1 s=11; r_h=1 per protocol §7.1. "
+                    "解析模型换算值，不是 netem 端到端实测（后者需 tc qdisc + 两机跑批）",
             "delphi_baseline": "【待补】Delphi 复现版未就绪（实验方案 W5–6 关键路径），本表只含 LitePI 三个配置点",
             "rows": all_rows,
             "adaptive": adaptive_rows,
         }
-        (out_dir / "seed73.json").write_text(
+        (out_dir / "rtt_scan.json").write_text(
             json.dumps(payload, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
-        with (out_dir / "seed73.csv").open("w", newline="", encoding="utf-8") as fh:
+        with (out_dir / "rtt_scan.csv").open("w", newline="", encoding="utf-8") as fh:
             writer = csv.DictWriter(
                 fh, fieldnames=["dataset", "rtt_ms", "bandwidth_mbps", "schedule", "K_h",
                                 "end_to_end_ms"])
@@ -246,10 +310,13 @@ def main() -> None:
 
     # ---- marginal cost of one extra hybrid layer over a (RTT, BW) grid ----
     bw_grid = [10.0, 50.0, 100.0]
-    ref = load_measured(root, datasets[0])
+    # 边际代价里的客户端加解密取三数据集均值（剔除并发种子后三者都在 4.0 ms 上下）。
+    ref = dict(T_dec=statistics.mean(measured[ds]["T_dec"] for ds in datasets),
+               T_enc=statistics.mean(measured[ds]["T_enc"] for ds in datasets))
     print("")
     print("每多插一层 hybrid 的边际代价 (ms) = RTT + 一次解密再加密 + %.0f KB/带宽"
           % S_HYBRID_PER_LAYER_KB)
+    print("  (解密+再加密 = %.2f ms，三数据集均值)" % (ref["T_dec"] + ref["T_enc"]))
     print("%9s" % "RTT (ms)" + "".join("%14s" % ("%g Mbps" % bw) for bw in bw_grid))
     marg_rows = []
     for rtt in RTT_GRID_MS:
@@ -272,9 +339,12 @@ def main() -> None:
                 ys = [curves[ds][rtt][idx] for rtt in RTT_GRID_MS]
                 ax.plot(RTT_GRID_MS, ys, marker="o", label=name)
             ax.set_title(ds)
-            ax.set_xlabel("RTT (ms)")
+            ax.set_xscale("log")
+            ax.set_xticks(RTT_GRID_MS)
+            ax.set_xticklabels([str(r) for r in RTT_GRID_MS])
+            ax.set_xlabel("RTT (ms, log scale)")
             ax.set_ylabel("end-to-end latency (ms)")
-            ax.grid(alpha=0.3)
+            ax.grid(alpha=0.3, which="both")
             ax.legend(fontsize=8)
         fig.tight_layout()
         if not args.no_save:
@@ -288,9 +358,12 @@ def main() -> None:
             ys = [marginal_cost_ms(ref, rtt, bw) for rtt in RTT_GRID_MS]
             ax2.plot(RTT_GRID_MS, ys, marker="o", label="%g Mbps" % bw)
         ax2.set_title("marginal cost of one extra hybrid layer")
-        ax2.set_xlabel("RTT (ms)")
+        ax2.set_xscale("log")
+        ax2.set_xticks(RTT_GRID_MS)
+        ax2.set_xticklabels([str(r) for r in RTT_GRID_MS])
+        ax2.set_xlabel("RTT (ms, log scale)")
         ax2.set_ylabel("added latency (ms)")
-        ax2.grid(alpha=0.3)
+        ax2.grid(alpha=0.3, which="both")
         ax2.legend(fontsize=9)
         fig2.tight_layout()
         if not args.no_save:

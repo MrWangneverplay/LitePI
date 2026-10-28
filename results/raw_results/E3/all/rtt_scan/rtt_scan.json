@@ -1,0 +1,1996 @@
+{
+  "exp_id": "E3",
+  "dataset": "all",
+  "method": "rtt_scan",
+  "seed": null,
+  "seed_note": "E3 是确定性解析模型，无随机种子；输入为 E2 的 seed73–77 聚合值",
+  "timestamp_utc": "2026-10-28T07:59:22+00:00",
+  "git_sha": "88acee282e34",
+  "model": "T_e2e = T_client(s) + T_server(s) + (2+K_h)*RTT + bytes(s)/BW",
+  "bandwidth_mbps": 10.0,
+  "bandwidth_grid_mbps": [
+    10.0,
+    50.0,
+    100.0
+  ],
+  "slack_for_adaptive": 0.05,
+  "s_hybrid_per_layer_kb": 1410.236328125,
+  "t_server_hybrid_ms": 48.6045,
+  "hybrid_cost_source": "results\\raw_results\\E4\\all\\comm_bytes\\seed73.json + results\\raw_results\\E1\\mnist\\hybrid_s11_seal\\seed73.json",
+  "measured_inputs": {
+    "mnist": {
+      "source": "litepi_seal/seed{73,74,75,76,77}（5 seeds, mean±std）",
+      "n_seeds": 5,
+      "seeds": [
+        73,
+        74,
+        75,
+        76,
+        77
+      ],
+      "excluded": [],
+      "backend": "seal",
+      "std": {
+        "T_client": 0.07111430174705523,
+        "T_enc": 0.062199032770015907,
+        "T_dec": 0.012143157567220533,
+        "T_server": 46.09185437015808,
+        "S_up": 0.0,
+        "S_down": 0.0
+      }
+    },
+    "cifar10": {
+      "source": "litepi_seal/seed{74,75,76,77}（4 seeds, mean±std）",
+      "n_seeds": 4,
+      "seeds": [
+        74,
+        75,
+        76,
+        77
+      ],
+      "excluded": [
+        {
+          "seed": 73,
+          "path": "results\\raw_results\\E2\\cifar10\\litepi_seal\\seed73.json",
+          "reason": "并发污染：T_enc 9.46 vs 3.63 ms、T_server 34.5 vs 15.5 s（审计 §5.3）"
+        }
+      ],
+      "backend": "seal",
+      "std": {
+        "T_client": 0.01887254122742219,
+        "T_enc": 0.010401033141777125,
+        "T_dec": 0.0006646129236631536,
+        "T_server": 50.78365276844796,
+        "S_up": 0.0,
+        "S_down": 0.0
+      }
+    },
+    "uci_har": {
+      "source": "litepi_seal/seed{74,75,76,77}（4 seeds, mean±std）",
+      "n_seeds": 4,
+      "seeds": [
+        74,
+        75,
+        76,
+        77
+      ],
+      "excluded": [
+        {
+          "seed": 73,
+          "path": "results\\raw_results\\E2\\uci_har\\litepi_seal\\seed73.json",
+          "reason": "并发污染：T_enc 9.34 vs 3.64 ms、T_server 25.2 vs 12.5 s（审计 §5.3）"
+        }
+      ],
+      "backend": "seal",
+      "std": {
+        "T_client": 0.012104970731800526,
+        "T_enc": 0.024309517335617464,
+        "T_dec": 0.0019388941424475766,
+        "T_server": 46.2915928989906,
+        "S_up": 0.0,
+        "S_down": 0.0
+      }
+    }
+  },
+  "measured_sources": {
+    "mnist": "litepi_seal/seed{73,74,75,76,77}（5 seeds, mean±std）",
+    "cifar10": "litepi_seal/seed{74,75,76,77}（4 seeds, mean±std）",
+    "uci_har": "litepi_seal/seed{74,75,76,77}（4 seeds, mean±std）"
+  },
+  "note": "per-hybrid-layer bytes from E4 ciphertext ladder (L4 down + L7 fresh up + 2KB OT); per-layer server MPC time from E1 s=11; r_h=1 per protocol §7.1. 解析模型换算值，不是 netem 端到端实测（后者需 tc qdisc + 两机跑批）",
+  "delphi_baseline": "【待补】Delphi 复现版未就绪（实验方案 W5–6 关键路径），本表只含 LitePI 三个配置点",
+  "rows": [
+    {
+      "dataset": "mnist",
+      "rtt_ms": 1,
+      "bandwidth_mbps": 10.0,
+      "schedule": "s=00 (HE-only)",
+      "K_h": 0,
+      "end_to_end_ms": 5011.538
+    },
+    {
+      "dataset": "mnist",
+      "rtt_ms": 1,
+      "bandwidth_mbps": 10.0,
+      "schedule": "s=10 (1 hybrid)",
+      "K_h": 1,
+      "end_to_end_ms": 6220.529
+    },
+    {
+      "dataset": "mnist",
+      "rtt_ms": 1,
+      "bandwidth_mbps": 10.0,
+      "schedule": "s=11 (all-hybrid)",
+      "K_h": 2,
+      "end_to_end_ms": 7429.52
+    },
+    {
+      "dataset": "mnist",
+      "rtt_ms": 1,
+      "bandwidth_mbps": 50.0,
+      "schedule": "s=00 (HE-only)",
+      "K_h": 0,
+      "end_to_end_ms": 4256.408
+    },
+    {
+      "dataset": "mnist",
+      "rtt_ms": 1,
+      "bandwidth_mbps": 50.0,
+      "schedule": "s=10 (1 hybrid)",
+      "K_h": 1,
+      "end_to_end_ms": 4541.187
+    },
+    {
+      "dataset": "mnist",
+      "rtt_ms": 1,
+      "bandwidth_mbps": 50.0,
+      "schedule": "s=11 (all-hybrid)",
+      "K_h": 2,
+      "end_to_end_ms": 4825.966
+    },
+    {
+      "dataset": "mnist",
+      "rtt_ms": 1,
+      "bandwidth_mbps": 100.0,
+      "schedule": "s=00 (HE-only)",
+      "K_h": 0,
+      "end_to_end_ms": 4162.017
+    },
+    {
+      "dataset": "mnist",
+      "rtt_ms": 1,
+      "bandwidth_mbps": 100.0,
+      "schedule": "s=10 (1 hybrid)",
+      "K_h": 1,
+      "end_to_end_ms": 4331.269
+    },
+    {
+      "dataset": "mnist",
+      "rtt_ms": 1,
+      "bandwidth_mbps": 100.0,
+      "schedule": "s=11 (all-hybrid)",
+      "K_h": 2,
+      "end_to_end_ms": 4500.521
+    },
+    {
+      "dataset": "mnist",
+      "rtt_ms": 5,
+      "bandwidth_mbps": 10.0,
+      "schedule": "s=00 (HE-only)",
+      "K_h": 0,
+      "end_to_end_ms": 5019.538
+    },
+    {
+      "dataset": "mnist",
+      "rtt_ms": 5,
+      "bandwidth_mbps": 10.0,
+      "schedule": "s=10 (1 hybrid)",
+      "K_h": 1,
+      "end_to_end_ms": 6232.529
+    },
+    {
+      "dataset": "mnist",
+      "rtt_ms": 5,
+      "bandwidth_mbps": 10.0,
+      "schedule": "s=11 (all-hybrid)",
+      "K_h": 2,
+      "end_to_end_ms": 7445.52
+    },
+    {
+      "dataset": "mnist",
+      "rtt_ms": 5,
+      "bandwidth_mbps": 50.0,
+      "schedule": "s=00 (HE-only)",
+      "K_h": 0,
+      "end_to_end_ms": 4264.408
+    },
+    {
+      "dataset": "mnist",
+      "rtt_ms": 5,
+      "bandwidth_mbps": 50.0,
+      "schedule": "s=10 (1 hybrid)",
+      "K_h": 1,
+      "end_to_end_ms": 4553.187
+    },
+    {
+      "dataset": "mnist",
+      "rtt_ms": 5,
+      "bandwidth_mbps": 50.0,
+      "schedule": "s=11 (all-hybrid)",
+      "K_h": 2,
+      "end_to_end_ms": 4841.966
+    },
+    {
+      "dataset": "mnist",
+      "rtt_ms": 5,
+      "bandwidth_mbps": 100.0,
+      "schedule": "s=00 (HE-only)",
+      "K_h": 0,
+      "end_to_end_ms": 4170.017
+    },
+    {
+      "dataset": "mnist",
+      "rtt_ms": 5,
+      "bandwidth_mbps": 100.0,
+      "schedule": "s=10 (1 hybrid)",
+      "K_h": 1,
+      "end_to_end_ms": 4343.269
+    },
+    {
+      "dataset": "mnist",
+      "rtt_ms": 5,
+      "bandwidth_mbps": 100.0,
+      "schedule": "s=11 (all-hybrid)",
+      "K_h": 2,
+      "end_to_end_ms": 4516.521
+    },
+    {
+      "dataset": "mnist",
+      "rtt_ms": 20,
+      "bandwidth_mbps": 10.0,
+      "schedule": "s=00 (HE-only)",
+      "K_h": 0,
+      "end_to_end_ms": 5049.538
+    },
+    {
+      "dataset": "mnist",
+      "rtt_ms": 20,
+      "bandwidth_mbps": 10.0,
+      "schedule": "s=10 (1 hybrid)",
+      "K_h": 1,
+      "end_to_end_ms": 6277.529
+    },
+    {
+      "dataset": "mnist",
+      "rtt_ms": 20,
+      "bandwidth_mbps": 10.0,
+      "schedule": "s=11 (all-hybrid)",
+      "K_h": 2,
+      "end_to_end_ms": 7505.52
+    },
+    {
+      "dataset": "mnist",
+      "rtt_ms": 20,
+      "bandwidth_mbps": 50.0,
+      "schedule": "s=00 (HE-only)",
+      "K_h": 0,
+      "end_to_end_ms": 4294.408
+    },
+    {
+      "dataset": "mnist",
+      "rtt_ms": 20,
+      "bandwidth_mbps": 50.0,
+      "schedule": "s=10 (1 hybrid)",
+      "K_h": 1,
+      "end_to_end_ms": 4598.187
+    },
+    {
+      "dataset": "mnist",
+      "rtt_ms": 20,
+      "bandwidth_mbps": 50.0,
+      "schedule": "s=11 (all-hybrid)",
+      "K_h": 2,
+      "end_to_end_ms": 4901.966
+    },
+    {
+      "dataset": "mnist",
+      "rtt_ms": 20,
+      "bandwidth_mbps": 100.0,
+      "schedule": "s=00 (HE-only)",
+      "K_h": 0,
+      "end_to_end_ms": 4200.017
+    },
+    {
+      "dataset": "mnist",
+      "rtt_ms": 20,
+      "bandwidth_mbps": 100.0,
+      "schedule": "s=10 (1 hybrid)",
+      "K_h": 1,
+      "end_to_end_ms": 4388.269
+    },
+    {
+      "dataset": "mnist",
+      "rtt_ms": 20,
+      "bandwidth_mbps": 100.0,
+      "schedule": "s=11 (all-hybrid)",
+      "K_h": 2,
+      "end_to_end_ms": 4576.521
+    },
+    {
+      "dataset": "mnist",
+      "rtt_ms": 50,
+      "bandwidth_mbps": 10.0,
+      "schedule": "s=00 (HE-only)",
+      "K_h": 0,
+      "end_to_end_ms": 5109.538
+    },
+    {
+      "dataset": "mnist",
+      "rtt_ms": 50,
+      "bandwidth_mbps": 10.0,
+      "schedule": "s=10 (1 hybrid)",
+      "K_h": 1,
+      "end_to_end_ms": 6367.529
+    },
+    {
+      "dataset": "mnist",
+      "rtt_ms": 50,
+      "bandwidth_mbps": 10.0,
+      "schedule": "s=11 (all-hybrid)",
+      "K_h": 2,
+      "end_to_end_ms": 7625.52
+    },
+    {
+      "dataset": "mnist",
+      "rtt_ms": 50,
+      "bandwidth_mbps": 50.0,
+      "schedule": "s=00 (HE-only)",
+      "K_h": 0,
+      "end_to_end_ms": 4354.408
+    },
+    {
+      "dataset": "mnist",
+      "rtt_ms": 50,
+      "bandwidth_mbps": 50.0,
+      "schedule": "s=10 (1 hybrid)",
+      "K_h": 1,
+      "end_to_end_ms": 4688.187
+    },
+    {
+      "dataset": "mnist",
+      "rtt_ms": 50,
+      "bandwidth_mbps": 50.0,
+      "schedule": "s=11 (all-hybrid)",
+      "K_h": 2,
+      "end_to_end_ms": 5021.966
+    },
+    {
+      "dataset": "mnist",
+      "rtt_ms": 50,
+      "bandwidth_mbps": 100.0,
+      "schedule": "s=00 (HE-only)",
+      "K_h": 0,
+      "end_to_end_ms": 4260.017
+    },
+    {
+      "dataset": "mnist",
+      "rtt_ms": 50,
+      "bandwidth_mbps": 100.0,
+      "schedule": "s=10 (1 hybrid)",
+      "K_h": 1,
+      "end_to_end_ms": 4478.269
+    },
+    {
+      "dataset": "mnist",
+      "rtt_ms": 50,
+      "bandwidth_mbps": 100.0,
+      "schedule": "s=11 (all-hybrid)",
+      "K_h": 2,
+      "end_to_end_ms": 4696.521
+    },
+    {
+      "dataset": "mnist",
+      "rtt_ms": 100,
+      "bandwidth_mbps": 10.0,
+      "schedule": "s=00 (HE-only)",
+      "K_h": 0,
+      "end_to_end_ms": 5209.538
+    },
+    {
+      "dataset": "mnist",
+      "rtt_ms": 100,
+      "bandwidth_mbps": 10.0,
+      "schedule": "s=10 (1 hybrid)",
+      "K_h": 1,
+      "end_to_end_ms": 6517.529
+    },
+    {
+      "dataset": "mnist",
+      "rtt_ms": 100,
+      "bandwidth_mbps": 10.0,
+      "schedule": "s=11 (all-hybrid)",
+      "K_h": 2,
+      "end_to_end_ms": 7825.52
+    },
+    {
+      "dataset": "mnist",
+      "rtt_ms": 100,
+      "bandwidth_mbps": 50.0,
+      "schedule": "s=00 (HE-only)",
+      "K_h": 0,
+      "end_to_end_ms": 4454.408
+    },
+    {
+      "dataset": "mnist",
+      "rtt_ms": 100,
+      "bandwidth_mbps": 50.0,
+      "schedule": "s=10 (1 hybrid)",
+      "K_h": 1,
+      "end_to_end_ms": 4838.187
+    },
+    {
+      "dataset": "mnist",
+      "rtt_ms": 100,
+      "bandwidth_mbps": 50.0,
+      "schedule": "s=11 (all-hybrid)",
+      "K_h": 2,
+      "end_to_end_ms": 5221.966
+    },
+    {
+      "dataset": "mnist",
+      "rtt_ms": 100,
+      "bandwidth_mbps": 100.0,
+      "schedule": "s=00 (HE-only)",
+      "K_h": 0,
+      "end_to_end_ms": 4360.017
+    },
+    {
+      "dataset": "mnist",
+      "rtt_ms": 100,
+      "bandwidth_mbps": 100.0,
+      "schedule": "s=10 (1 hybrid)",
+      "K_h": 1,
+      "end_to_end_ms": 4628.269
+    },
+    {
+      "dataset": "mnist",
+      "rtt_ms": 100,
+      "bandwidth_mbps": 100.0,
+      "schedule": "s=11 (all-hybrid)",
+      "K_h": 2,
+      "end_to_end_ms": 4896.521
+    },
+    {
+      "dataset": "mnist",
+      "rtt_ms": 200,
+      "bandwidth_mbps": 10.0,
+      "schedule": "s=00 (HE-only)",
+      "K_h": 0,
+      "end_to_end_ms": 5409.538
+    },
+    {
+      "dataset": "mnist",
+      "rtt_ms": 200,
+      "bandwidth_mbps": 10.0,
+      "schedule": "s=10 (1 hybrid)",
+      "K_h": 1,
+      "end_to_end_ms": 6817.529
+    },
+    {
+      "dataset": "mnist",
+      "rtt_ms": 200,
+      "bandwidth_mbps": 10.0,
+      "schedule": "s=11 (all-hybrid)",
+      "K_h": 2,
+      "end_to_end_ms": 8225.52
+    },
+    {
+      "dataset": "mnist",
+      "rtt_ms": 200,
+      "bandwidth_mbps": 50.0,
+      "schedule": "s=00 (HE-only)",
+      "K_h": 0,
+      "end_to_end_ms": 4654.408
+    },
+    {
+      "dataset": "mnist",
+      "rtt_ms": 200,
+      "bandwidth_mbps": 50.0,
+      "schedule": "s=10 (1 hybrid)",
+      "K_h": 1,
+      "end_to_end_ms": 5138.187
+    },
+    {
+      "dataset": "mnist",
+      "rtt_ms": 200,
+      "bandwidth_mbps": 50.0,
+      "schedule": "s=11 (all-hybrid)",
+      "K_h": 2,
+      "end_to_end_ms": 5621.966
+    },
+    {
+      "dataset": "mnist",
+      "rtt_ms": 200,
+      "bandwidth_mbps": 100.0,
+      "schedule": "s=00 (HE-only)",
+      "K_h": 0,
+      "end_to_end_ms": 4560.017
+    },
+    {
+      "dataset": "mnist",
+      "rtt_ms": 200,
+      "bandwidth_mbps": 100.0,
+      "schedule": "s=10 (1 hybrid)",
+      "K_h": 1,
+      "end_to_end_ms": 4928.269
+    },
+    {
+      "dataset": "mnist",
+      "rtt_ms": 200,
+      "bandwidth_mbps": 100.0,
+      "schedule": "s=11 (all-hybrid)",
+      "K_h": 2,
+      "end_to_end_ms": 5296.521
+    },
+    {
+      "dataset": "cifar10",
+      "rtt_ms": 1,
+      "bandwidth_mbps": 10.0,
+      "schedule": "s=00 (HE-only)",
+      "K_h": 0,
+      "end_to_end_ms": 16467.609
+    },
+    {
+      "dataset": "cifar10",
+      "rtt_ms": 1,
+      "bandwidth_mbps": 10.0,
+      "schedule": "s=10 (1 hybrid)",
+      "K_h": 1,
+      "end_to_end_ms": 17676.466
+    },
+    {
+      "dataset": "cifar10",
+      "rtt_ms": 1,
+      "bandwidth_mbps": 10.0,
+      "schedule": "s=11 (all-hybrid)",
+      "K_h": 2,
+      "end_to_end_ms": 18885.323
+    },
+    {
+      "dataset": "cifar10",
+      "rtt_ms": 1,
+      "bandwidth_mbps": 50.0,
+      "schedule": "s=00 (HE-only)",
+      "K_h": 0,
+      "end_to_end_ms": 15712.479
+    },
+    {
+      "dataset": "cifar10",
+      "rtt_ms": 1,
+      "bandwidth_mbps": 50.0,
+      "schedule": "s=10 (1 hybrid)",
+      "K_h": 1,
+      "end_to_end_ms": 15997.124
+    },
+    {
+      "dataset": "cifar10",
+      "rtt_ms": 1,
+      "bandwidth_mbps": 50.0,
+      "schedule": "s=11 (all-hybrid)",
+      "K_h": 2,
+      "end_to_end_ms": 16281.768
+    },
+    {
+      "dataset": "cifar10",
+      "rtt_ms": 1,
+      "bandwidth_mbps": 100.0,
+      "schedule": "s=00 (HE-only)",
+      "K_h": 0,
+      "end_to_end_ms": 15618.088
+    },
+    {
+      "dataset": "cifar10",
+      "rtt_ms": 1,
+      "bandwidth_mbps": 100.0,
+      "schedule": "s=10 (1 hybrid)",
+      "K_h": 1,
+      "end_to_end_ms": 15787.206
+    },
+    {
+      "dataset": "cifar10",
+      "rtt_ms": 1,
+      "bandwidth_mbps": 100.0,
+      "schedule": "s=11 (all-hybrid)",
+      "K_h": 2,
+      "end_to_end_ms": 15956.324
+    },
+    {
+      "dataset": "cifar10",
+      "rtt_ms": 5,
+      "bandwidth_mbps": 10.0,
+      "schedule": "s=00 (HE-only)",
+      "K_h": 0,
+      "end_to_end_ms": 16475.609
+    },
+    {
+      "dataset": "cifar10",
+      "rtt_ms": 5,
+      "bandwidth_mbps": 10.0,
+      "schedule": "s=10 (1 hybrid)",
+      "K_h": 1,
+      "end_to_end_ms": 17688.466
+    },
+    {
+      "dataset": "cifar10",
+      "rtt_ms": 5,
+      "bandwidth_mbps": 10.0,
+      "schedule": "s=11 (all-hybrid)",
+      "K_h": 2,
+      "end_to_end_ms": 18901.323
+    },
+    {
+      "dataset": "cifar10",
+      "rtt_ms": 5,
+      "bandwidth_mbps": 50.0,
+      "schedule": "s=00 (HE-only)",
+      "K_h": 0,
+      "end_to_end_ms": 15720.479
+    },
+    {
+      "dataset": "cifar10",
+      "rtt_ms": 5,
+      "bandwidth_mbps": 50.0,
+      "schedule": "s=10 (1 hybrid)",
+      "K_h": 1,
+      "end_to_end_ms": 16009.124
+    },
+    {
+      "dataset": "cifar10",
+      "rtt_ms": 5,
+      "bandwidth_mbps": 50.0,
+      "schedule": "s=11 (all-hybrid)",
+      "K_h": 2,
+      "end_to_end_ms": 16297.768
+    },
+    {
+      "dataset": "cifar10",
+      "rtt_ms": 5,
+      "bandwidth_mbps": 100.0,
+      "schedule": "s=00 (HE-only)",
+      "K_h": 0,
+      "end_to_end_ms": 15626.088
+    },
+    {
+      "dataset": "cifar10",
+      "rtt_ms": 5,
+      "bandwidth_mbps": 100.0,
+      "schedule": "s=10 (1 hybrid)",
+      "K_h": 1,
+      "end_to_end_ms": 15799.206
+    },
+    {
+      "dataset": "cifar10",
+      "rtt_ms": 5,
+      "bandwidth_mbps": 100.0,
+      "schedule": "s=11 (all-hybrid)",
+      "K_h": 2,
+      "end_to_end_ms": 15972.324
+    },
+    {
+      "dataset": "cifar10",
+      "rtt_ms": 20,
+      "bandwidth_mbps": 10.0,
+      "schedule": "s=00 (HE-only)",
+      "K_h": 0,
+      "end_to_end_ms": 16505.609
+    },
+    {
+      "dataset": "cifar10",
+      "rtt_ms": 20,
+      "bandwidth_mbps": 10.0,
+      "schedule": "s=10 (1 hybrid)",
+      "K_h": 1,
+      "end_to_end_ms": 17733.466
+    },
+    {
+      "dataset": "cifar10",
+      "rtt_ms": 20,
+      "bandwidth_mbps": 10.0,
+      "schedule": "s=11 (all-hybrid)",
+      "K_h": 2,
+      "end_to_end_ms": 18961.323
+    },
+    {
+      "dataset": "cifar10",
+      "rtt_ms": 20,
+      "bandwidth_mbps": 50.0,
+      "schedule": "s=00 (HE-only)",
+      "K_h": 0,
+      "end_to_end_ms": 15750.479
+    },
+    {
+      "dataset": "cifar10",
+      "rtt_ms": 20,
+      "bandwidth_mbps": 50.0,
+      "schedule": "s=10 (1 hybrid)",
+      "K_h": 1,
+      "end_to_end_ms": 16054.124
+    },
+    {
+      "dataset": "cifar10",
+      "rtt_ms": 20,
+      "bandwidth_mbps": 50.0,
+      "schedule": "s=11 (all-hybrid)",
+      "K_h": 2,
+      "end_to_end_ms": 16357.768
+    },
+    {
+      "dataset": "cifar10",
+      "rtt_ms": 20,
+      "bandwidth_mbps": 100.0,
+      "schedule": "s=00 (HE-only)",
+      "K_h": 0,
+      "end_to_end_ms": 15656.088
+    },
+    {
+      "dataset": "cifar10",
+      "rtt_ms": 20,
+      "bandwidth_mbps": 100.0,
+      "schedule": "s=10 (1 hybrid)",
+      "K_h": 1,
+      "end_to_end_ms": 15844.206
+    },
+    {
+      "dataset": "cifar10",
+      "rtt_ms": 20,
+      "bandwidth_mbps": 100.0,
+      "schedule": "s=11 (all-hybrid)",
+      "K_h": 2,
+      "end_to_end_ms": 16032.324
+    },
+    {
+      "dataset": "cifar10",
+      "rtt_ms": 50,
+      "bandwidth_mbps": 10.0,
+      "schedule": "s=00 (HE-only)",
+      "K_h": 0,
+      "end_to_end_ms": 16565.609
+    },
+    {
+      "dataset": "cifar10",
+      "rtt_ms": 50,
+      "bandwidth_mbps": 10.0,
+      "schedule": "s=10 (1 hybrid)",
+      "K_h": 1,
+      "end_to_end_ms": 17823.466
+    },
+    {
+      "dataset": "cifar10",
+      "rtt_ms": 50,
+      "bandwidth_mbps": 10.0,
+      "schedule": "s=11 (all-hybrid)",
+      "K_h": 2,
+      "end_to_end_ms": 19081.323
+    },
+    {
+      "dataset": "cifar10",
+      "rtt_ms": 50,
+      "bandwidth_mbps": 50.0,
+      "schedule": "s=00 (HE-only)",
+      "K_h": 0,
+      "end_to_end_ms": 15810.479
+    },
+    {
+      "dataset": "cifar10",
+      "rtt_ms": 50,
+      "bandwidth_mbps": 50.0,
+      "schedule": "s=10 (1 hybrid)",
+      "K_h": 1,
+      "end_to_end_ms": 16144.124
+    },
+    {
+      "dataset": "cifar10",
+      "rtt_ms": 50,
+      "bandwidth_mbps": 50.0,
+      "schedule": "s=11 (all-hybrid)",
+      "K_h": 2,
+      "end_to_end_ms": 16477.768
+    },
+    {
+      "dataset": "cifar10",
+      "rtt_ms": 50,
+      "bandwidth_mbps": 100.0,
+      "schedule": "s=00 (HE-only)",
+      "K_h": 0,
+      "end_to_end_ms": 15716.088
+    },
+    {
+      "dataset": "cifar10",
+      "rtt_ms": 50,
+      "bandwidth_mbps": 100.0,
+      "schedule": "s=10 (1 hybrid)",
+      "K_h": 1,
+      "end_to_end_ms": 15934.206
+    },
+    {
+      "dataset": "cifar10",
+      "rtt_ms": 50,
+      "bandwidth_mbps": 100.0,
+      "schedule": "s=11 (all-hybrid)",
+      "K_h": 2,
+      "end_to_end_ms": 16152.324
+    },
+    {
+      "dataset": "cifar10",
+      "rtt_ms": 100,
+      "bandwidth_mbps": 10.0,
+      "schedule": "s=00 (HE-only)",
+      "K_h": 0,
+      "end_to_end_ms": 16665.609
+    },
+    {
+      "dataset": "cifar10",
+      "rtt_ms": 100,
+      "bandwidth_mbps": 10.0,
+      "schedule": "s=10 (1 hybrid)",
+      "K_h": 1,
+      "end_to_end_ms": 17973.466
+    },
+    {
+      "dataset": "cifar10",
+      "rtt_ms": 100,
+      "bandwidth_mbps": 10.0,
+      "schedule": "s=11 (all-hybrid)",
+      "K_h": 2,
+      "end_to_end_ms": 19281.323
+    },
+    {
+      "dataset": "cifar10",
+      "rtt_ms": 100,
+      "bandwidth_mbps": 50.0,
+      "schedule": "s=00 (HE-only)",
+      "K_h": 0,
+      "end_to_end_ms": 15910.479
+    },
+    {
+      "dataset": "cifar10",
+      "rtt_ms": 100,
+      "bandwidth_mbps": 50.0,
+      "schedule": "s=10 (1 hybrid)",
+      "K_h": 1,
+      "end_to_end_ms": 16294.124
+    },
+    {
+      "dataset": "cifar10",
+      "rtt_ms": 100,
+      "bandwidth_mbps": 50.0,
+      "schedule": "s=11 (all-hybrid)",
+      "K_h": 2,
+      "end_to_end_ms": 16677.768
+    },
+    {
+      "dataset": "cifar10",
+      "rtt_ms": 100,
+      "bandwidth_mbps": 100.0,
+      "schedule": "s=00 (HE-only)",
+      "K_h": 0,
+      "end_to_end_ms": 15816.088
+    },
+    {
+      "dataset": "cifar10",
+      "rtt_ms": 100,
+      "bandwidth_mbps": 100.0,
+      "schedule": "s=10 (1 hybrid)",
+      "K_h": 1,
+      "end_to_end_ms": 16084.206
+    },
+    {
+      "dataset": "cifar10",
+      "rtt_ms": 100,
+      "bandwidth_mbps": 100.0,
+      "schedule": "s=11 (all-hybrid)",
+      "K_h": 2,
+      "end_to_end_ms": 16352.324
+    },
+    {
+      "dataset": "cifar10",
+      "rtt_ms": 200,
+      "bandwidth_mbps": 10.0,
+      "schedule": "s=00 (HE-only)",
+      "K_h": 0,
+      "end_to_end_ms": 16865.609
+    },
+    {
+      "dataset": "cifar10",
+      "rtt_ms": 200,
+      "bandwidth_mbps": 10.0,
+      "schedule": "s=10 (1 hybrid)",
+      "K_h": 1,
+      "end_to_end_ms": 18273.466
+    },
+    {
+      "dataset": "cifar10",
+      "rtt_ms": 200,
+      "bandwidth_mbps": 10.0,
+      "schedule": "s=11 (all-hybrid)",
+      "K_h": 2,
+      "end_to_end_ms": 19681.323
+    },
+    {
+      "dataset": "cifar10",
+      "rtt_ms": 200,
+      "bandwidth_mbps": 50.0,
+      "schedule": "s=00 (HE-only)",
+      "K_h": 0,
+      "end_to_end_ms": 16110.479
+    },
+    {
+      "dataset": "cifar10",
+      "rtt_ms": 200,
+      "bandwidth_mbps": 50.0,
+      "schedule": "s=10 (1 hybrid)",
+      "K_h": 1,
+      "end_to_end_ms": 16594.124
+    },
+    {
+      "dataset": "cifar10",
+      "rtt_ms": 200,
+      "bandwidth_mbps": 50.0,
+      "schedule": "s=11 (all-hybrid)",
+      "K_h": 2,
+      "end_to_end_ms": 17077.768
+    },
+    {
+      "dataset": "cifar10",
+      "rtt_ms": 200,
+      "bandwidth_mbps": 100.0,
+      "schedule": "s=00 (HE-only)",
+      "K_h": 0,
+      "end_to_end_ms": 16016.088
+    },
+    {
+      "dataset": "cifar10",
+      "rtt_ms": 200,
+      "bandwidth_mbps": 100.0,
+      "schedule": "s=10 (1 hybrid)",
+      "K_h": 1,
+      "end_to_end_ms": 16384.206
+    },
+    {
+      "dataset": "cifar10",
+      "rtt_ms": 200,
+      "bandwidth_mbps": 100.0,
+      "schedule": "s=11 (all-hybrid)",
+      "K_h": 2,
+      "end_to_end_ms": 16752.324
+    },
+    {
+      "dataset": "uci_har",
+      "rtt_ms": 1,
+      "bandwidth_mbps": 10.0,
+      "schedule": "s=00 (HE-only)",
+      "K_h": 0,
+      "end_to_end_ms": 13455.364
+    },
+    {
+      "dataset": "uci_har",
+      "rtt_ms": 1,
+      "bandwidth_mbps": 10.0,
+      "schedule": "s=10 (1 hybrid)",
+      "K_h": 1,
+      "end_to_end_ms": 14664.196
+    },
+    {
+      "dataset": "uci_har",
+      "rtt_ms": 1,
+      "bandwidth_mbps": 10.0,
+      "schedule": "s=11 (all-hybrid)",
+      "K_h": 2,
+      "end_to_end_ms": 15873.027
+    },
+    {
+      "dataset": "uci_har",
+      "rtt_ms": 1,
+      "bandwidth_mbps": 50.0,
+      "schedule": "s=00 (HE-only)",
+      "K_h": 0,
+      "end_to_end_ms": 12700.234
+    },
+    {
+      "dataset": "uci_har",
+      "rtt_ms": 1,
+      "bandwidth_mbps": 50.0,
+      "schedule": "s=10 (1 hybrid)",
+      "K_h": 1,
+      "end_to_end_ms": 12984.853
+    },
+    {
+      "dataset": "uci_har",
+      "rtt_ms": 1,
+      "bandwidth_mbps": 50.0,
+      "schedule": "s=11 (all-hybrid)",
+      "K_h": 2,
+      "end_to_end_ms": 13269.473
+    },
+    {
+      "dataset": "uci_har",
+      "rtt_ms": 1,
+      "bandwidth_mbps": 100.0,
+      "schedule": "s=00 (HE-only)",
+      "K_h": 0,
+      "end_to_end_ms": 12605.843
+    },
+    {
+      "dataset": "uci_har",
+      "rtt_ms": 1,
+      "bandwidth_mbps": 100.0,
+      "schedule": "s=10 (1 hybrid)",
+      "K_h": 1,
+      "end_to_end_ms": 12774.936
+    },
+    {
+      "dataset": "uci_har",
+      "rtt_ms": 1,
+      "bandwidth_mbps": 100.0,
+      "schedule": "s=11 (all-hybrid)",
+      "K_h": 2,
+      "end_to_end_ms": 12944.028
+    },
+    {
+      "dataset": "uci_har",
+      "rtt_ms": 5,
+      "bandwidth_mbps": 10.0,
+      "schedule": "s=00 (HE-only)",
+      "K_h": 0,
+      "end_to_end_ms": 13463.364
+    },
+    {
+      "dataset": "uci_har",
+      "rtt_ms": 5,
+      "bandwidth_mbps": 10.0,
+      "schedule": "s=10 (1 hybrid)",
+      "K_h": 1,
+      "end_to_end_ms": 14676.196
+    },
+    {
+      "dataset": "uci_har",
+      "rtt_ms": 5,
+      "bandwidth_mbps": 10.0,
+      "schedule": "s=11 (all-hybrid)",
+      "K_h": 2,
+      "end_to_end_ms": 15889.027
+    },
+    {
+      "dataset": "uci_har",
+      "rtt_ms": 5,
+      "bandwidth_mbps": 50.0,
+      "schedule": "s=00 (HE-only)",
+      "K_h": 0,
+      "end_to_end_ms": 12708.234
+    },
+    {
+      "dataset": "uci_har",
+      "rtt_ms": 5,
+      "bandwidth_mbps": 50.0,
+      "schedule": "s=10 (1 hybrid)",
+      "K_h": 1,
+      "end_to_end_ms": 12996.853
+    },
+    {
+      "dataset": "uci_har",
+      "rtt_ms": 5,
+      "bandwidth_mbps": 50.0,
+      "schedule": "s=11 (all-hybrid)",
+      "K_h": 2,
+      "end_to_end_ms": 13285.473
+    },
+    {
+      "dataset": "uci_har",
+      "rtt_ms": 5,
+      "bandwidth_mbps": 100.0,
+      "schedule": "s=00 (HE-only)",
+      "K_h": 0,
+      "end_to_end_ms": 12613.843
+    },
+    {
+      "dataset": "uci_har",
+      "rtt_ms": 5,
+      "bandwidth_mbps": 100.0,
+      "schedule": "s=10 (1 hybrid)",
+      "K_h": 1,
+      "end_to_end_ms": 12786.936
+    },
+    {
+      "dataset": "uci_har",
+      "rtt_ms": 5,
+      "bandwidth_mbps": 100.0,
+      "schedule": "s=11 (all-hybrid)",
+      "K_h": 2,
+      "end_to_end_ms": 12960.028
+    },
+    {
+      "dataset": "uci_har",
+      "rtt_ms": 20,
+      "bandwidth_mbps": 10.0,
+      "schedule": "s=00 (HE-only)",
+      "K_h": 0,
+      "end_to_end_ms": 13493.364
+    },
+    {
+      "dataset": "uci_har",
+      "rtt_ms": 20,
+      "bandwidth_mbps": 10.0,
+      "schedule": "s=10 (1 hybrid)",
+      "K_h": 1,
+      "end_to_end_ms": 14721.196
+    },
+    {
+      "dataset": "uci_har",
+      "rtt_ms": 20,
+      "bandwidth_mbps": 10.0,
+      "schedule": "s=11 (all-hybrid)",
+      "K_h": 2,
+      "end_to_end_ms": 15949.027
+    },
+    {
+      "dataset": "uci_har",
+      "rtt_ms": 20,
+      "bandwidth_mbps": 50.0,
+      "schedule": "s=00 (HE-only)",
+      "K_h": 0,
+      "end_to_end_ms": 12738.234
+    },
+    {
+      "dataset": "uci_har",
+      "rtt_ms": 20,
+      "bandwidth_mbps": 50.0,
+      "schedule": "s=10 (1 hybrid)",
+      "K_h": 1,
+      "end_to_end_ms": 13041.853
+    },
+    {
+      "dataset": "uci_har",
+      "rtt_ms": 20,
+      "bandwidth_mbps": 50.0,
+      "schedule": "s=11 (all-hybrid)",
+      "K_h": 2,
+      "end_to_end_ms": 13345.473
+    },
+    {
+      "dataset": "uci_har",
+      "rtt_ms": 20,
+      "bandwidth_mbps": 100.0,
+      "schedule": "s=00 (HE-only)",
+      "K_h": 0,
+      "end_to_end_ms": 12643.843
+    },
+    {
+      "dataset": "uci_har",
+      "rtt_ms": 20,
+      "bandwidth_mbps": 100.0,
+      "schedule": "s=10 (1 hybrid)",
+      "K_h": 1,
+      "end_to_end_ms": 12831.936
+    },
+    {
+      "dataset": "uci_har",
+      "rtt_ms": 20,
+      "bandwidth_mbps": 100.0,
+      "schedule": "s=11 (all-hybrid)",
+      "K_h": 2,
+      "end_to_end_ms": 13020.028
+    },
+    {
+      "dataset": "uci_har",
+      "rtt_ms": 50,
+      "bandwidth_mbps": 10.0,
+      "schedule": "s=00 (HE-only)",
+      "K_h": 0,
+      "end_to_end_ms": 13553.364
+    },
+    {
+      "dataset": "uci_har",
+      "rtt_ms": 50,
+      "bandwidth_mbps": 10.0,
+      "schedule": "s=10 (1 hybrid)",
+      "K_h": 1,
+      "end_to_end_ms": 14811.196
+    },
+    {
+      "dataset": "uci_har",
+      "rtt_ms": 50,
+      "bandwidth_mbps": 10.0,
+      "schedule": "s=11 (all-hybrid)",
+      "K_h": 2,
+      "end_to_end_ms": 16069.027
+    },
+    {
+      "dataset": "uci_har",
+      "rtt_ms": 50,
+      "bandwidth_mbps": 50.0,
+      "schedule": "s=00 (HE-only)",
+      "K_h": 0,
+      "end_to_end_ms": 12798.234
+    },
+    {
+      "dataset": "uci_har",
+      "rtt_ms": 50,
+      "bandwidth_mbps": 50.0,
+      "schedule": "s=10 (1 hybrid)",
+      "K_h": 1,
+      "end_to_end_ms": 13131.853
+    },
+    {
+      "dataset": "uci_har",
+      "rtt_ms": 50,
+      "bandwidth_mbps": 50.0,
+      "schedule": "s=11 (all-hybrid)",
+      "K_h": 2,
+      "end_to_end_ms": 13465.473
+    },
+    {
+      "dataset": "uci_har",
+      "rtt_ms": 50,
+      "bandwidth_mbps": 100.0,
+      "schedule": "s=00 (HE-only)",
+      "K_h": 0,
+      "end_to_end_ms": 12703.843
+    },
+    {
+      "dataset": "uci_har",
+      "rtt_ms": 50,
+      "bandwidth_mbps": 100.0,
+      "schedule": "s=10 (1 hybrid)",
+      "K_h": 1,
+      "end_to_end_ms": 12921.936
+    },
+    {
+      "dataset": "uci_har",
+      "rtt_ms": 50,
+      "bandwidth_mbps": 100.0,
+      "schedule": "s=11 (all-hybrid)",
+      "K_h": 2,
+      "end_to_end_ms": 13140.028
+    },
+    {
+      "dataset": "uci_har",
+      "rtt_ms": 100,
+      "bandwidth_mbps": 10.0,
+      "schedule": "s=00 (HE-only)",
+      "K_h": 0,
+      "end_to_end_ms": 13653.364
+    },
+    {
+      "dataset": "uci_har",
+      "rtt_ms": 100,
+      "bandwidth_mbps": 10.0,
+      "schedule": "s=10 (1 hybrid)",
+      "K_h": 1,
+      "end_to_end_ms": 14961.196
+    },
+    {
+      "dataset": "uci_har",
+      "rtt_ms": 100,
+      "bandwidth_mbps": 10.0,
+      "schedule": "s=11 (all-hybrid)",
+      "K_h": 2,
+      "end_to_end_ms": 16269.027
+    },
+    {
+      "dataset": "uci_har",
+      "rtt_ms": 100,
+      "bandwidth_mbps": 50.0,
+      "schedule": "s=00 (HE-only)",
+      "K_h": 0,
+      "end_to_end_ms": 12898.234
+    },
+    {
+      "dataset": "uci_har",
+      "rtt_ms": 100,
+      "bandwidth_mbps": 50.0,
+      "schedule": "s=10 (1 hybrid)",
+      "K_h": 1,
+      "end_to_end_ms": 13281.853
+    },
+    {
+      "dataset": "uci_har",
+      "rtt_ms": 100,
+      "bandwidth_mbps": 50.0,
+      "schedule": "s=11 (all-hybrid)",
+      "K_h": 2,
+      "end_to_end_ms": 13665.473
+    },
+    {
+      "dataset": "uci_har",
+      "rtt_ms": 100,
+      "bandwidth_mbps": 100.0,
+      "schedule": "s=00 (HE-only)",
+      "K_h": 0,
+      "end_to_end_ms": 12803.843
+    },
+    {
+      "dataset": "uci_har",
+      "rtt_ms": 100,
+      "bandwidth_mbps": 100.0,
+      "schedule": "s=10 (1 hybrid)",
+      "K_h": 1,
+      "end_to_end_ms": 13071.936
+    },
+    {
+      "dataset": "uci_har",
+      "rtt_ms": 100,
+      "bandwidth_mbps": 100.0,
+      "schedule": "s=11 (all-hybrid)",
+      "K_h": 2,
+      "end_to_end_ms": 13340.028
+    },
+    {
+      "dataset": "uci_har",
+      "rtt_ms": 200,
+      "bandwidth_mbps": 10.0,
+      "schedule": "s=00 (HE-only)",
+      "K_h": 0,
+      "end_to_end_ms": 13853.364
+    },
+    {
+      "dataset": "uci_har",
+      "rtt_ms": 200,
+      "bandwidth_mbps": 10.0,
+      "schedule": "s=10 (1 hybrid)",
+      "K_h": 1,
+      "end_to_end_ms": 15261.196
+    },
+    {
+      "dataset": "uci_har",
+      "rtt_ms": 200,
+      "bandwidth_mbps": 10.0,
+      "schedule": "s=11 (all-hybrid)",
+      "K_h": 2,
+      "end_to_end_ms": 16669.027
+    },
+    {
+      "dataset": "uci_har",
+      "rtt_ms": 200,
+      "bandwidth_mbps": 50.0,
+      "schedule": "s=00 (HE-only)",
+      "K_h": 0,
+      "end_to_end_ms": 13098.234
+    },
+    {
+      "dataset": "uci_har",
+      "rtt_ms": 200,
+      "bandwidth_mbps": 50.0,
+      "schedule": "s=10 (1 hybrid)",
+      "K_h": 1,
+      "end_to_end_ms": 13581.853
+    },
+    {
+      "dataset": "uci_har",
+      "rtt_ms": 200,
+      "bandwidth_mbps": 50.0,
+      "schedule": "s=11 (all-hybrid)",
+      "K_h": 2,
+      "end_to_end_ms": 14065.473
+    },
+    {
+      "dataset": "uci_har",
+      "rtt_ms": 200,
+      "bandwidth_mbps": 100.0,
+      "schedule": "s=00 (HE-only)",
+      "K_h": 0,
+      "end_to_end_ms": 13003.843
+    },
+    {
+      "dataset": "uci_har",
+      "rtt_ms": 200,
+      "bandwidth_mbps": 100.0,
+      "schedule": "s=10 (1 hybrid)",
+      "K_h": 1,
+      "end_to_end_ms": 13371.936
+    },
+    {
+      "dataset": "uci_har",
+      "rtt_ms": 200,
+      "bandwidth_mbps": 100.0,
+      "schedule": "s=11 (all-hybrid)",
+      "K_h": 2,
+      "end_to_end_ms": 13740.028
+    }
+  ],
+  "adaptive": [
+    {
+      "dataset": "mnist",
+      "rtt_ms": 1,
+      "bandwidth_mbps": 10.0,
+      "slack": 0.05,
+      "latency_cap_ms": 5262.115,
+      "K_h_star": 0,
+      "schedule_star": "s=00 (HE-only)",
+      "end_to_end_ms": 5011.538,
+      "extra_latency_vs_he_only_ms": 0.0
+    },
+    {
+      "dataset": "mnist",
+      "rtt_ms": 1,
+      "bandwidth_mbps": 50.0,
+      "slack": 0.05,
+      "latency_cap_ms": 4469.229,
+      "K_h_star": 0,
+      "schedule_star": "s=00 (HE-only)",
+      "end_to_end_ms": 4256.408,
+      "extra_latency_vs_he_only_ms": 0.0
+    },
+    {
+      "dataset": "mnist",
+      "rtt_ms": 1,
+      "bandwidth_mbps": 100.0,
+      "slack": 0.05,
+      "latency_cap_ms": 4370.118,
+      "K_h_star": 1,
+      "schedule_star": "s=10 (1 hybrid)",
+      "end_to_end_ms": 4331.269,
+      "extra_latency_vs_he_only_ms": 169.252
+    },
+    {
+      "dataset": "mnist",
+      "rtt_ms": 5,
+      "bandwidth_mbps": 10.0,
+      "slack": 0.05,
+      "latency_cap_ms": 5270.515,
+      "K_h_star": 0,
+      "schedule_star": "s=00 (HE-only)",
+      "end_to_end_ms": 5019.538,
+      "extra_latency_vs_he_only_ms": 0.0
+    },
+    {
+      "dataset": "mnist",
+      "rtt_ms": 5,
+      "bandwidth_mbps": 50.0,
+      "slack": 0.05,
+      "latency_cap_ms": 4477.629,
+      "K_h_star": 0,
+      "schedule_star": "s=00 (HE-only)",
+      "end_to_end_ms": 4264.408,
+      "extra_latency_vs_he_only_ms": 0.0
+    },
+    {
+      "dataset": "mnist",
+      "rtt_ms": 5,
+      "bandwidth_mbps": 100.0,
+      "slack": 0.05,
+      "latency_cap_ms": 4378.518,
+      "K_h_star": 1,
+      "schedule_star": "s=10 (1 hybrid)",
+      "end_to_end_ms": 4343.269,
+      "extra_latency_vs_he_only_ms": 173.252
+    },
+    {
+      "dataset": "mnist",
+      "rtt_ms": 20,
+      "bandwidth_mbps": 10.0,
+      "slack": 0.05,
+      "latency_cap_ms": 5302.015,
+      "K_h_star": 0,
+      "schedule_star": "s=00 (HE-only)",
+      "end_to_end_ms": 5049.538,
+      "extra_latency_vs_he_only_ms": 0.0
+    },
+    {
+      "dataset": "mnist",
+      "rtt_ms": 20,
+      "bandwidth_mbps": 50.0,
+      "slack": 0.05,
+      "latency_cap_ms": 4509.129,
+      "K_h_star": 0,
+      "schedule_star": "s=00 (HE-only)",
+      "end_to_end_ms": 4294.408,
+      "extra_latency_vs_he_only_ms": 0.0
+    },
+    {
+      "dataset": "mnist",
+      "rtt_ms": 20,
+      "bandwidth_mbps": 100.0,
+      "slack": 0.05,
+      "latency_cap_ms": 4410.018,
+      "K_h_star": 1,
+      "schedule_star": "s=10 (1 hybrid)",
+      "end_to_end_ms": 4388.269,
+      "extra_latency_vs_he_only_ms": 188.252
+    },
+    {
+      "dataset": "mnist",
+      "rtt_ms": 50,
+      "bandwidth_mbps": 10.0,
+      "slack": 0.05,
+      "latency_cap_ms": 5365.015,
+      "K_h_star": 0,
+      "schedule_star": "s=00 (HE-only)",
+      "end_to_end_ms": 5109.538,
+      "extra_latency_vs_he_only_ms": 0.0
+    },
+    {
+      "dataset": "mnist",
+      "rtt_ms": 50,
+      "bandwidth_mbps": 50.0,
+      "slack": 0.05,
+      "latency_cap_ms": 4572.129,
+      "K_h_star": 0,
+      "schedule_star": "s=00 (HE-only)",
+      "end_to_end_ms": 4354.408,
+      "extra_latency_vs_he_only_ms": 0.0
+    },
+    {
+      "dataset": "mnist",
+      "rtt_ms": 50,
+      "bandwidth_mbps": 100.0,
+      "slack": 0.05,
+      "latency_cap_ms": 4473.018,
+      "K_h_star": 0,
+      "schedule_star": "s=00 (HE-only)",
+      "end_to_end_ms": 4260.017,
+      "extra_latency_vs_he_only_ms": 0.0
+    },
+    {
+      "dataset": "mnist",
+      "rtt_ms": 100,
+      "bandwidth_mbps": 10.0,
+      "slack": 0.05,
+      "latency_cap_ms": 5470.015,
+      "K_h_star": 0,
+      "schedule_star": "s=00 (HE-only)",
+      "end_to_end_ms": 5209.538,
+      "extra_latency_vs_he_only_ms": 0.0
+    },
+    {
+      "dataset": "mnist",
+      "rtt_ms": 100,
+      "bandwidth_mbps": 50.0,
+      "slack": 0.05,
+      "latency_cap_ms": 4677.129,
+      "K_h_star": 0,
+      "schedule_star": "s=00 (HE-only)",
+      "end_to_end_ms": 4454.408,
+      "extra_latency_vs_he_only_ms": 0.0
+    },
+    {
+      "dataset": "mnist",
+      "rtt_ms": 100,
+      "bandwidth_mbps": 100.0,
+      "slack": 0.05,
+      "latency_cap_ms": 4578.018,
+      "K_h_star": 0,
+      "schedule_star": "s=00 (HE-only)",
+      "end_to_end_ms": 4360.017,
+      "extra_latency_vs_he_only_ms": 0.0
+    },
+    {
+      "dataset": "mnist",
+      "rtt_ms": 200,
+      "bandwidth_mbps": 10.0,
+      "slack": 0.05,
+      "latency_cap_ms": 5680.015,
+      "K_h_star": 0,
+      "schedule_star": "s=00 (HE-only)",
+      "end_to_end_ms": 5409.538,
+      "extra_latency_vs_he_only_ms": 0.0
+    },
+    {
+      "dataset": "mnist",
+      "rtt_ms": 200,
+      "bandwidth_mbps": 50.0,
+      "slack": 0.05,
+      "latency_cap_ms": 4887.129,
+      "K_h_star": 0,
+      "schedule_star": "s=00 (HE-only)",
+      "end_to_end_ms": 4654.408,
+      "extra_latency_vs_he_only_ms": 0.0
+    },
+    {
+      "dataset": "mnist",
+      "rtt_ms": 200,
+      "bandwidth_mbps": 100.0,
+      "slack": 0.05,
+      "latency_cap_ms": 4788.018,
+      "K_h_star": 0,
+      "schedule_star": "s=00 (HE-only)",
+      "end_to_end_ms": 4560.017,
+      "extra_latency_vs_he_only_ms": 0.0
+    },
+    {
+      "dataset": "cifar10",
+      "rtt_ms": 1,
+      "bandwidth_mbps": 10.0,
+      "slack": 0.05,
+      "latency_cap_ms": 17290.989,
+      "K_h_star": 0,
+      "schedule_star": "s=00 (HE-only)",
+      "end_to_end_ms": 16467.609,
+      "extra_latency_vs_he_only_ms": 0.0
+    },
+    {
+      "dataset": "cifar10",
+      "rtt_ms": 1,
+      "bandwidth_mbps": 50.0,
+      "slack": 0.05,
+      "latency_cap_ms": 16498.103,
+      "K_h_star": 2,
+      "schedule_star": "s=11 (all-hybrid)",
+      "end_to_end_ms": 16281.768,
+      "extra_latency_vs_he_only_ms": 569.289
+    },
+    {
+      "dataset": "cifar10",
+      "rtt_ms": 1,
+      "bandwidth_mbps": 100.0,
+      "slack": 0.05,
+      "latency_cap_ms": 16398.993,
+      "K_h_star": 2,
+      "schedule_star": "s=11 (all-hybrid)",
+      "end_to_end_ms": 15956.324,
+      "extra_latency_vs_he_only_ms": 338.236
+    },
+    {
+      "dataset": "cifar10",
+      "rtt_ms": 5,
+      "bandwidth_mbps": 10.0,
+      "slack": 0.05,
+      "latency_cap_ms": 17299.389,
+      "K_h_star": 0,
+      "schedule_star": "s=00 (HE-only)",
+      "end_to_end_ms": 16475.609,
+      "extra_latency_vs_he_only_ms": 0.0
+    },
+    {
+      "dataset": "cifar10",
+      "rtt_ms": 5,
+      "bandwidth_mbps": 50.0,
+      "slack": 0.05,
+      "latency_cap_ms": 16506.503,
+      "K_h_star": 2,
+      "schedule_star": "s=11 (all-hybrid)",
+      "end_to_end_ms": 16297.768,
+      "extra_latency_vs_he_only_ms": 577.289
+    },
+    {
+      "dataset": "cifar10",
+      "rtt_ms": 5,
+      "bandwidth_mbps": 100.0,
+      "slack": 0.05,
+      "latency_cap_ms": 16407.393,
+      "K_h_star": 2,
+      "schedule_star": "s=11 (all-hybrid)",
+      "end_to_end_ms": 15972.324,
+      "extra_latency_vs_he_only_ms": 346.236
+    },
+    {
+      "dataset": "cifar10",
+      "rtt_ms": 20,
+      "bandwidth_mbps": 10.0,
+      "slack": 0.05,
+      "latency_cap_ms": 17330.889,
+      "K_h_star": 0,
+      "schedule_star": "s=00 (HE-only)",
+      "end_to_end_ms": 16505.609,
+      "extra_latency_vs_he_only_ms": 0.0
+    },
+    {
+      "dataset": "cifar10",
+      "rtt_ms": 20,
+      "bandwidth_mbps": 50.0,
+      "slack": 0.05,
+      "latency_cap_ms": 16538.003,
+      "K_h_star": 2,
+      "schedule_star": "s=11 (all-hybrid)",
+      "end_to_end_ms": 16357.768,
+      "extra_latency_vs_he_only_ms": 607.289
+    },
+    {
+      "dataset": "cifar10",
+      "rtt_ms": 20,
+      "bandwidth_mbps": 100.0,
+      "slack": 0.05,
+      "latency_cap_ms": 16438.893,
+      "K_h_star": 2,
+      "schedule_star": "s=11 (all-hybrid)",
+      "end_to_end_ms": 16032.324,
+      "extra_latency_vs_he_only_ms": 376.236
+    },
+    {
+      "dataset": "cifar10",
+      "rtt_ms": 50,
+      "bandwidth_mbps": 10.0,
+      "slack": 0.05,
+      "latency_cap_ms": 17393.889,
+      "K_h_star": 0,
+      "schedule_star": "s=00 (HE-only)",
+      "end_to_end_ms": 16565.609,
+      "extra_latency_vs_he_only_ms": 0.0
+    },
+    {
+      "dataset": "cifar10",
+      "rtt_ms": 50,
+      "bandwidth_mbps": 50.0,
+      "slack": 0.05,
+      "latency_cap_ms": 16601.003,
+      "K_h_star": 2,
+      "schedule_star": "s=11 (all-hybrid)",
+      "end_to_end_ms": 16477.768,
+      "extra_latency_vs_he_only_ms": 667.289
+    },
+    {
+      "dataset": "cifar10",
+      "rtt_ms": 50,
+      "bandwidth_mbps": 100.0,
+      "slack": 0.05,
+      "latency_cap_ms": 16501.893,
+      "K_h_star": 2,
+      "schedule_star": "s=11 (all-hybrid)",
+      "end_to_end_ms": 16152.324,
+      "extra_latency_vs_he_only_ms": 436.236
+    },
+    {
+      "dataset": "cifar10",
+      "rtt_ms": 100,
+      "bandwidth_mbps": 10.0,
+      "slack": 0.05,
+      "latency_cap_ms": 17498.889,
+      "K_h_star": 0,
+      "schedule_star": "s=00 (HE-only)",
+      "end_to_end_ms": 16665.609,
+      "extra_latency_vs_he_only_ms": 0.0
+    },
+    {
+      "dataset": "cifar10",
+      "rtt_ms": 100,
+      "bandwidth_mbps": 50.0,
+      "slack": 0.05,
+      "latency_cap_ms": 16706.003,
+      "K_h_star": 2,
+      "schedule_star": "s=11 (all-hybrid)",
+      "end_to_end_ms": 16677.768,
+      "extra_latency_vs_he_only_ms": 767.289
+    },
+    {
+      "dataset": "cifar10",
+      "rtt_ms": 100,
+      "bandwidth_mbps": 100.0,
+      "slack": 0.05,
+      "latency_cap_ms": 16606.893,
+      "K_h_star": 2,
+      "schedule_star": "s=11 (all-hybrid)",
+      "end_to_end_ms": 16352.324,
+      "extra_latency_vs_he_only_ms": 536.236
+    },
+    {
+      "dataset": "cifar10",
+      "rtt_ms": 200,
+      "bandwidth_mbps": 10.0,
+      "slack": 0.05,
+      "latency_cap_ms": 17708.889,
+      "K_h_star": 0,
+      "schedule_star": "s=00 (HE-only)",
+      "end_to_end_ms": 16865.609,
+      "extra_latency_vs_he_only_ms": 0.0
+    },
+    {
+      "dataset": "cifar10",
+      "rtt_ms": 200,
+      "bandwidth_mbps": 50.0,
+      "slack": 0.05,
+      "latency_cap_ms": 16916.003,
+      "K_h_star": 1,
+      "schedule_star": "s=10 (1 hybrid)",
+      "end_to_end_ms": 16594.124,
+      "extra_latency_vs_he_only_ms": 483.644
+    },
+    {
+      "dataset": "cifar10",
+      "rtt_ms": 200,
+      "bandwidth_mbps": 100.0,
+      "slack": 0.05,
+      "latency_cap_ms": 16816.893,
+      "K_h_star": 2,
+      "schedule_star": "s=11 (all-hybrid)",
+      "end_to_end_ms": 16752.324,
+      "extra_latency_vs_he_only_ms": 736.236
+    },
+    {
+      "dataset": "uci_har",
+      "rtt_ms": 1,
+      "bandwidth_mbps": 10.0,
+      "slack": 0.05,
+      "latency_cap_ms": 14128.132,
+      "K_h_star": 0,
+      "schedule_star": "s=00 (HE-only)",
+      "end_to_end_ms": 13455.364,
+      "extra_latency_vs_he_only_ms": 0.0
+    },
+    {
+      "dataset": "uci_har",
+      "rtt_ms": 1,
+      "bandwidth_mbps": 50.0,
+      "slack": 0.05,
+      "latency_cap_ms": 13335.246,
+      "K_h_star": 2,
+      "schedule_star": "s=11 (all-hybrid)",
+      "end_to_end_ms": 13269.473,
+      "extra_latency_vs_he_only_ms": 569.239
+    },
+    {
+      "dataset": "uci_har",
+      "rtt_ms": 1,
+      "bandwidth_mbps": 100.0,
+      "slack": 0.05,
+      "latency_cap_ms": 13236.135,
+      "K_h_star": 2,
+      "schedule_star": "s=11 (all-hybrid)",
+      "end_to_end_ms": 12944.028,
+      "extra_latency_vs_he_only_ms": 338.186
+    },
+    {
+      "dataset": "uci_har",
+      "rtt_ms": 5,
+      "bandwidth_mbps": 10.0,
+      "slack": 0.05,
+      "latency_cap_ms": 14136.532,
+      "K_h_star": 0,
+      "schedule_star": "s=00 (HE-only)",
+      "end_to_end_ms": 13463.364,
+      "extra_latency_vs_he_only_ms": 0.0
+    },
+    {
+      "dataset": "uci_har",
+      "rtt_ms": 5,
+      "bandwidth_mbps": 50.0,
+      "slack": 0.05,
+      "latency_cap_ms": 13343.646,
+      "K_h_star": 2,
+      "schedule_star": "s=11 (all-hybrid)",
+      "end_to_end_ms": 13285.473,
+      "extra_latency_vs_he_only_ms": 577.239
+    },
+    {
+      "dataset": "uci_har",
+      "rtt_ms": 5,
+      "bandwidth_mbps": 100.0,
+      "slack": 0.05,
+      "latency_cap_ms": 13244.535,
+      "K_h_star": 2,
+      "schedule_star": "s=11 (all-hybrid)",
+      "end_to_end_ms": 12960.028,
+      "extra_latency_vs_he_only_ms": 346.186
+    },
+    {
+      "dataset": "uci_har",
+      "rtt_ms": 20,
+      "bandwidth_mbps": 10.0,
+      "slack": 0.05,
+      "latency_cap_ms": 14168.032,
+      "K_h_star": 0,
+      "schedule_star": "s=00 (HE-only)",
+      "end_to_end_ms": 13493.364,
+      "extra_latency_vs_he_only_ms": 0.0
+    },
+    {
+      "dataset": "uci_har",
+      "rtt_ms": 20,
+      "bandwidth_mbps": 50.0,
+      "slack": 0.05,
+      "latency_cap_ms": 13375.146,
+      "K_h_star": 2,
+      "schedule_star": "s=11 (all-hybrid)",
+      "end_to_end_ms": 13345.473,
+      "extra_latency_vs_he_only_ms": 607.239
+    },
+    {
+      "dataset": "uci_har",
+      "rtt_ms": 20,
+      "bandwidth_mbps": 100.0,
+      "slack": 0.05,
+      "latency_cap_ms": 13276.035,
+      "K_h_star": 2,
+      "schedule_star": "s=11 (all-hybrid)",
+      "end_to_end_ms": 13020.028,
+      "extra_latency_vs_he_only_ms": 376.186
+    },
+    {
+      "dataset": "uci_har",
+      "rtt_ms": 50,
+      "bandwidth_mbps": 10.0,
+      "slack": 0.05,
+      "latency_cap_ms": 14231.032,
+      "K_h_star": 0,
+      "schedule_star": "s=00 (HE-only)",
+      "end_to_end_ms": 13553.364,
+      "extra_latency_vs_he_only_ms": 0.0
+    },
+    {
+      "dataset": "uci_har",
+      "rtt_ms": 50,
+      "bandwidth_mbps": 50.0,
+      "slack": 0.05,
+      "latency_cap_ms": 13438.146,
+      "K_h_star": 1,
+      "schedule_star": "s=10 (1 hybrid)",
+      "end_to_end_ms": 13131.853,
+      "extra_latency_vs_he_only_ms": 333.619
+    },
+    {
+      "dataset": "uci_har",
+      "rtt_ms": 50,
+      "bandwidth_mbps": 100.0,
+      "slack": 0.05,
+      "latency_cap_ms": 13339.035,
+      "K_h_star": 2,
+      "schedule_star": "s=11 (all-hybrid)",
+      "end_to_end_ms": 13140.028,
+      "extra_latency_vs_he_only_ms": 436.186
+    },
+    {
+      "dataset": "uci_har",
+      "rtt_ms": 100,
+      "bandwidth_mbps": 10.0,
+      "slack": 0.05,
+      "latency_cap_ms": 14336.032,
+      "K_h_star": 0,
+      "schedule_star": "s=00 (HE-only)",
+      "end_to_end_ms": 13653.364,
+      "extra_latency_vs_he_only_ms": 0.0
+    },
+    {
+      "dataset": "uci_har",
+      "rtt_ms": 100,
+      "bandwidth_mbps": 50.0,
+      "slack": 0.05,
+      "latency_cap_ms": 13543.146,
+      "K_h_star": 1,
+      "schedule_star": "s=10 (1 hybrid)",
+      "end_to_end_ms": 13281.853,
+      "extra_latency_vs_he_only_ms": 383.619
+    },
+    {
+      "dataset": "uci_har",
+      "rtt_ms": 100,
+      "bandwidth_mbps": 100.0,
+      "slack": 0.05,
+      "latency_cap_ms": 13444.035,
+      "K_h_star": 2,
+      "schedule_star": "s=11 (all-hybrid)",
+      "end_to_end_ms": 13340.028,
+      "extra_latency_vs_he_only_ms": 536.186
+    },
+    {
+      "dataset": "uci_har",
+      "rtt_ms": 200,
+      "bandwidth_mbps": 10.0,
+      "slack": 0.05,
+      "latency_cap_ms": 14546.032,
+      "K_h_star": 0,
+      "schedule_star": "s=00 (HE-only)",
+      "end_to_end_ms": 13853.364,
+      "extra_latency_vs_he_only_ms": 0.0
+    },
+    {
+      "dataset": "uci_har",
+      "rtt_ms": 200,
+      "bandwidth_mbps": 50.0,
+      "slack": 0.05,
+      "latency_cap_ms": 13753.146,
+      "K_h_star": 1,
+      "schedule_star": "s=10 (1 hybrid)",
+      "end_to_end_ms": 13581.853,
+      "extra_latency_vs_he_only_ms": 483.619
+    },
+    {
+      "dataset": "uci_har",
+      "rtt_ms": 200,
+      "bandwidth_mbps": 100.0,
+      "slack": 0.05,
+      "latency_cap_ms": 13654.035,
+      "K_h_star": 1,
+      "schedule_star": "s=10 (1 hybrid)",
+      "end_to_end_ms": 13371.936,
+      "extra_latency_vs_he_only_ms": 368.093
+    }
+  ]
+}

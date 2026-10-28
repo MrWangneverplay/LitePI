@@ -26,6 +26,11 @@ _tmp_*.sh
 _tmp_*.py
 analysis/_env_check.sh
 
+# 根目录下划线前缀的一次性文件：Pi5 部署期的命令快照/抓取脚本/打包产物（含 65 MB 的
+# _pi_bundle.tar.gz）。归档数据目录 _archived_mismatch/ 属于红线①要保留的实验数据，例外放行。
+/_*
+!/_archived_mismatch/
+
 # IDE
 .idea/
 .vscode/

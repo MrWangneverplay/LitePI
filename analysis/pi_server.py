@@ -647,7 +647,7 @@ def main() -> int:
     ap.add_argument("--dims", type=_as_dims, default=[64, 32, 10],
                     help="comma-separated layer sizes, e.g. 784,128,64,10")
     ap.add_argument("--seed", type=int, default=73)
-    ap.add_argument("--backend", choices=["tenseal", "seal", "stub"], default="tenseal")
+    ap.add_argument("--backend", choices=["tenseal", "seal", "stub"], default="seal")
     ap.add_argument("--serve", action="store_true",
                     help="keep serving instead of handling one connection")
     ap.add_argument("--weights", type=Path, default=None,

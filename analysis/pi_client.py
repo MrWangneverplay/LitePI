@@ -580,7 +580,7 @@ def main() -> int:
     ap = argparse.ArgumentParser(description="LitePI Raspberry-Pi client (party1)")
     ap.add_argument("--host", default="127.0.0.1")
     ap.add_argument("--port", type=int, default=9101)
-    ap.add_argument("--backend", choices=["tenseal", "seal", "stub"], default="tenseal")
+    ap.add_argument("--backend", choices=["tenseal", "seal", "stub"], default="seal")
     ap.add_argument("--input", type=Path, default=None,
                     help="optional .npy/.npz/.json/text vector")
     ap.add_argument("--dim", type=int, default=64,

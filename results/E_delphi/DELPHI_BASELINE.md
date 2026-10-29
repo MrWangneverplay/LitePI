@@ -20,7 +20,7 @@
 | 拓扑 | 客户端与服务端同机回环 `127.0.0.1`，无跨机网络时延 |
 | HE | SEAL 3.6.5，BFV，N=8192，`BFVDefault` 系数模数，128-bit |
 | 定点 | `TenBitExpParams`：`MANTISSA_CAPACITY=3`（小数位）+ `EXPONENT_CAPACITY=8`（整数位），官方默认 |
-| 模型 | 官方 MiniONN CIFAR-10 `7_approx`（4 层 3×3 卷积 + 2 层 1×1 降维 + 平均池化 + FC，7 个激活层全部为多项式） |
+| 模型 | 官方 MiniONN CIFAR-10 `7_approx`（5 层 3×3 卷积 + 2 层 1×1 降维 + 2 次平均池化 + FC，7 个激活层全部为多项式） |
 
 ## 3. CIFAR-10 MiniONN 主结果（每档 5 次独立运行，含重新 Keygen 与重新建连）
 
@@ -60,6 +60,8 @@
 | 0（全 ReLU） | 2.801 | 0.280 | 237.9 MiB | 11.7 MiB |
 
 原始数据：`delphi_mnist_raw.csv`；日志：`logs/client_L*.log`。
+
+注：官方 MNIST 示例（`construct_mnist`）使用**随机初始化权重**，仅用于验证 Pipeline 与测量时延/通信，不代表任何训练精度。
 
 ## 5. 精度与正确性
 

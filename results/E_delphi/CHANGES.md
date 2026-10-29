@@ -76,7 +76,7 @@
 | `scripts/delphi_grid18.sh` | 18 线程敏感性对照（layers ∈ {0,7} × 3 次） |
 | `scripts/parse18.py` | 解析 18 线程对照数据 |
 
-另外两个一次性辅助脚本（生成 CIFAR 测试图 `image.npy`/`class.npy` 与明文预测 `plaintext.npy`）未入库；其逻辑等价于官方 `generate_test_images.py`（后者依赖 TensorFlow），用 pickle 直接读 CIFAR-10 官方 `test_batch`，并用官方 `model.npy` 权重做明文复算。明文复算精度 82.0%（82/100，seed 20261029），与官方 `model_state` 记录的 82.95% 一致。
+另外两个一次性辅助脚本（`scripts/delphi_gen_image.py` 生成单图 quick-start 的 `image.npy`/`class.npy`；`scripts/delphi_gen_val.py` 生成 100 张 CIFAR 测试图、`classes.npy` 与明文预测 `plaintext.npy`）均等价于官方 `generate_test_images.py` 的逻辑（后者依赖 TensorFlow），改为用 pickle 直接读 CIFAR-10 官方 `test_batch`，并用官方 `model.npy` 权重做明文复算。明文复算精度 82.0%（82/100，seed 20261029），与官方 `model_state` 记录的 82.95% 一致。
 
 ## 6. 已知的官方脚手架缺陷（未修改其代码）
 

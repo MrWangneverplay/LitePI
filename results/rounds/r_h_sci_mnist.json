@@ -1,0 +1,82 @@
+{
+  "experiment": "r_h",
+  "measured_at": "2026-10-29T08:10:30+00:00",
+  "dataset": "mnist",
+  "seed": 73,
+  "he_backend": "stub",
+  "mpc_runtime": "sci",
+  "method": "message counting on the loopback wire; schedules differenced",
+  "definition": "one round trip = one message each way; m_h = (msgs(s=11) - msgs(s=00)) / 2; r_h = m_h / 2",
+  "per_schedule": {
+    "00": {
+      "messages": 9,
+      "client_to_server": 4,
+      "server_to_client": 5,
+      "direction_blocks": 9,
+      "bytes": 35287,
+      "by_tag": {
+        "CTXT": 3,
+        "REDY": 2,
+        "SPEC": 1,
+        "INIT": 1,
+        "BYE.": 1,
+        "STAT": 1
+      }
+    },
+    "01": {
+      "messages": 11,
+      "client_to_server": 5,
+      "server_to_client": 6,
+      "direction_blocks": 11,
+      "bytes": 36353,
+      "by_tag": {
+        "CTXT": 5,
+        "REDY": 2,
+        "SPEC": 1,
+        "INIT": 1,
+        "BYE.": 1,
+        "STAT": 1
+      }
+    },
+    "10": {
+      "messages": 11,
+      "client_to_server": 5,
+      "server_to_client": 6,
+      "direction_blocks": 11,
+      "bytes": 39422,
+      "by_tag": {
+        "CTXT": 5,
+        "REDY": 2,
+        "SPEC": 1,
+        "INIT": 1,
+        "BYE.": 1,
+        "STAT": 1
+      }
+    },
+    "11": {
+      "messages": 13,
+      "client_to_server": 6,
+      "server_to_client": 7,
+      "direction_blocks": 13,
+      "bytes": 40477,
+      "by_tag": {
+        "CTXT": 7,
+        "REDY": 2,
+        "SPEC": 1,
+        "INIT": 1,
+        "BYE.": 1,
+        "STAT": 1
+      }
+    }
+  },
+  "per_hybrid_layer": {
+    "messages": 2.0,
+    "client_to_server": 1.0,
+    "server_to_client": 1.0,
+    "balanced": true,
+    "round_trips": 1.0
+  },
+  "r_h_measured": 1.0,
+  "protocol_r_h": 1,
+  "caveat": "The ReLU itself runs inside SCI's C++ socket, so these counts are the main-wire control plane only. SCI-internal rounds are not visible from Python; claiming r_h=1 end-to-end needs C++ instrumentation of litepi_sci."
+}

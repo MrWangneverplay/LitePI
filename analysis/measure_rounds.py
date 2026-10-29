@@ -222,7 +222,8 @@ def main() -> int:
                 "instrumentation of litepi_sci.")
 
     if not args.no_save:
-        out = root / "results" / "rounds" / ("r_h_%s.json" % args.mpc)
+        out = root / "results" / "rounds" / (
+            "r_h_%s_%s.json" % (args.mpc, args.dataset))
         out.parent.mkdir(parents=True, exist_ok=True)
         out.write_text(json.dumps(payload, ensure_ascii=False, indent=2),
                        encoding="utf-8")

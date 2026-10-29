@@ -1,0 +1,88 @@
+{
+  "check": "M2 mask width vs CKKS decode precision",
+  "timestamp_utc": "2026-10-29T08:05:09+00:00",
+  "git_sha": "d56858a",
+  "backend": "seal",
+  "f": 8,
+  "k_ring": 44,
+  "n": 1024,
+  "z_bound": 128.0,
+  "rescales_before_layer": 3,
+  "rows": [
+    {
+      "log2_mask_half_width": 20,
+      "dec_err": 0.008592374622821808,
+      "dec_err_lsb": 2.199647903442383,
+      "share_err_lsb": 2,
+      "relu_err_lsb": 1.6816115766996518,
+      "pass": true
+    },
+    {
+      "log2_mask_half_width": 30,
+      "dec_err": 0.007578849792480469,
+      "dec_err_lsb": 1.940185546875,
+      "share_err_lsb": 2,
+      "relu_err_lsb": 2.0938898864824296,
+      "pass": true
+    },
+    {
+      "log2_mask_half_width": 36,
+      "dec_err": 0.0073394775390625,
+      "dec_err_lsb": 1.87890625,
+      "share_err_lsb": 2,
+      "relu_err_lsb": 2.146594184974674,
+      "pass": true
+    },
+    {
+      "log2_mask_half_width": 40,
+      "dec_err": 0.0076904296875,
+      "dec_err_lsb": 1.96875,
+      "share_err_lsb": 2,
+      "relu_err_lsb": 1.5343182622891618,
+      "pass": true
+    },
+    {
+      "log2_mask_half_width": 42,
+      "dec_err": 0.00732421875,
+      "dec_err_lsb": 1.875,
+      "share_err_lsb": 2,
+      "relu_err_lsb": 3.1513419012044324,
+      "pass": true
+    },
+    {
+      "log2_mask_half_width": 44,
+      "dec_err": 0.0078125,
+      "dec_err_lsb": 2.0,
+      "share_err_lsb": 2,
+      "relu_err_lsb": 2.382845490676118,
+      "pass": true
+    },
+    {
+      "log2_mask_half_width": 46,
+      "dec_err": 0.03125,
+      "dec_err_lsb": 8.0,
+      "share_err_lsb": 7,
+      "relu_err_lsb": 7.021528130273509,
+      "pass": false
+    },
+    {
+      "log2_mask_half_width": 48,
+      "dec_err": 0.125,
+      "dec_err_lsb": 32.0,
+      "share_err_lsb": 29,
+      "relu_err_lsb": 29.51639571728083,
+      "pass": false
+    },
+    {
+      "log2_mask_half_width": 52,
+      "dec_err": 2.0,
+      "dec_err_lsb": 512.0,
+      "share_err_lsb": 500,
+      "relu_err_lsb": 500.17816473222047,
+      "pass": false
+    }
+  ],
+  "largest_passing_log2_A": 44,
+  "configured_MASK_MAX_BITS": 42,
+  "cap_is_safe": true
+}

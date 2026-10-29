@@ -1,7 +1,7 @@
-strategy,schedule,naming,accuracy,mpc_elements,hybrid_layers,rtts,time_s,bytes_mb,on_pareto_front
-all_relu,11111,conv1=ReLU conv2=ReLU conv3=ReLU conv4=ReLU fc1=ReLU,0.8855,164096,5,5,2117.088,655.728,False
-all_p2,00000,conv1=P2 conv2=P2 conv3=P2 conv4=P2 fc1=P2,0.8355,0,0,0,0.0,0.0,False
-rule,11100,conv1=ReLU conv2=ReLU conv3=ReLU conv4=P2 fc1=P2,0.8805,147456,3,3,1902.332,589.234,False
-greedy,11100,conv1=ReLU conv2=ReLU conv3=ReLU conv4=P2 fc1=P2,0.8805,147456,3,3,1902.332,589.234,False
-cons_time,00100,conv1=P2 conv2=P2 conv3=ReLU conv4=P2 fc1=P2,0.8555,16384,1,1,211.404,65.47,True
-cons_mpc,00100,conv1=P2 conv2=P2 conv3=ReLU conv4=P2 fc1=P2,0.8555,16384,1,1,211.404,65.47,True
+strategy,schedule,accuracy,T_client_ms,R_online,L_e2e_ms,S_online_bytes,mpc_elements,on_pareto_front
+all_p2,00000,0.8355,10.205,2.0,12641.1,1704178,0,False
+all_relu,11111,0.8855,717.461,7.0,29054.2,10225068,164096,False
+rule,11001,0.8805,557.646,5.0,22612.0,6816712,131328,False
+greedy,11001,0.8805,557.646,5.0,22612.0,6816712,131328,False
+adaptive,00100,0.8555,90.112,3.0,15862.2,3408356,16384,True
+random_x5,10101|10110|10011|01111|10010,0.8795,397.7476,5.0,22452.14,6816712,88627.2,

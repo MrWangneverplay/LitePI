@@ -1,0 +1,98 @@
+{
+  "check": "deep-network hybrid conv feasibility (client im2col re-encoding)",
+  "timestamp_utc": "2026-10-29T08:51:17+00:00",
+  "network": "FastConvNet (train_deep_conv.py)",
+  "weights": "random (same geometry)",
+  "scope": "convs preceded by a hybrid layer; P2->conv needs HE re-layout (not implemented)",
+  "machine": "measurement host of this run (not the paper testbed)",
+  "rows": [
+    {
+      "profile": "baseline",
+      "conv": 2,
+      "in_shape": [
+        32,
+        16,
+        16
+      ],
+      "out_channels": 64,
+      "stride": 2,
+      "windows": 64,
+      "taps": 288,
+      "blocks_uploaded": 5,
+      "upload_bytes": 4588125,
+      "client_encrypt_s": 0.0557,
+      "server_conv_s": 8.2794,
+      "levels_used": 1,
+      "max_abs_err": 0.0033466897173233257,
+      "ref_max_abs": 2.7174617495019007,
+      "share_magnitude": 34359738368.0,
+      "pass": true
+    },
+    {
+      "profile": "baseline",
+      "conv": 3,
+      "in_shape": [
+        64,
+        8,
+        8
+      ],
+      "out_channels": 64,
+      "stride": 1,
+      "windows": 64,
+      "taps": 576,
+      "blocks_uploaded": 9,
+      "upload_bytes": 8258625,
+      "client_encrypt_s": 0.0995,
+      "server_conv_s": 14.3152,
+      "levels_used": 1,
+      "max_abs_err": 0.004508337478124402,
+      "ref_max_abs": 1.530067702258869,
+      "share_magnitude": 34359738368.0,
+      "pass": true
+    },
+    {
+      "profile": "compact",
+      "conv": 2,
+      "in_shape": [
+        32,
+        16,
+        16
+      ],
+      "out_channels": 64,
+      "stride": 2,
+      "windows": 64,
+      "taps": 288,
+      "blocks_uploaded": 5,
+      "upload_bytes": 1089038,
+      "client_encrypt_s": 0.0614,
+      "server_conv_s": 8.1565,
+      "levels_used": 1,
+      "max_abs_err": 0.0034241931337932185,
+      "ref_max_abs": 2.7174617495019007,
+      "share_magnitude": 34359738368.0,
+      "pass": true
+    },
+    {
+      "profile": "compact",
+      "conv": 3,
+      "in_shape": [
+        64,
+        8,
+        8
+      ],
+      "out_channels": 64,
+      "stride": 1,
+      "windows": 64,
+      "taps": 576,
+      "blocks_uploaded": 9,
+      "upload_bytes": 1957426,
+      "client_encrypt_s": 0.068,
+      "server_conv_s": 14.0113,
+      "levels_used": 1,
+      "max_abs_err": 0.003117261600704524,
+      "ref_max_abs": 1.530067702258869,
+      "share_magnitude": 34359738368.0,
+      "pass": true
+    }
+  ]
+}

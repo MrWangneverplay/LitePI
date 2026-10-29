@@ -1,0 +1,3637 @@
+{
+  "exp_id": "E4",
+  "experiment": "wire-profile bytes (per message, real SEAL serialisation)",
+  "timestamp_utc": "2026-10-29T09:12:27+00:00",
+  "git_sha": "a13424f",
+  "seal_version": "4.1.2",
+  "seal_codecs": [
+    "none"
+  ],
+  "note": "bytes depend on level/codec/seeding only; S_key uses the full Galois set unless --max-rot-pow is given",
+  "rows": [
+    {
+      "dataset": "mnist",
+      "schedule": "00",
+      "wire": {
+        "name": "baseline",
+        "compr": "none",
+        "seeded_client": false,
+        "seeded_keys": false,
+        "modswitch_send": false,
+        "short_chain": false
+      },
+      "messages": [
+        {
+          "msg": "M1",
+          "direction": "C->S",
+          "chain_index": 6,
+          "bytes": 917625
+        },
+        {
+          "msg": "M3",
+          "direction": "S->C",
+          "chain_index": 1,
+          "modulus_bits": 61,
+          "bytes": 262265
+        }
+      ],
+      "online_up_bytes": 917625,
+      "online_down_bytes": 262265,
+      "online_total_bytes": 1179890,
+      "M0_key_bytes": 184634972,
+      "key_sizes": {
+        "public_key_bytes": 1048689,
+        "galois_keys_bytes": 176245344,
+        "relin_keys_bytes": 7340887,
+        "galois_key_count": 24,
+        "compr": "none",
+        "seeded": 0,
+        "public_context_bytes": 184634972
+      },
+      "plan": null,
+      "online_reduction_vs_baseline": 1.0,
+      "M0_reduction_vs_baseline": 1.0
+    },
+    {
+      "dataset": "mnist",
+      "schedule": "01",
+      "wire": {
+        "name": "baseline",
+        "compr": "none",
+        "seeded_client": false,
+        "seeded_keys": false,
+        "modswitch_send": false,
+        "short_chain": false
+      },
+      "messages": [
+        {
+          "msg": "M1",
+          "direction": "C->S",
+          "chain_index": 6,
+          "bytes": 917625
+        },
+        {
+          "msg": "①_2",
+          "direction": "S->C",
+          "chain_index": 3,
+          "modulus_bits": 103,
+          "bytes": 524409
+        },
+        {
+          "msg": "②_2",
+          "direction": "C->S",
+          "chain_index": 6,
+          "bytes": 917625
+        },
+        {
+          "msg": "M3",
+          "direction": "S->C",
+          "chain_index": 5,
+          "modulus_bits": 145,
+          "bytes": 786553
+        }
+      ],
+      "online_up_bytes": 1835250,
+      "online_down_bytes": 1310962,
+      "online_total_bytes": 3146212,
+      "M0_key_bytes": 184634972,
+      "key_sizes": {
+        "public_key_bytes": 1048689,
+        "galois_keys_bytes": 176245344,
+        "relin_keys_bytes": 7340887,
+        "galois_key_count": 24,
+        "compr": "none",
+        "seeded": 0,
+        "public_context_bytes": 184634972
+      },
+      "plan": null,
+      "online_reduction_vs_baseline": 1.0,
+      "M0_reduction_vs_baseline": 1.0
+    },
+    {
+      "dataset": "mnist",
+      "schedule": "10",
+      "wire": {
+        "name": "baseline",
+        "compr": "none",
+        "seeded_client": false,
+        "seeded_keys": false,
+        "modswitch_send": false,
+        "short_chain": false
+      },
+      "messages": [
+        {
+          "msg": "M1",
+          "direction": "C->S",
+          "chain_index": 6,
+          "bytes": 917625
+        },
+        {
+          "msg": "①_1",
+          "direction": "S->C",
+          "chain_index": 5,
+          "modulus_bits": 145,
+          "bytes": 786553
+        },
+        {
+          "msg": "②_1",
+          "direction": "C->S",
+          "chain_index": 6,
+          "bytes": 917625
+        },
+        {
+          "msg": "M3",
+          "direction": "S->C",
+          "chain_index": 3,
+          "modulus_bits": 103,
+          "bytes": 524409
+        }
+      ],
+      "online_up_bytes": 1835250,
+      "online_down_bytes": 1310962,
+      "online_total_bytes": 3146212,
+      "M0_key_bytes": 184634972,
+      "key_sizes": {
+        "public_key_bytes": 1048689,
+        "galois_keys_bytes": 176245344,
+        "relin_keys_bytes": 7340887,
+        "galois_key_count": 24,
+        "compr": "none",
+        "seeded": 0,
+        "public_context_bytes": 184634972
+      },
+      "plan": null,
+      "online_reduction_vs_baseline": 1.0,
+      "M0_reduction_vs_baseline": 1.0
+    },
+    {
+      "dataset": "mnist",
+      "schedule": "11",
+      "wire": {
+        "name": "baseline",
+        "compr": "none",
+        "seeded_client": false,
+        "seeded_keys": false,
+        "modswitch_send": false,
+        "short_chain": false
+      },
+      "messages": [
+        {
+          "msg": "M1",
+          "direction": "C->S",
+          "chain_index": 6,
+          "bytes": 917625
+        },
+        {
+          "msg": "①_1",
+          "direction": "S->C",
+          "chain_index": 5,
+          "modulus_bits": 145,
+          "bytes": 786553
+        },
+        {
+          "msg": "②_1",
+          "direction": "C->S",
+          "chain_index": 6,
+          "bytes": 917625
+        },
+        {
+          "msg": "①_2",
+          "direction": "S->C",
+          "chain_index": 5,
+          "modulus_bits": 145,
+          "bytes": 786553
+        },
+        {
+          "msg": "②_2",
+          "direction": "C->S",
+          "chain_index": 6,
+          "bytes": 917625
+        },
+        {
+          "msg": "M3",
+          "direction": "S->C",
+          "chain_index": 5,
+          "modulus_bits": 145,
+          "bytes": 786553
+        }
+      ],
+      "online_up_bytes": 2752875,
+      "online_down_bytes": 2359659,
+      "online_total_bytes": 5112534,
+      "M0_key_bytes": 184634972,
+      "key_sizes": {
+        "public_key_bytes": 1048689,
+        "galois_keys_bytes": 176245344,
+        "relin_keys_bytes": 7340887,
+        "galois_key_count": 24,
+        "compr": "none",
+        "seeded": 0,
+        "public_context_bytes": 184634972
+      },
+      "plan": null,
+      "online_reduction_vs_baseline": 1.0,
+      "M0_reduction_vs_baseline": 1.0
+    },
+    {
+      "dataset": "cifar10",
+      "schedule": "00",
+      "wire": {
+        "name": "baseline",
+        "compr": "none",
+        "seeded_client": false,
+        "seeded_keys": false,
+        "modswitch_send": false,
+        "short_chain": false
+      },
+      "messages": [
+        {
+          "msg": "M1",
+          "direction": "C->S",
+          "chain_index": 6,
+          "bytes": 917625
+        },
+        {
+          "msg": "M3",
+          "direction": "S->C",
+          "chain_index": 1,
+          "modulus_bits": 61,
+          "bytes": 262265
+        }
+      ],
+      "online_up_bytes": 917625,
+      "online_down_bytes": 262265,
+      "online_total_bytes": 1179890,
+      "M0_key_bytes": 184634972,
+      "key_sizes": {
+        "public_key_bytes": 1048689,
+        "galois_keys_bytes": 176245344,
+        "relin_keys_bytes": 7340887,
+        "galois_key_count": 24,
+        "compr": "none",
+        "seeded": 0,
+        "public_context_bytes": 184634972
+      },
+      "plan": null,
+      "online_reduction_vs_baseline": 1.0,
+      "M0_reduction_vs_baseline": 1.0
+    },
+    {
+      "dataset": "cifar10",
+      "schedule": "01",
+      "wire": {
+        "name": "baseline",
+        "compr": "none",
+        "seeded_client": false,
+        "seeded_keys": false,
+        "modswitch_send": false,
+        "short_chain": false
+      },
+      "messages": [
+        {
+          "msg": "M1",
+          "direction": "C->S",
+          "chain_index": 6,
+          "bytes": 917625
+        },
+        {
+          "msg": "①_2",
+          "direction": "S->C",
+          "chain_index": 3,
+          "modulus_bits": 103,
+          "bytes": 524409
+        },
+        {
+          "msg": "②_2",
+          "direction": "C->S",
+          "chain_index": 6,
+          "bytes": 917625
+        },
+        {
+          "msg": "M3",
+          "direction": "S->C",
+          "chain_index": 5,
+          "modulus_bits": 145,
+          "bytes": 786553
+        }
+      ],
+      "online_up_bytes": 1835250,
+      "online_down_bytes": 1310962,
+      "online_total_bytes": 3146212,
+      "M0_key_bytes": 184634972,
+      "key_sizes": {
+        "public_key_bytes": 1048689,
+        "galois_keys_bytes": 176245344,
+        "relin_keys_bytes": 7340887,
+        "galois_key_count": 24,
+        "compr": "none",
+        "seeded": 0,
+        "public_context_bytes": 184634972
+      },
+      "plan": null,
+      "online_reduction_vs_baseline": 1.0,
+      "M0_reduction_vs_baseline": 1.0
+    },
+    {
+      "dataset": "cifar10",
+      "schedule": "10",
+      "wire": {
+        "name": "baseline",
+        "compr": "none",
+        "seeded_client": false,
+        "seeded_keys": false,
+        "modswitch_send": false,
+        "short_chain": false
+      },
+      "messages": [
+        {
+          "msg": "M1",
+          "direction": "C->S",
+          "chain_index": 6,
+          "bytes": 917625
+        },
+        {
+          "msg": "①_1",
+          "direction": "S->C",
+          "chain_index": 5,
+          "modulus_bits": 145,
+          "bytes": 786553
+        },
+        {
+          "msg": "②_1",
+          "direction": "C->S",
+          "chain_index": 6,
+          "bytes": 917625
+        },
+        {
+          "msg": "M3",
+          "direction": "S->C",
+          "chain_index": 3,
+          "modulus_bits": 103,
+          "bytes": 524409
+        }
+      ],
+      "online_up_bytes": 1835250,
+      "online_down_bytes": 1310962,
+      "online_total_bytes": 3146212,
+      "M0_key_bytes": 184634972,
+      "key_sizes": {
+        "public_key_bytes": 1048689,
+        "galois_keys_bytes": 176245344,
+        "relin_keys_bytes": 7340887,
+        "galois_key_count": 24,
+        "compr": "none",
+        "seeded": 0,
+        "public_context_bytes": 184634972
+      },
+      "plan": null,
+      "online_reduction_vs_baseline": 1.0,
+      "M0_reduction_vs_baseline": 1.0
+    },
+    {
+      "dataset": "cifar10",
+      "schedule": "11",
+      "wire": {
+        "name": "baseline",
+        "compr": "none",
+        "seeded_client": false,
+        "seeded_keys": false,
+        "modswitch_send": false,
+        "short_chain": false
+      },
+      "messages": [
+        {
+          "msg": "M1",
+          "direction": "C->S",
+          "chain_index": 6,
+          "bytes": 917625
+        },
+        {
+          "msg": "①_1",
+          "direction": "S->C",
+          "chain_index": 5,
+          "modulus_bits": 145,
+          "bytes": 786553
+        },
+        {
+          "msg": "②_1",
+          "direction": "C->S",
+          "chain_index": 6,
+          "bytes": 917625
+        },
+        {
+          "msg": "①_2",
+          "direction": "S->C",
+          "chain_index": 5,
+          "modulus_bits": 145,
+          "bytes": 786553
+        },
+        {
+          "msg": "②_2",
+          "direction": "C->S",
+          "chain_index": 6,
+          "bytes": 917625
+        },
+        {
+          "msg": "M3",
+          "direction": "S->C",
+          "chain_index": 5,
+          "modulus_bits": 145,
+          "bytes": 786553
+        }
+      ],
+      "online_up_bytes": 2752875,
+      "online_down_bytes": 2359659,
+      "online_total_bytes": 5112534,
+      "M0_key_bytes": 184634972,
+      "key_sizes": {
+        "public_key_bytes": 1048689,
+        "galois_keys_bytes": 176245344,
+        "relin_keys_bytes": 7340887,
+        "galois_key_count": 24,
+        "compr": "none",
+        "seeded": 0,
+        "public_context_bytes": 184634972
+      },
+      "plan": null,
+      "online_reduction_vs_baseline": 1.0,
+      "M0_reduction_vs_baseline": 1.0
+    },
+    {
+      "dataset": "uci_har",
+      "schedule": "00",
+      "wire": {
+        "name": "baseline",
+        "compr": "none",
+        "seeded_client": false,
+        "seeded_keys": false,
+        "modswitch_send": false,
+        "short_chain": false
+      },
+      "messages": [
+        {
+          "msg": "M1",
+          "direction": "C->S",
+          "chain_index": 6,
+          "bytes": 917625
+        },
+        {
+          "msg": "M3",
+          "direction": "S->C",
+          "chain_index": 1,
+          "modulus_bits": 61,
+          "bytes": 262265
+        }
+      ],
+      "online_up_bytes": 917625,
+      "online_down_bytes": 262265,
+      "online_total_bytes": 1179890,
+      "M0_key_bytes": 184634972,
+      "key_sizes": {
+        "public_key_bytes": 1048689,
+        "galois_keys_bytes": 176245344,
+        "relin_keys_bytes": 7340887,
+        "galois_key_count": 24,
+        "compr": "none",
+        "seeded": 0,
+        "public_context_bytes": 184634972
+      },
+      "plan": null,
+      "online_reduction_vs_baseline": 1.0,
+      "M0_reduction_vs_baseline": 1.0
+    },
+    {
+      "dataset": "uci_har",
+      "schedule": "01",
+      "wire": {
+        "name": "baseline",
+        "compr": "none",
+        "seeded_client": false,
+        "seeded_keys": false,
+        "modswitch_send": false,
+        "short_chain": false
+      },
+      "messages": [
+        {
+          "msg": "M1",
+          "direction": "C->S",
+          "chain_index": 6,
+          "bytes": 917625
+        },
+        {
+          "msg": "①_2",
+          "direction": "S->C",
+          "chain_index": 3,
+          "modulus_bits": 103,
+          "bytes": 524409
+        },
+        {
+          "msg": "②_2",
+          "direction": "C->S",
+          "chain_index": 6,
+          "bytes": 917625
+        },
+        {
+          "msg": "M3",
+          "direction": "S->C",
+          "chain_index": 5,
+          "modulus_bits": 145,
+          "bytes": 786553
+        }
+      ],
+      "online_up_bytes": 1835250,
+      "online_down_bytes": 1310962,
+      "online_total_bytes": 3146212,
+      "M0_key_bytes": 184634972,
+      "key_sizes": {
+        "public_key_bytes": 1048689,
+        "galois_keys_bytes": 176245344,
+        "relin_keys_bytes": 7340887,
+        "galois_key_count": 24,
+        "compr": "none",
+        "seeded": 0,
+        "public_context_bytes": 184634972
+      },
+      "plan": null,
+      "online_reduction_vs_baseline": 1.0,
+      "M0_reduction_vs_baseline": 1.0
+    },
+    {
+      "dataset": "uci_har",
+      "schedule": "10",
+      "wire": {
+        "name": "baseline",
+        "compr": "none",
+        "seeded_client": false,
+        "seeded_keys": false,
+        "modswitch_send": false,
+        "short_chain": false
+      },
+      "messages": [
+        {
+          "msg": "M1",
+          "direction": "C->S",
+          "chain_index": 6,
+          "bytes": 917625
+        },
+        {
+          "msg": "①_1",
+          "direction": "S->C",
+          "chain_index": 5,
+          "modulus_bits": 145,
+          "bytes": 786553
+        },
+        {
+          "msg": "②_1",
+          "direction": "C->S",
+          "chain_index": 6,
+          "bytes": 917625
+        },
+        {
+          "msg": "M3",
+          "direction": "S->C",
+          "chain_index": 3,
+          "modulus_bits": 103,
+          "bytes": 524409
+        }
+      ],
+      "online_up_bytes": 1835250,
+      "online_down_bytes": 1310962,
+      "online_total_bytes": 3146212,
+      "M0_key_bytes": 184634972,
+      "key_sizes": {
+        "public_key_bytes": 1048689,
+        "galois_keys_bytes": 176245344,
+        "relin_keys_bytes": 7340887,
+        "galois_key_count": 24,
+        "compr": "none",
+        "seeded": 0,
+        "public_context_bytes": 184634972
+      },
+      "plan": null,
+      "online_reduction_vs_baseline": 1.0,
+      "M0_reduction_vs_baseline": 1.0
+    },
+    {
+      "dataset": "uci_har",
+      "schedule": "11",
+      "wire": {
+        "name": "baseline",
+        "compr": "none",
+        "seeded_client": false,
+        "seeded_keys": false,
+        "modswitch_send": false,
+        "short_chain": false
+      },
+      "messages": [
+        {
+          "msg": "M1",
+          "direction": "C->S",
+          "chain_index": 6,
+          "bytes": 917625
+        },
+        {
+          "msg": "①_1",
+          "direction": "S->C",
+          "chain_index": 5,
+          "modulus_bits": 145,
+          "bytes": 786553
+        },
+        {
+          "msg": "②_1",
+          "direction": "C->S",
+          "chain_index": 6,
+          "bytes": 917625
+        },
+        {
+          "msg": "①_2",
+          "direction": "S->C",
+          "chain_index": 5,
+          "modulus_bits": 145,
+          "bytes": 786553
+        },
+        {
+          "msg": "②_2",
+          "direction": "C->S",
+          "chain_index": 6,
+          "bytes": 917625
+        },
+        {
+          "msg": "M3",
+          "direction": "S->C",
+          "chain_index": 5,
+          "modulus_bits": 145,
+          "bytes": 786553
+        }
+      ],
+      "online_up_bytes": 2752875,
+      "online_down_bytes": 2359659,
+      "online_total_bytes": 5112534,
+      "M0_key_bytes": 184634972,
+      "key_sizes": {
+        "public_key_bytes": 1048689,
+        "galois_keys_bytes": 176245344,
+        "relin_keys_bytes": 7340887,
+        "galois_key_count": 24,
+        "compr": "none",
+        "seeded": 0,
+        "public_context_bytes": 184634972
+      },
+      "plan": null,
+      "online_reduction_vs_baseline": 1.0,
+      "M0_reduction_vs_baseline": 1.0
+    },
+    {
+      "dataset": "mnist",
+      "schedule": "00",
+      "wire": {
+        "name": "seeded",
+        "compr": "none",
+        "seeded_client": true,
+        "seeded_keys": true,
+        "modswitch_send": false,
+        "short_chain": false
+      },
+      "messages": [
+        {
+          "msg": "M1",
+          "direction": "C->S",
+          "chain_index": 6,
+          "bytes": 458954
+        },
+        {
+          "msg": "M3",
+          "direction": "S->C",
+          "chain_index": 1,
+          "modulus_bits": 61,
+          "bytes": 262265
+        }
+      ],
+      "online_up_bytes": 458954,
+      "online_down_bytes": 262265,
+      "online_total_bytes": 721219,
+      "M0_key_bytes": 92374540,
+      "key_sizes": {
+        "public_key_bytes": 524482,
+        "galois_keys_bytes": 88178568,
+        "relin_keys_bytes": 3671438,
+        "galois_key_count": 24,
+        "compr": "none",
+        "seeded": 1,
+        "public_context_bytes": 92374540
+      },
+      "plan": {
+        "data_primes": [
+          1099510890497,
+          1196033,
+          1376257,
+          1589249,
+          1720321,
+          1769473,
+          1785857
+        ],
+        "send_abs": {
+          "out": 64.0,
+          "argmax": 4398046511168.0,
+          "dummy": 4398046511104.0
+        },
+        "chain_index": {
+          "logits": {
+            "M1": 6
+          },
+          "index": {
+            "M1": 6
+          }
+        }
+      },
+      "online_reduction_vs_baseline": 1.636,
+      "M0_reduction_vs_baseline": 1.999
+    },
+    {
+      "dataset": "mnist",
+      "schedule": "01",
+      "wire": {
+        "name": "seeded",
+        "compr": "none",
+        "seeded_client": true,
+        "seeded_keys": true,
+        "modswitch_send": false,
+        "short_chain": false
+      },
+      "messages": [
+        {
+          "msg": "M1",
+          "direction": "C->S",
+          "chain_index": 6,
+          "bytes": 458954
+        },
+        {
+          "msg": "①_2",
+          "direction": "S->C",
+          "chain_index": 3,
+          "modulus_bits": 103,
+          "bytes": 524409
+        },
+        {
+          "msg": "②_2",
+          "direction": "C->S",
+          "chain_index": 6,
+          "bytes": 458954
+        },
+        {
+          "msg": "M3",
+          "direction": "S->C",
+          "chain_index": 5,
+          "modulus_bits": 145,
+          "bytes": 786553
+        }
+      ],
+      "online_up_bytes": 917908,
+      "online_down_bytes": 1310962,
+      "online_total_bytes": 2228870,
+      "M0_key_bytes": 92374540,
+      "key_sizes": {
+        "public_key_bytes": 524482,
+        "galois_keys_bytes": 88178568,
+        "relin_keys_bytes": 3671438,
+        "galois_key_count": 24,
+        "compr": "none",
+        "seeded": 1,
+        "public_context_bytes": 92374540
+      },
+      "plan": {
+        "data_primes": [
+          1099510890497,
+          1196033,
+          1376257,
+          1589249,
+          1720321,
+          1769473,
+          1785857
+        ],
+        "send_abs": {
+          "hyb1": 4398046511168.0,
+          "out": 64.0,
+          "argmax": 4398046511168.0,
+          "dummy": 4398046511104.0
+        },
+        "chain_index": {
+          "logits": {
+            "M1": 6,
+            "re1": 6
+          },
+          "index": {
+            "M1": 6,
+            "re1": 6
+          }
+        }
+      },
+      "online_reduction_vs_baseline": 1.412,
+      "M0_reduction_vs_baseline": 1.999
+    },
+    {
+      "dataset": "mnist",
+      "schedule": "10",
+      "wire": {
+        "name": "seeded",
+        "compr": "none",
+        "seeded_client": true,
+        "seeded_keys": true,
+        "modswitch_send": false,
+        "short_chain": false
+      },
+      "messages": [
+        {
+          "msg": "M1",
+          "direction": "C->S",
+          "chain_index": 6,
+          "bytes": 458954
+        },
+        {
+          "msg": "①_1",
+          "direction": "S->C",
+          "chain_index": 5,
+          "modulus_bits": 145,
+          "bytes": 786553
+        },
+        {
+          "msg": "②_1",
+          "direction": "C->S",
+          "chain_index": 6,
+          "bytes": 458954
+        },
+        {
+          "msg": "M3",
+          "direction": "S->C",
+          "chain_index": 3,
+          "modulus_bits": 103,
+          "bytes": 524409
+        }
+      ],
+      "online_up_bytes": 917908,
+      "online_down_bytes": 1310962,
+      "online_total_bytes": 2228870,
+      "M0_key_bytes": 92374540,
+      "key_sizes": {
+        "public_key_bytes": 524482,
+        "galois_keys_bytes": 88178568,
+        "relin_keys_bytes": 3671438,
+        "galois_key_count": 24,
+        "compr": "none",
+        "seeded": 1,
+        "public_context_bytes": 92374540
+      },
+      "plan": {
+        "data_primes": [
+          1099510890497,
+          1196033,
+          1376257,
+          1589249,
+          1720321,
+          1769473,
+          1785857
+        ],
+        "send_abs": {
+          "hyb0": 4398046511120.0,
+          "out": 64.0,
+          "argmax": 4398046511168.0,
+          "dummy": 4398046511104.0
+        },
+        "chain_index": {
+          "logits": {
+            "M1": 6,
+            "re0": 6
+          },
+          "index": {
+            "M1": 6,
+            "re0": 6
+          }
+        }
+      },
+      "online_reduction_vs_baseline": 1.412,
+      "M0_reduction_vs_baseline": 1.999
+    },
+    {
+      "dataset": "mnist",
+      "schedule": "11",
+      "wire": {
+        "name": "seeded",
+        "compr": "none",
+        "seeded_client": true,
+        "seeded_keys": true,
+        "modswitch_send": false,
+        "short_chain": false
+      },
+      "messages": [
+        {
+          "msg": "M1",
+          "direction": "C->S",
+          "chain_index": 6,
+          "bytes": 458954
+        },
+        {
+          "msg": "①_1",
+          "direction": "S->C",
+          "chain_index": 5,
+          "modulus_bits": 145,
+          "bytes": 786553
+        },
+        {
+          "msg": "②_1",
+          "direction": "C->S",
+          "chain_index": 6,
+          "bytes": 458954
+        },
+        {
+          "msg": "①_2",
+          "direction": "S->C",
+          "chain_index": 5,
+          "modulus_bits": 145,
+          "bytes": 786553
+        },
+        {
+          "msg": "②_2",
+          "direction": "C->S",
+          "chain_index": 6,
+          "bytes": 458954
+        },
+        {
+          "msg": "M3",
+          "direction": "S->C",
+          "chain_index": 5,
+          "modulus_bits": 145,
+          "bytes": 786553
+        }
+      ],
+      "online_up_bytes": 1376862,
+      "online_down_bytes": 2359659,
+      "online_total_bytes": 3736521,
+      "M0_key_bytes": 92374540,
+      "key_sizes": {
+        "public_key_bytes": 524482,
+        "galois_keys_bytes": 88178568,
+        "relin_keys_bytes": 3671438,
+        "galois_key_count": 24,
+        "compr": "none",
+        "seeded": 1,
+        "public_context_bytes": 92374540
+      },
+      "plan": {
+        "data_primes": [
+          1099510890497,
+          1196033,
+          1376257,
+          1589249,
+          1720321,
+          1769473,
+          1785857
+        ],
+        "send_abs": {
+          "hyb0": 4398046511120.0,
+          "hyb1": 4398046511168.0,
+          "out": 64.0,
+          "argmax": 4398046511168.0,
+          "dummy": 4398046511104.0
+        },
+        "chain_index": {
+          "logits": {
+            "M1": 6,
+            "re0": 6,
+            "re1": 6
+          },
+          "index": {
+            "M1": 6,
+            "re0": 6,
+            "re1": 6
+          }
+        }
+      },
+      "online_reduction_vs_baseline": 1.368,
+      "M0_reduction_vs_baseline": 1.999
+    },
+    {
+      "dataset": "cifar10",
+      "schedule": "00",
+      "wire": {
+        "name": "seeded",
+        "compr": "none",
+        "seeded_client": true,
+        "seeded_keys": true,
+        "modswitch_send": false,
+        "short_chain": false
+      },
+      "messages": [
+        {
+          "msg": "M1",
+          "direction": "C->S",
+          "chain_index": 6,
+          "bytes": 458954
+        },
+        {
+          "msg": "M3",
+          "direction": "S->C",
+          "chain_index": 1,
+          "modulus_bits": 61,
+          "bytes": 262265
+        }
+      ],
+      "online_up_bytes": 458954,
+      "online_down_bytes": 262265,
+      "online_total_bytes": 721219,
+      "M0_key_bytes": 92374540,
+      "key_sizes": {
+        "public_key_bytes": 524482,
+        "galois_keys_bytes": 88178568,
+        "relin_keys_bytes": 3671438,
+        "galois_key_count": 24,
+        "compr": "none",
+        "seeded": 1,
+        "public_context_bytes": 92374540
+      },
+      "plan": {
+        "data_primes": [
+          1099510890497,
+          1196033,
+          1376257,
+          1589249,
+          1720321,
+          1769473,
+          1785857
+        ],
+        "send_abs": {
+          "out": 64.0,
+          "argmax": 4398046511168.0,
+          "dummy": 4398046511104.0
+        },
+        "chain_index": {
+          "logits": {
+            "M1": 6
+          },
+          "index": {
+            "M1": 6
+          }
+        }
+      },
+      "online_reduction_vs_baseline": 1.636,
+      "M0_reduction_vs_baseline": 1.999
+    },
+    {
+      "dataset": "cifar10",
+      "schedule": "01",
+      "wire": {
+        "name": "seeded",
+        "compr": "none",
+        "seeded_client": true,
+        "seeded_keys": true,
+        "modswitch_send": false,
+        "short_chain": false
+      },
+      "messages": [
+        {
+          "msg": "M1",
+          "direction": "C->S",
+          "chain_index": 6,
+          "bytes": 458954
+        },
+        {
+          "msg": "①_2",
+          "direction": "S->C",
+          "chain_index": 3,
+          "modulus_bits": 103,
+          "bytes": 524409
+        },
+        {
+          "msg": "②_2",
+          "direction": "C->S",
+          "chain_index": 6,
+          "bytes": 458954
+        },
+        {
+          "msg": "M3",
+          "direction": "S->C",
+          "chain_index": 5,
+          "modulus_bits": 145,
+          "bytes": 786553
+        }
+      ],
+      "online_up_bytes": 917908,
+      "online_down_bytes": 1310962,
+      "online_total_bytes": 2228870,
+      "M0_key_bytes": 92374540,
+      "key_sizes": {
+        "public_key_bytes": 524482,
+        "galois_keys_bytes": 88178568,
+        "relin_keys_bytes": 3671438,
+        "galois_key_count": 24,
+        "compr": "none",
+        "seeded": 1,
+        "public_context_bytes": 92374540
+      },
+      "plan": {
+        "data_primes": [
+          1099510890497,
+          1196033,
+          1376257,
+          1589249,
+          1720321,
+          1769473,
+          1785857
+        ],
+        "send_abs": {
+          "hyb1": 4398046511168.0,
+          "out": 64.0,
+          "argmax": 4398046511168.0,
+          "dummy": 4398046511104.0
+        },
+        "chain_index": {
+          "logits": {
+            "M1": 6,
+            "re1": 6
+          },
+          "index": {
+            "M1": 6,
+            "re1": 6
+          }
+        }
+      },
+      "online_reduction_vs_baseline": 1.412,
+      "M0_reduction_vs_baseline": 1.999
+    },
+    {
+      "dataset": "cifar10",
+      "schedule": "10",
+      "wire": {
+        "name": "seeded",
+        "compr": "none",
+        "seeded_client": true,
+        "seeded_keys": true,
+        "modswitch_send": false,
+        "short_chain": false
+      },
+      "messages": [
+        {
+          "msg": "M1",
+          "direction": "C->S",
+          "chain_index": 6,
+          "bytes": 458954
+        },
+        {
+          "msg": "①_1",
+          "direction": "S->C",
+          "chain_index": 5,
+          "modulus_bits": 145,
+          "bytes": 786553
+        },
+        {
+          "msg": "②_1",
+          "direction": "C->S",
+          "chain_index": 6,
+          "bytes": 458954
+        },
+        {
+          "msg": "M3",
+          "direction": "S->C",
+          "chain_index": 3,
+          "modulus_bits": 103,
+          "bytes": 524409
+        }
+      ],
+      "online_up_bytes": 917908,
+      "online_down_bytes": 1310962,
+      "online_total_bytes": 2228870,
+      "M0_key_bytes": 92374540,
+      "key_sizes": {
+        "public_key_bytes": 524482,
+        "galois_keys_bytes": 88178568,
+        "relin_keys_bytes": 3671438,
+        "galois_key_count": 24,
+        "compr": "none",
+        "seeded": 1,
+        "public_context_bytes": 92374540
+      },
+      "plan": {
+        "data_primes": [
+          1099510890497,
+          1196033,
+          1376257,
+          1589249,
+          1720321,
+          1769473,
+          1785857
+        ],
+        "send_abs": {
+          "hyb0": 4398046511120.0,
+          "out": 64.0,
+          "argmax": 4398046511168.0,
+          "dummy": 4398046511104.0
+        },
+        "chain_index": {
+          "logits": {
+            "M1": 6,
+            "re0": 6
+          },
+          "index": {
+            "M1": 6,
+            "re0": 6
+          }
+        }
+      },
+      "online_reduction_vs_baseline": 1.412,
+      "M0_reduction_vs_baseline": 1.999
+    },
+    {
+      "dataset": "cifar10",
+      "schedule": "11",
+      "wire": {
+        "name": "seeded",
+        "compr": "none",
+        "seeded_client": true,
+        "seeded_keys": true,
+        "modswitch_send": false,
+        "short_chain": false
+      },
+      "messages": [
+        {
+          "msg": "M1",
+          "direction": "C->S",
+          "chain_index": 6,
+          "bytes": 458954
+        },
+        {
+          "msg": "①_1",
+          "direction": "S->C",
+          "chain_index": 5,
+          "modulus_bits": 145,
+          "bytes": 786553
+        },
+        {
+          "msg": "②_1",
+          "direction": "C->S",
+          "chain_index": 6,
+          "bytes": 458954
+        },
+        {
+          "msg": "①_2",
+          "direction": "S->C",
+          "chain_index": 5,
+          "modulus_bits": 145,
+          "bytes": 786553
+        },
+        {
+          "msg": "②_2",
+          "direction": "C->S",
+          "chain_index": 6,
+          "bytes": 458954
+        },
+        {
+          "msg": "M3",
+          "direction": "S->C",
+          "chain_index": 5,
+          "modulus_bits": 145,
+          "bytes": 786553
+        }
+      ],
+      "online_up_bytes": 1376862,
+      "online_down_bytes": 2359659,
+      "online_total_bytes": 3736521,
+      "M0_key_bytes": 92374540,
+      "key_sizes": {
+        "public_key_bytes": 524482,
+        "galois_keys_bytes": 88178568,
+        "relin_keys_bytes": 3671438,
+        "galois_key_count": 24,
+        "compr": "none",
+        "seeded": 1,
+        "public_context_bytes": 92374540
+      },
+      "plan": {
+        "data_primes": [
+          1099510890497,
+          1196033,
+          1376257,
+          1589249,
+          1720321,
+          1769473,
+          1785857
+        ],
+        "send_abs": {
+          "hyb0": 4398046511120.0,
+          "hyb1": 4398046511168.0,
+          "out": 64.0,
+          "argmax": 4398046511168.0,
+          "dummy": 4398046511104.0
+        },
+        "chain_index": {
+          "logits": {
+            "M1": 6,
+            "re0": 6,
+            "re1": 6
+          },
+          "index": {
+            "M1": 6,
+            "re0": 6,
+            "re1": 6
+          }
+        }
+      },
+      "online_reduction_vs_baseline": 1.368,
+      "M0_reduction_vs_baseline": 1.999
+    },
+    {
+      "dataset": "uci_har",
+      "schedule": "00",
+      "wire": {
+        "name": "seeded",
+        "compr": "none",
+        "seeded_client": true,
+        "seeded_keys": true,
+        "modswitch_send": false,
+        "short_chain": false
+      },
+      "messages": [
+        {
+          "msg": "M1",
+          "direction": "C->S",
+          "chain_index": 6,
+          "bytes": 458954
+        },
+        {
+          "msg": "M3",
+          "direction": "S->C",
+          "chain_index": 1,
+          "modulus_bits": 61,
+          "bytes": 262265
+        }
+      ],
+      "online_up_bytes": 458954,
+      "online_down_bytes": 262265,
+      "online_total_bytes": 721219,
+      "M0_key_bytes": 92374540,
+      "key_sizes": {
+        "public_key_bytes": 524482,
+        "galois_keys_bytes": 88178568,
+        "relin_keys_bytes": 3671438,
+        "galois_key_count": 24,
+        "compr": "none",
+        "seeded": 1,
+        "public_context_bytes": 92374540
+      },
+      "plan": {
+        "data_primes": [
+          1099510890497,
+          1196033,
+          1376257,
+          1589249,
+          1720321,
+          1769473,
+          1785857
+        ],
+        "send_abs": {
+          "out": 64.0,
+          "argmax": 4398046511168.0,
+          "dummy": 4398046511104.0
+        },
+        "chain_index": {
+          "logits": {
+            "M1": 6
+          },
+          "index": {
+            "M1": 6
+          }
+        }
+      },
+      "online_reduction_vs_baseline": 1.636,
+      "M0_reduction_vs_baseline": 1.999
+    },
+    {
+      "dataset": "uci_har",
+      "schedule": "01",
+      "wire": {
+        "name": "seeded",
+        "compr": "none",
+        "seeded_client": true,
+        "seeded_keys": true,
+        "modswitch_send": false,
+        "short_chain": false
+      },
+      "messages": [
+        {
+          "msg": "M1",
+          "direction": "C->S",
+          "chain_index": 6,
+          "bytes": 458954
+        },
+        {
+          "msg": "①_2",
+          "direction": "S->C",
+          "chain_index": 3,
+          "modulus_bits": 103,
+          "bytes": 524409
+        },
+        {
+          "msg": "②_2",
+          "direction": "C->S",
+          "chain_index": 6,
+          "bytes": 458954
+        },
+        {
+          "msg": "M3",
+          "direction": "S->C",
+          "chain_index": 5,
+          "modulus_bits": 145,
+          "bytes": 786553
+        }
+      ],
+      "online_up_bytes": 917908,
+      "online_down_bytes": 1310962,
+      "online_total_bytes": 2228870,
+      "M0_key_bytes": 92374540,
+      "key_sizes": {
+        "public_key_bytes": 524482,
+        "galois_keys_bytes": 88178568,
+        "relin_keys_bytes": 3671438,
+        "galois_key_count": 24,
+        "compr": "none",
+        "seeded": 1,
+        "public_context_bytes": 92374540
+      },
+      "plan": {
+        "data_primes": [
+          1099510890497,
+          1196033,
+          1376257,
+          1589249,
+          1720321,
+          1769473,
+          1785857
+        ],
+        "send_abs": {
+          "hyb1": 4398046511168.0,
+          "out": 64.0,
+          "argmax": 4398046511168.0,
+          "dummy": 4398046511104.0
+        },
+        "chain_index": {
+          "logits": {
+            "M1": 6,
+            "re1": 6
+          },
+          "index": {
+            "M1": 6,
+            "re1": 6
+          }
+        }
+      },
+      "online_reduction_vs_baseline": 1.412,
+      "M0_reduction_vs_baseline": 1.999
+    },
+    {
+      "dataset": "uci_har",
+      "schedule": "10",
+      "wire": {
+        "name": "seeded",
+        "compr": "none",
+        "seeded_client": true,
+        "seeded_keys": true,
+        "modswitch_send": false,
+        "short_chain": false
+      },
+      "messages": [
+        {
+          "msg": "M1",
+          "direction": "C->S",
+          "chain_index": 6,
+          "bytes": 458954
+        },
+        {
+          "msg": "①_1",
+          "direction": "S->C",
+          "chain_index": 5,
+          "modulus_bits": 145,
+          "bytes": 786553
+        },
+        {
+          "msg": "②_1",
+          "direction": "C->S",
+          "chain_index": 6,
+          "bytes": 458954
+        },
+        {
+          "msg": "M3",
+          "direction": "S->C",
+          "chain_index": 3,
+          "modulus_bits": 103,
+          "bytes": 524409
+        }
+      ],
+      "online_up_bytes": 917908,
+      "online_down_bytes": 1310962,
+      "online_total_bytes": 2228870,
+      "M0_key_bytes": 92374540,
+      "key_sizes": {
+        "public_key_bytes": 524482,
+        "galois_keys_bytes": 88178568,
+        "relin_keys_bytes": 3671438,
+        "galois_key_count": 24,
+        "compr": "none",
+        "seeded": 1,
+        "public_context_bytes": 92374540
+      },
+      "plan": {
+        "data_primes": [
+          1099510890497,
+          1196033,
+          1376257,
+          1589249,
+          1720321,
+          1769473,
+          1785857
+        ],
+        "send_abs": {
+          "hyb0": 4398046511120.0,
+          "out": 64.0,
+          "argmax": 4398046511168.0,
+          "dummy": 4398046511104.0
+        },
+        "chain_index": {
+          "logits": {
+            "M1": 6,
+            "re0": 6
+          },
+          "index": {
+            "M1": 6,
+            "re0": 6
+          }
+        }
+      },
+      "online_reduction_vs_baseline": 1.412,
+      "M0_reduction_vs_baseline": 1.999
+    },
+    {
+      "dataset": "uci_har",
+      "schedule": "11",
+      "wire": {
+        "name": "seeded",
+        "compr": "none",
+        "seeded_client": true,
+        "seeded_keys": true,
+        "modswitch_send": false,
+        "short_chain": false
+      },
+      "messages": [
+        {
+          "msg": "M1",
+          "direction": "C->S",
+          "chain_index": 6,
+          "bytes": 458954
+        },
+        {
+          "msg": "①_1",
+          "direction": "S->C",
+          "chain_index": 5,
+          "modulus_bits": 145,
+          "bytes": 786553
+        },
+        {
+          "msg": "②_1",
+          "direction": "C->S",
+          "chain_index": 6,
+          "bytes": 458954
+        },
+        {
+          "msg": "①_2",
+          "direction": "S->C",
+          "chain_index": 5,
+          "modulus_bits": 145,
+          "bytes": 786553
+        },
+        {
+          "msg": "②_2",
+          "direction": "C->S",
+          "chain_index": 6,
+          "bytes": 458954
+        },
+        {
+          "msg": "M3",
+          "direction": "S->C",
+          "chain_index": 5,
+          "modulus_bits": 145,
+          "bytes": 786553
+        }
+      ],
+      "online_up_bytes": 1376862,
+      "online_down_bytes": 2359659,
+      "online_total_bytes": 3736521,
+      "M0_key_bytes": 92374540,
+      "key_sizes": {
+        "public_key_bytes": 524482,
+        "galois_keys_bytes": 88178568,
+        "relin_keys_bytes": 3671438,
+        "galois_key_count": 24,
+        "compr": "none",
+        "seeded": 1,
+        "public_context_bytes": 92374540
+      },
+      "plan": {
+        "data_primes": [
+          1099510890497,
+          1196033,
+          1376257,
+          1589249,
+          1720321,
+          1769473,
+          1785857
+        ],
+        "send_abs": {
+          "hyb0": 4398046511120.0,
+          "hyb1": 4398046511168.0,
+          "out": 64.0,
+          "argmax": 4398046511168.0,
+          "dummy": 4398046511104.0
+        },
+        "chain_index": {
+          "logits": {
+            "M1": 6,
+            "re0": 6,
+            "re1": 6
+          },
+          "index": {
+            "M1": 6,
+            "re0": 6,
+            "re1": 6
+          }
+        }
+      },
+      "online_reduction_vs_baseline": 1.368,
+      "M0_reduction_vs_baseline": 1.999
+    },
+    {
+      "dataset": "mnist",
+      "schedule": "00",
+      "wire": {
+        "name": "modswitch",
+        "compr": "none",
+        "seeded_client": false,
+        "seeded_keys": false,
+        "modswitch_send": true,
+        "short_chain": false
+      },
+      "messages": [
+        {
+          "msg": "M1",
+          "direction": "C->S",
+          "chain_index": 6,
+          "bytes": 917625
+        },
+        {
+          "msg": "M3",
+          "direction": "S->C",
+          "chain_index": 0,
+          "modulus_bits": 40,
+          "bytes": 131193
+        }
+      ],
+      "online_up_bytes": 917625,
+      "online_down_bytes": 131193,
+      "online_total_bytes": 1048818,
+      "M0_key_bytes": 184634972,
+      "key_sizes": {
+        "public_key_bytes": 1048689,
+        "galois_keys_bytes": 176245344,
+        "relin_keys_bytes": 7340887,
+        "galois_key_count": 24,
+        "compr": "none",
+        "seeded": 0,
+        "public_context_bytes": 184634972
+      },
+      "plan": {
+        "data_primes": [
+          1099510890497,
+          1196033,
+          1376257,
+          1589249,
+          1720321,
+          1769473,
+          1785857
+        ],
+        "send_abs": {
+          "out": 64.0,
+          "argmax": 4398046511168.0,
+          "dummy": 4398046511104.0
+        },
+        "chain_index": {
+          "logits": {
+            "M1": 6
+          },
+          "index": {
+            "M1": 6
+          }
+        }
+      },
+      "online_reduction_vs_baseline": 1.125,
+      "M0_reduction_vs_baseline": 1.0
+    },
+    {
+      "dataset": "mnist",
+      "schedule": "01",
+      "wire": {
+        "name": "modswitch",
+        "compr": "none",
+        "seeded_client": false,
+        "seeded_keys": false,
+        "modswitch_send": true,
+        "short_chain": false
+      },
+      "messages": [
+        {
+          "msg": "M1",
+          "direction": "C->S",
+          "chain_index": 6,
+          "bytes": 917625
+        },
+        {
+          "msg": "①_2",
+          "direction": "S->C",
+          "chain_index": 2,
+          "modulus_bits": 82,
+          "bytes": 393337
+        },
+        {
+          "msg": "②_2",
+          "direction": "C->S",
+          "chain_index": 6,
+          "bytes": 917625
+        },
+        {
+          "msg": "M3",
+          "direction": "S->C",
+          "chain_index": 0,
+          "modulus_bits": 40,
+          "bytes": 131193
+        }
+      ],
+      "online_up_bytes": 1835250,
+      "online_down_bytes": 524530,
+      "online_total_bytes": 2359780,
+      "M0_key_bytes": 184634972,
+      "key_sizes": {
+        "public_key_bytes": 1048689,
+        "galois_keys_bytes": 176245344,
+        "relin_keys_bytes": 7340887,
+        "galois_key_count": 24,
+        "compr": "none",
+        "seeded": 0,
+        "public_context_bytes": 184634972
+      },
+      "plan": {
+        "data_primes": [
+          1099510890497,
+          1196033,
+          1376257,
+          1589249,
+          1720321,
+          1769473,
+          1785857
+        ],
+        "send_abs": {
+          "hyb1": 4398046511168.0,
+          "out": 64.0,
+          "argmax": 4398046511168.0,
+          "dummy": 4398046511104.0
+        },
+        "chain_index": {
+          "logits": {
+            "M1": 6,
+            "re1": 6
+          },
+          "index": {
+            "M1": 6,
+            "re1": 6
+          }
+        }
+      },
+      "online_reduction_vs_baseline": 1.333,
+      "M0_reduction_vs_baseline": 1.0
+    },
+    {
+      "dataset": "mnist",
+      "schedule": "10",
+      "wire": {
+        "name": "modswitch",
+        "compr": "none",
+        "seeded_client": false,
+        "seeded_keys": false,
+        "modswitch_send": true,
+        "short_chain": false
+      },
+      "messages": [
+        {
+          "msg": "M1",
+          "direction": "C->S",
+          "chain_index": 6,
+          "bytes": 917625
+        },
+        {
+          "msg": "①_1",
+          "direction": "S->C",
+          "chain_index": 2,
+          "modulus_bits": 82,
+          "bytes": 393337
+        },
+        {
+          "msg": "②_1",
+          "direction": "C->S",
+          "chain_index": 6,
+          "bytes": 917625
+        },
+        {
+          "msg": "M3",
+          "direction": "S->C",
+          "chain_index": 0,
+          "modulus_bits": 40,
+          "bytes": 131193
+        }
+      ],
+      "online_up_bytes": 1835250,
+      "online_down_bytes": 524530,
+      "online_total_bytes": 2359780,
+      "M0_key_bytes": 184634972,
+      "key_sizes": {
+        "public_key_bytes": 1048689,
+        "galois_keys_bytes": 176245344,
+        "relin_keys_bytes": 7340887,
+        "galois_key_count": 24,
+        "compr": "none",
+        "seeded": 0,
+        "public_context_bytes": 184634972
+      },
+      "plan": {
+        "data_primes": [
+          1099510890497,
+          1196033,
+          1376257,
+          1589249,
+          1720321,
+          1769473,
+          1785857
+        ],
+        "send_abs": {
+          "hyb0": 4398046511120.0,
+          "out": 64.0,
+          "argmax": 4398046511168.0,
+          "dummy": 4398046511104.0
+        },
+        "chain_index": {
+          "logits": {
+            "M1": 6,
+            "re0": 6
+          },
+          "index": {
+            "M1": 6,
+            "re0": 6
+          }
+        }
+      },
+      "online_reduction_vs_baseline": 1.333,
+      "M0_reduction_vs_baseline": 1.0
+    },
+    {
+      "dataset": "mnist",
+      "schedule": "11",
+      "wire": {
+        "name": "modswitch",
+        "compr": "none",
+        "seeded_client": false,
+        "seeded_keys": false,
+        "modswitch_send": true,
+        "short_chain": false
+      },
+      "messages": [
+        {
+          "msg": "M1",
+          "direction": "C->S",
+          "chain_index": 6,
+          "bytes": 917625
+        },
+        {
+          "msg": "①_1",
+          "direction": "S->C",
+          "chain_index": 2,
+          "modulus_bits": 82,
+          "bytes": 393337
+        },
+        {
+          "msg": "②_1",
+          "direction": "C->S",
+          "chain_index": 6,
+          "bytes": 917625
+        },
+        {
+          "msg": "①_2",
+          "direction": "S->C",
+          "chain_index": 2,
+          "modulus_bits": 82,
+          "bytes": 393337
+        },
+        {
+          "msg": "②_2",
+          "direction": "C->S",
+          "chain_index": 6,
+          "bytes": 917625
+        },
+        {
+          "msg": "M3",
+          "direction": "S->C",
+          "chain_index": 0,
+          "modulus_bits": 40,
+          "bytes": 131193
+        }
+      ],
+      "online_up_bytes": 2752875,
+      "online_down_bytes": 917867,
+      "online_total_bytes": 3670742,
+      "M0_key_bytes": 184634972,
+      "key_sizes": {
+        "public_key_bytes": 1048689,
+        "galois_keys_bytes": 176245344,
+        "relin_keys_bytes": 7340887,
+        "galois_key_count": 24,
+        "compr": "none",
+        "seeded": 0,
+        "public_context_bytes": 184634972
+      },
+      "plan": {
+        "data_primes": [
+          1099510890497,
+          1196033,
+          1376257,
+          1589249,
+          1720321,
+          1769473,
+          1785857
+        ],
+        "send_abs": {
+          "hyb0": 4398046511120.0,
+          "hyb1": 4398046511168.0,
+          "out": 64.0,
+          "argmax": 4398046511168.0,
+          "dummy": 4398046511104.0
+        },
+        "chain_index": {
+          "logits": {
+            "M1": 6,
+            "re0": 6,
+            "re1": 6
+          },
+          "index": {
+            "M1": 6,
+            "re0": 6,
+            "re1": 6
+          }
+        }
+      },
+      "online_reduction_vs_baseline": 1.393,
+      "M0_reduction_vs_baseline": 1.0
+    },
+    {
+      "dataset": "cifar10",
+      "schedule": "00",
+      "wire": {
+        "name": "modswitch",
+        "compr": "none",
+        "seeded_client": false,
+        "seeded_keys": false,
+        "modswitch_send": true,
+        "short_chain": false
+      },
+      "messages": [
+        {
+          "msg": "M1",
+          "direction": "C->S",
+          "chain_index": 6,
+          "bytes": 917625
+        },
+        {
+          "msg": "M3",
+          "direction": "S->C",
+          "chain_index": 0,
+          "modulus_bits": 40,
+          "bytes": 131193
+        }
+      ],
+      "online_up_bytes": 917625,
+      "online_down_bytes": 131193,
+      "online_total_bytes": 1048818,
+      "M0_key_bytes": 184634972,
+      "key_sizes": {
+        "public_key_bytes": 1048689,
+        "galois_keys_bytes": 176245344,
+        "relin_keys_bytes": 7340887,
+        "galois_key_count": 24,
+        "compr": "none",
+        "seeded": 0,
+        "public_context_bytes": 184634972
+      },
+      "plan": {
+        "data_primes": [
+          1099510890497,
+          1196033,
+          1376257,
+          1589249,
+          1720321,
+          1769473,
+          1785857
+        ],
+        "send_abs": {
+          "out": 64.0,
+          "argmax": 4398046511168.0,
+          "dummy": 4398046511104.0
+        },
+        "chain_index": {
+          "logits": {
+            "M1": 6
+          },
+          "index": {
+            "M1": 6
+          }
+        }
+      },
+      "online_reduction_vs_baseline": 1.125,
+      "M0_reduction_vs_baseline": 1.0
+    },
+    {
+      "dataset": "cifar10",
+      "schedule": "01",
+      "wire": {
+        "name": "modswitch",
+        "compr": "none",
+        "seeded_client": false,
+        "seeded_keys": false,
+        "modswitch_send": true,
+        "short_chain": false
+      },
+      "messages": [
+        {
+          "msg": "M1",
+          "direction": "C->S",
+          "chain_index": 6,
+          "bytes": 917625
+        },
+        {
+          "msg": "①_2",
+          "direction": "S->C",
+          "chain_index": 2,
+          "modulus_bits": 82,
+          "bytes": 393337
+        },
+        {
+          "msg": "②_2",
+          "direction": "C->S",
+          "chain_index": 6,
+          "bytes": 917625
+        },
+        {
+          "msg": "M3",
+          "direction": "S->C",
+          "chain_index": 0,
+          "modulus_bits": 40,
+          "bytes": 131193
+        }
+      ],
+      "online_up_bytes": 1835250,
+      "online_down_bytes": 524530,
+      "online_total_bytes": 2359780,
+      "M0_key_bytes": 184634972,
+      "key_sizes": {
+        "public_key_bytes": 1048689,
+        "galois_keys_bytes": 176245344,
+        "relin_keys_bytes": 7340887,
+        "galois_key_count": 24,
+        "compr": "none",
+        "seeded": 0,
+        "public_context_bytes": 184634972
+      },
+      "plan": {
+        "data_primes": [
+          1099510890497,
+          1196033,
+          1376257,
+          1589249,
+          1720321,
+          1769473,
+          1785857
+        ],
+        "send_abs": {
+          "hyb1": 4398046511168.0,
+          "out": 64.0,
+          "argmax": 4398046511168.0,
+          "dummy": 4398046511104.0
+        },
+        "chain_index": {
+          "logits": {
+            "M1": 6,
+            "re1": 6
+          },
+          "index": {
+            "M1": 6,
+            "re1": 6
+          }
+        }
+      },
+      "online_reduction_vs_baseline": 1.333,
+      "M0_reduction_vs_baseline": 1.0
+    },
+    {
+      "dataset": "cifar10",
+      "schedule": "10",
+      "wire": {
+        "name": "modswitch",
+        "compr": "none",
+        "seeded_client": false,
+        "seeded_keys": false,
+        "modswitch_send": true,
+        "short_chain": false
+      },
+      "messages": [
+        {
+          "msg": "M1",
+          "direction": "C->S",
+          "chain_index": 6,
+          "bytes": 917625
+        },
+        {
+          "msg": "①_1",
+          "direction": "S->C",
+          "chain_index": 2,
+          "modulus_bits": 82,
+          "bytes": 393337
+        },
+        {
+          "msg": "②_1",
+          "direction": "C->S",
+          "chain_index": 6,
+          "bytes": 917625
+        },
+        {
+          "msg": "M3",
+          "direction": "S->C",
+          "chain_index": 0,
+          "modulus_bits": 40,
+          "bytes": 131193
+        }
+      ],
+      "online_up_bytes": 1835250,
+      "online_down_bytes": 524530,
+      "online_total_bytes": 2359780,
+      "M0_key_bytes": 184634972,
+      "key_sizes": {
+        "public_key_bytes": 1048689,
+        "galois_keys_bytes": 176245344,
+        "relin_keys_bytes": 7340887,
+        "galois_key_count": 24,
+        "compr": "none",
+        "seeded": 0,
+        "public_context_bytes": 184634972
+      },
+      "plan": {
+        "data_primes": [
+          1099510890497,
+          1196033,
+          1376257,
+          1589249,
+          1720321,
+          1769473,
+          1785857
+        ],
+        "send_abs": {
+          "hyb0": 4398046511120.0,
+          "out": 64.0,
+          "argmax": 4398046511168.0,
+          "dummy": 4398046511104.0
+        },
+        "chain_index": {
+          "logits": {
+            "M1": 6,
+            "re0": 6
+          },
+          "index": {
+            "M1": 6,
+            "re0": 6
+          }
+        }
+      },
+      "online_reduction_vs_baseline": 1.333,
+      "M0_reduction_vs_baseline": 1.0
+    },
+    {
+      "dataset": "cifar10",
+      "schedule": "11",
+      "wire": {
+        "name": "modswitch",
+        "compr": "none",
+        "seeded_client": false,
+        "seeded_keys": false,
+        "modswitch_send": true,
+        "short_chain": false
+      },
+      "messages": [
+        {
+          "msg": "M1",
+          "direction": "C->S",
+          "chain_index": 6,
+          "bytes": 917625
+        },
+        {
+          "msg": "①_1",
+          "direction": "S->C",
+          "chain_index": 2,
+          "modulus_bits": 82,
+          "bytes": 393337
+        },
+        {
+          "msg": "②_1",
+          "direction": "C->S",
+          "chain_index": 6,
+          "bytes": 917625
+        },
+        {
+          "msg": "①_2",
+          "direction": "S->C",
+          "chain_index": 2,
+          "modulus_bits": 82,
+          "bytes": 393337
+        },
+        {
+          "msg": "②_2",
+          "direction": "C->S",
+          "chain_index": 6,
+          "bytes": 917625
+        },
+        {
+          "msg": "M3",
+          "direction": "S->C",
+          "chain_index": 0,
+          "modulus_bits": 40,
+          "bytes": 131193
+        }
+      ],
+      "online_up_bytes": 2752875,
+      "online_down_bytes": 917867,
+      "online_total_bytes": 3670742,
+      "M0_key_bytes": 184634972,
+      "key_sizes": {
+        "public_key_bytes": 1048689,
+        "galois_keys_bytes": 176245344,
+        "relin_keys_bytes": 7340887,
+        "galois_key_count": 24,
+        "compr": "none",
+        "seeded": 0,
+        "public_context_bytes": 184634972
+      },
+      "plan": {
+        "data_primes": [
+          1099510890497,
+          1196033,
+          1376257,
+          1589249,
+          1720321,
+          1769473,
+          1785857
+        ],
+        "send_abs": {
+          "hyb0": 4398046511120.0,
+          "hyb1": 4398046511168.0,
+          "out": 64.0,
+          "argmax": 4398046511168.0,
+          "dummy": 4398046511104.0
+        },
+        "chain_index": {
+          "logits": {
+            "M1": 6,
+            "re0": 6,
+            "re1": 6
+          },
+          "index": {
+            "M1": 6,
+            "re0": 6,
+            "re1": 6
+          }
+        }
+      },
+      "online_reduction_vs_baseline": 1.393,
+      "M0_reduction_vs_baseline": 1.0
+    },
+    {
+      "dataset": "uci_har",
+      "schedule": "00",
+      "wire": {
+        "name": "modswitch",
+        "compr": "none",
+        "seeded_client": false,
+        "seeded_keys": false,
+        "modswitch_send": true,
+        "short_chain": false
+      },
+      "messages": [
+        {
+          "msg": "M1",
+          "direction": "C->S",
+          "chain_index": 6,
+          "bytes": 917625
+        },
+        {
+          "msg": "M3",
+          "direction": "S->C",
+          "chain_index": 0,
+          "modulus_bits": 40,
+          "bytes": 131193
+        }
+      ],
+      "online_up_bytes": 917625,
+      "online_down_bytes": 131193,
+      "online_total_bytes": 1048818,
+      "M0_key_bytes": 184634972,
+      "key_sizes": {
+        "public_key_bytes": 1048689,
+        "galois_keys_bytes": 176245344,
+        "relin_keys_bytes": 7340887,
+        "galois_key_count": 24,
+        "compr": "none",
+        "seeded": 0,
+        "public_context_bytes": 184634972
+      },
+      "plan": {
+        "data_primes": [
+          1099510890497,
+          1196033,
+          1376257,
+          1589249,
+          1720321,
+          1769473,
+          1785857
+        ],
+        "send_abs": {
+          "out": 64.0,
+          "argmax": 4398046511168.0,
+          "dummy": 4398046511104.0
+        },
+        "chain_index": {
+          "logits": {
+            "M1": 6
+          },
+          "index": {
+            "M1": 6
+          }
+        }
+      },
+      "online_reduction_vs_baseline": 1.125,
+      "M0_reduction_vs_baseline": 1.0
+    },
+    {
+      "dataset": "uci_har",
+      "schedule": "01",
+      "wire": {
+        "name": "modswitch",
+        "compr": "none",
+        "seeded_client": false,
+        "seeded_keys": false,
+        "modswitch_send": true,
+        "short_chain": false
+      },
+      "messages": [
+        {
+          "msg": "M1",
+          "direction": "C->S",
+          "chain_index": 6,
+          "bytes": 917625
+        },
+        {
+          "msg": "①_2",
+          "direction": "S->C",
+          "chain_index": 2,
+          "modulus_bits": 82,
+          "bytes": 393337
+        },
+        {
+          "msg": "②_2",
+          "direction": "C->S",
+          "chain_index": 6,
+          "bytes": 917625
+        },
+        {
+          "msg": "M3",
+          "direction": "S->C",
+          "chain_index": 0,
+          "modulus_bits": 40,
+          "bytes": 131193
+        }
+      ],
+      "online_up_bytes": 1835250,
+      "online_down_bytes": 524530,
+      "online_total_bytes": 2359780,
+      "M0_key_bytes": 184634972,
+      "key_sizes": {
+        "public_key_bytes": 1048689,
+        "galois_keys_bytes": 176245344,
+        "relin_keys_bytes": 7340887,
+        "galois_key_count": 24,
+        "compr": "none",
+        "seeded": 0,
+        "public_context_bytes": 184634972
+      },
+      "plan": {
+        "data_primes": [
+          1099510890497,
+          1196033,
+          1376257,
+          1589249,
+          1720321,
+          1769473,
+          1785857
+        ],
+        "send_abs": {
+          "hyb1": 4398046511168.0,
+          "out": 64.0,
+          "argmax": 4398046511168.0,
+          "dummy": 4398046511104.0
+        },
+        "chain_index": {
+          "logits": {
+            "M1": 6,
+            "re1": 6
+          },
+          "index": {
+            "M1": 6,
+            "re1": 6
+          }
+        }
+      },
+      "online_reduction_vs_baseline": 1.333,
+      "M0_reduction_vs_baseline": 1.0
+    },
+    {
+      "dataset": "uci_har",
+      "schedule": "10",
+      "wire": {
+        "name": "modswitch",
+        "compr": "none",
+        "seeded_client": false,
+        "seeded_keys": false,
+        "modswitch_send": true,
+        "short_chain": false
+      },
+      "messages": [
+        {
+          "msg": "M1",
+          "direction": "C->S",
+          "chain_index": 6,
+          "bytes": 917625
+        },
+        {
+          "msg": "①_1",
+          "direction": "S->C",
+          "chain_index": 2,
+          "modulus_bits": 82,
+          "bytes": 393337
+        },
+        {
+          "msg": "②_1",
+          "direction": "C->S",
+          "chain_index": 6,
+          "bytes": 917625
+        },
+        {
+          "msg": "M3",
+          "direction": "S->C",
+          "chain_index": 0,
+          "modulus_bits": 40,
+          "bytes": 131193
+        }
+      ],
+      "online_up_bytes": 1835250,
+      "online_down_bytes": 524530,
+      "online_total_bytes": 2359780,
+      "M0_key_bytes": 184634972,
+      "key_sizes": {
+        "public_key_bytes": 1048689,
+        "galois_keys_bytes": 176245344,
+        "relin_keys_bytes": 7340887,
+        "galois_key_count": 24,
+        "compr": "none",
+        "seeded": 0,
+        "public_context_bytes": 184634972
+      },
+      "plan": {
+        "data_primes": [
+          1099510890497,
+          1196033,
+          1376257,
+          1589249,
+          1720321,
+          1769473,
+          1785857
+        ],
+        "send_abs": {
+          "hyb0": 4398046511120.0,
+          "out": 64.0,
+          "argmax": 4398046511168.0,
+          "dummy": 4398046511104.0
+        },
+        "chain_index": {
+          "logits": {
+            "M1": 6,
+            "re0": 6
+          },
+          "index": {
+            "M1": 6,
+            "re0": 6
+          }
+        }
+      },
+      "online_reduction_vs_baseline": 1.333,
+      "M0_reduction_vs_baseline": 1.0
+    },
+    {
+      "dataset": "uci_har",
+      "schedule": "11",
+      "wire": {
+        "name": "modswitch",
+        "compr": "none",
+        "seeded_client": false,
+        "seeded_keys": false,
+        "modswitch_send": true,
+        "short_chain": false
+      },
+      "messages": [
+        {
+          "msg": "M1",
+          "direction": "C->S",
+          "chain_index": 6,
+          "bytes": 917625
+        },
+        {
+          "msg": "①_1",
+          "direction": "S->C",
+          "chain_index": 2,
+          "modulus_bits": 82,
+          "bytes": 393337
+        },
+        {
+          "msg": "②_1",
+          "direction": "C->S",
+          "chain_index": 6,
+          "bytes": 917625
+        },
+        {
+          "msg": "①_2",
+          "direction": "S->C",
+          "chain_index": 2,
+          "modulus_bits": 82,
+          "bytes": 393337
+        },
+        {
+          "msg": "②_2",
+          "direction": "C->S",
+          "chain_index": 6,
+          "bytes": 917625
+        },
+        {
+          "msg": "M3",
+          "direction": "S->C",
+          "chain_index": 0,
+          "modulus_bits": 40,
+          "bytes": 131193
+        }
+      ],
+      "online_up_bytes": 2752875,
+      "online_down_bytes": 917867,
+      "online_total_bytes": 3670742,
+      "M0_key_bytes": 184634972,
+      "key_sizes": {
+        "public_key_bytes": 1048689,
+        "galois_keys_bytes": 176245344,
+        "relin_keys_bytes": 7340887,
+        "galois_key_count": 24,
+        "compr": "none",
+        "seeded": 0,
+        "public_context_bytes": 184634972
+      },
+      "plan": {
+        "data_primes": [
+          1099510890497,
+          1196033,
+          1376257,
+          1589249,
+          1720321,
+          1769473,
+          1785857
+        ],
+        "send_abs": {
+          "hyb0": 4398046511120.0,
+          "hyb1": 4398046511168.0,
+          "out": 64.0,
+          "argmax": 4398046511168.0,
+          "dummy": 4398046511104.0
+        },
+        "chain_index": {
+          "logits": {
+            "M1": 6,
+            "re0": 6,
+            "re1": 6
+          },
+          "index": {
+            "M1": 6,
+            "re0": 6,
+            "re1": 6
+          }
+        }
+      },
+      "online_reduction_vs_baseline": 1.393,
+      "M0_reduction_vs_baseline": 1.0
+    },
+    {
+      "dataset": "mnist",
+      "schedule": "00",
+      "wire": {
+        "name": "shortchain",
+        "compr": "none",
+        "seeded_client": false,
+        "seeded_keys": false,
+        "modswitch_send": false,
+        "short_chain": true
+      },
+      "messages": [
+        {
+          "msg": "M1",
+          "direction": "C->S",
+          "chain_index": 6,
+          "bytes": 917625
+        },
+        {
+          "msg": "M3",
+          "direction": "S->C",
+          "chain_index": 1,
+          "modulus_bits": 61,
+          "bytes": 262265
+        }
+      ],
+      "online_up_bytes": 917625,
+      "online_down_bytes": 262265,
+      "online_total_bytes": 1179890,
+      "M0_key_bytes": 184634972,
+      "key_sizes": {
+        "public_key_bytes": 1048689,
+        "galois_keys_bytes": 176245344,
+        "relin_keys_bytes": 7340887,
+        "galois_key_count": 24,
+        "compr": "none",
+        "seeded": 0,
+        "public_context_bytes": 184634972
+      },
+      "plan": {
+        "data_primes": [
+          1099510890497,
+          1196033,
+          1376257,
+          1589249,
+          1720321,
+          1769473,
+          1785857
+        ],
+        "send_abs": {
+          "out": 64.0,
+          "argmax": 4398046511168.0,
+          "dummy": 4398046511104.0
+        },
+        "chain_index": {
+          "logits": {
+            "M1": 6
+          },
+          "index": {
+            "M1": 6
+          }
+        }
+      },
+      "online_reduction_vs_baseline": 1.0,
+      "M0_reduction_vs_baseline": 1.0
+    },
+    {
+      "dataset": "mnist",
+      "schedule": "01",
+      "wire": {
+        "name": "shortchain",
+        "compr": "none",
+        "seeded_client": false,
+        "seeded_keys": false,
+        "modswitch_send": false,
+        "short_chain": true
+      },
+      "messages": [
+        {
+          "msg": "M1",
+          "direction": "C->S",
+          "chain_index": 5,
+          "bytes": 786553
+        },
+        {
+          "msg": "①_2",
+          "direction": "S->C",
+          "chain_index": 2,
+          "modulus_bits": 82,
+          "bytes": 393337
+        },
+        {
+          "msg": "②_2",
+          "direction": "C->S",
+          "chain_index": 1,
+          "bytes": 262265
+        },
+        {
+          "msg": "M3",
+          "direction": "S->C",
+          "chain_index": 0,
+          "modulus_bits": 40,
+          "bytes": 131193
+        }
+      ],
+      "online_up_bytes": 1048818,
+      "online_down_bytes": 524530,
+      "online_total_bytes": 1573348,
+      "M0_key_bytes": 184634972,
+      "key_sizes": {
+        "public_key_bytes": 1048689,
+        "galois_keys_bytes": 176245344,
+        "relin_keys_bytes": 7340887,
+        "galois_key_count": 24,
+        "compr": "none",
+        "seeded": 0,
+        "public_context_bytes": 184634972
+      },
+      "plan": {
+        "data_primes": [
+          1099510890497,
+          1196033,
+          1376257,
+          1589249,
+          1720321,
+          1769473,
+          1785857
+        ],
+        "send_abs": {
+          "hyb1": 4398046511168.0,
+          "out": 64.0,
+          "argmax": 4398046511168.0,
+          "dummy": 4398046511104.0
+        },
+        "chain_index": {
+          "logits": {
+            "M1": 5,
+            "re1": 1
+          },
+          "index": {
+            "M1": 5,
+            "re1": 3
+          }
+        }
+      },
+      "online_reduction_vs_baseline": 2.0,
+      "M0_reduction_vs_baseline": 1.0
+    },
+    {
+      "dataset": "mnist",
+      "schedule": "10",
+      "wire": {
+        "name": "shortchain",
+        "compr": "none",
+        "seeded_client": false,
+        "seeded_keys": false,
+        "modswitch_send": false,
+        "short_chain": true
+      },
+      "messages": [
+        {
+          "msg": "M1",
+          "direction": "C->S",
+          "chain_index": 3,
+          "bytes": 524409
+        },
+        {
+          "msg": "①_1",
+          "direction": "S->C",
+          "chain_index": 2,
+          "modulus_bits": 82,
+          "bytes": 393337
+        },
+        {
+          "msg": "②_1",
+          "direction": "C->S",
+          "chain_index": 3,
+          "bytes": 524409
+        },
+        {
+          "msg": "M3",
+          "direction": "S->C",
+          "chain_index": 0,
+          "modulus_bits": 40,
+          "bytes": 131193
+        }
+      ],
+      "online_up_bytes": 1048818,
+      "online_down_bytes": 524530,
+      "online_total_bytes": 1573348,
+      "M0_key_bytes": 184634972,
+      "key_sizes": {
+        "public_key_bytes": 1048689,
+        "galois_keys_bytes": 176245344,
+        "relin_keys_bytes": 7340887,
+        "galois_key_count": 24,
+        "compr": "none",
+        "seeded": 0,
+        "public_context_bytes": 184634972
+      },
+      "plan": {
+        "data_primes": [
+          1099510890497,
+          1196033,
+          1376257,
+          1589249,
+          1720321,
+          1769473,
+          1785857
+        ],
+        "send_abs": {
+          "hyb0": 4398046511120.0,
+          "out": 64.0,
+          "argmax": 4398046511168.0,
+          "dummy": 4398046511104.0
+        },
+        "chain_index": {
+          "logits": {
+            "M1": 3,
+            "re0": 3
+          },
+          "index": {
+            "M1": 3,
+            "re0": 5
+          }
+        }
+      },
+      "online_reduction_vs_baseline": 2.0,
+      "M0_reduction_vs_baseline": 1.0
+    },
+    {
+      "dataset": "mnist",
+      "schedule": "11",
+      "wire": {
+        "name": "shortchain",
+        "compr": "none",
+        "seeded_client": false,
+        "seeded_keys": false,
+        "modswitch_send": false,
+        "short_chain": true
+      },
+      "messages": [
+        {
+          "msg": "M1",
+          "direction": "C->S",
+          "chain_index": 3,
+          "bytes": 524409
+        },
+        {
+          "msg": "①_1",
+          "direction": "S->C",
+          "chain_index": 2,
+          "modulus_bits": 82,
+          "bytes": 393337
+        },
+        {
+          "msg": "②_1",
+          "direction": "C->S",
+          "chain_index": 3,
+          "bytes": 524409
+        },
+        {
+          "msg": "①_2",
+          "direction": "S->C",
+          "chain_index": 2,
+          "modulus_bits": 82,
+          "bytes": 393337
+        },
+        {
+          "msg": "②_2",
+          "direction": "C->S",
+          "chain_index": 1,
+          "bytes": 262265
+        },
+        {
+          "msg": "M3",
+          "direction": "S->C",
+          "chain_index": 0,
+          "modulus_bits": 40,
+          "bytes": 131193
+        }
+      ],
+      "online_up_bytes": 1311083,
+      "online_down_bytes": 917867,
+      "online_total_bytes": 2228950,
+      "M0_key_bytes": 184634972,
+      "key_sizes": {
+        "public_key_bytes": 1048689,
+        "galois_keys_bytes": 176245344,
+        "relin_keys_bytes": 7340887,
+        "galois_key_count": 24,
+        "compr": "none",
+        "seeded": 0,
+        "public_context_bytes": 184634972
+      },
+      "plan": {
+        "data_primes": [
+          1099510890497,
+          1196033,
+          1376257,
+          1589249,
+          1720321,
+          1769473,
+          1785857
+        ],
+        "send_abs": {
+          "hyb0": 4398046511120.0,
+          "hyb1": 4398046511168.0,
+          "out": 64.0,
+          "argmax": 4398046511168.0,
+          "dummy": 4398046511104.0
+        },
+        "chain_index": {
+          "logits": {
+            "M1": 3,
+            "re0": 3,
+            "re1": 1
+          },
+          "index": {
+            "M1": 3,
+            "re0": 3,
+            "re1": 3
+          }
+        }
+      },
+      "online_reduction_vs_baseline": 2.294,
+      "M0_reduction_vs_baseline": 1.0
+    },
+    {
+      "dataset": "cifar10",
+      "schedule": "00",
+      "wire": {
+        "name": "shortchain",
+        "compr": "none",
+        "seeded_client": false,
+        "seeded_keys": false,
+        "modswitch_send": false,
+        "short_chain": true
+      },
+      "messages": [
+        {
+          "msg": "M1",
+          "direction": "C->S",
+          "chain_index": 6,
+          "bytes": 917625
+        },
+        {
+          "msg": "M3",
+          "direction": "S->C",
+          "chain_index": 1,
+          "modulus_bits": 61,
+          "bytes": 262265
+        }
+      ],
+      "online_up_bytes": 917625,
+      "online_down_bytes": 262265,
+      "online_total_bytes": 1179890,
+      "M0_key_bytes": 184634972,
+      "key_sizes": {
+        "public_key_bytes": 1048689,
+        "galois_keys_bytes": 176245344,
+        "relin_keys_bytes": 7340887,
+        "galois_key_count": 24,
+        "compr": "none",
+        "seeded": 0,
+        "public_context_bytes": 184634972
+      },
+      "plan": {
+        "data_primes": [
+          1099510890497,
+          1196033,
+          1376257,
+          1589249,
+          1720321,
+          1769473,
+          1785857
+        ],
+        "send_abs": {
+          "out": 64.0,
+          "argmax": 4398046511168.0,
+          "dummy": 4398046511104.0
+        },
+        "chain_index": {
+          "logits": {
+            "M1": 6
+          },
+          "index": {
+            "M1": 6
+          }
+        }
+      },
+      "online_reduction_vs_baseline": 1.0,
+      "M0_reduction_vs_baseline": 1.0
+    },
+    {
+      "dataset": "cifar10",
+      "schedule": "01",
+      "wire": {
+        "name": "shortchain",
+        "compr": "none",
+        "seeded_client": false,
+        "seeded_keys": false,
+        "modswitch_send": false,
+        "short_chain": true
+      },
+      "messages": [
+        {
+          "msg": "M1",
+          "direction": "C->S",
+          "chain_index": 5,
+          "bytes": 786553
+        },
+        {
+          "msg": "①_2",
+          "direction": "S->C",
+          "chain_index": 2,
+          "modulus_bits": 82,
+          "bytes": 393337
+        },
+        {
+          "msg": "②_2",
+          "direction": "C->S",
+          "chain_index": 1,
+          "bytes": 262265
+        },
+        {
+          "msg": "M3",
+          "direction": "S->C",
+          "chain_index": 0,
+          "modulus_bits": 40,
+          "bytes": 131193
+        }
+      ],
+      "online_up_bytes": 1048818,
+      "online_down_bytes": 524530,
+      "online_total_bytes": 1573348,
+      "M0_key_bytes": 184634972,
+      "key_sizes": {
+        "public_key_bytes": 1048689,
+        "galois_keys_bytes": 176245344,
+        "relin_keys_bytes": 7340887,
+        "galois_key_count": 24,
+        "compr": "none",
+        "seeded": 0,
+        "public_context_bytes": 184634972
+      },
+      "plan": {
+        "data_primes": [
+          1099510890497,
+          1196033,
+          1376257,
+          1589249,
+          1720321,
+          1769473,
+          1785857
+        ],
+        "send_abs": {
+          "hyb1": 4398046511168.0,
+          "out": 64.0,
+          "argmax": 4398046511168.0,
+          "dummy": 4398046511104.0
+        },
+        "chain_index": {
+          "logits": {
+            "M1": 5,
+            "re1": 1
+          },
+          "index": {
+            "M1": 5,
+            "re1": 3
+          }
+        }
+      },
+      "online_reduction_vs_baseline": 2.0,
+      "M0_reduction_vs_baseline": 1.0
+    },
+    {
+      "dataset": "cifar10",
+      "schedule": "10",
+      "wire": {
+        "name": "shortchain",
+        "compr": "none",
+        "seeded_client": false,
+        "seeded_keys": false,
+        "modswitch_send": false,
+        "short_chain": true
+      },
+      "messages": [
+        {
+          "msg": "M1",
+          "direction": "C->S",
+          "chain_index": 3,
+          "bytes": 524409
+        },
+        {
+          "msg": "①_1",
+          "direction": "S->C",
+          "chain_index": 2,
+          "modulus_bits": 82,
+          "bytes": 393337
+        },
+        {
+          "msg": "②_1",
+          "direction": "C->S",
+          "chain_index": 3,
+          "bytes": 524409
+        },
+        {
+          "msg": "M3",
+          "direction": "S->C",
+          "chain_index": 0,
+          "modulus_bits": 40,
+          "bytes": 131193
+        }
+      ],
+      "online_up_bytes": 1048818,
+      "online_down_bytes": 524530,
+      "online_total_bytes": 1573348,
+      "M0_key_bytes": 184634972,
+      "key_sizes": {
+        "public_key_bytes": 1048689,
+        "galois_keys_bytes": 176245344,
+        "relin_keys_bytes": 7340887,
+        "galois_key_count": 24,
+        "compr": "none",
+        "seeded": 0,
+        "public_context_bytes": 184634972
+      },
+      "plan": {
+        "data_primes": [
+          1099510890497,
+          1196033,
+          1376257,
+          1589249,
+          1720321,
+          1769473,
+          1785857
+        ],
+        "send_abs": {
+          "hyb0": 4398046511120.0,
+          "out": 64.0,
+          "argmax": 4398046511168.0,
+          "dummy": 4398046511104.0
+        },
+        "chain_index": {
+          "logits": {
+            "M1": 3,
+            "re0": 3
+          },
+          "index": {
+            "M1": 3,
+            "re0": 5
+          }
+        }
+      },
+      "online_reduction_vs_baseline": 2.0,
+      "M0_reduction_vs_baseline": 1.0
+    },
+    {
+      "dataset": "cifar10",
+      "schedule": "11",
+      "wire": {
+        "name": "shortchain",
+        "compr": "none",
+        "seeded_client": false,
+        "seeded_keys": false,
+        "modswitch_send": false,
+        "short_chain": true
+      },
+      "messages": [
+        {
+          "msg": "M1",
+          "direction": "C->S",
+          "chain_index": 3,
+          "bytes": 524409
+        },
+        {
+          "msg": "①_1",
+          "direction": "S->C",
+          "chain_index": 2,
+          "modulus_bits": 82,
+          "bytes": 393337
+        },
+        {
+          "msg": "②_1",
+          "direction": "C->S",
+          "chain_index": 3,
+          "bytes": 524409
+        },
+        {
+          "msg": "①_2",
+          "direction": "S->C",
+          "chain_index": 2,
+          "modulus_bits": 82,
+          "bytes": 393337
+        },
+        {
+          "msg": "②_2",
+          "direction": "C->S",
+          "chain_index": 1,
+          "bytes": 262265
+        },
+        {
+          "msg": "M3",
+          "direction": "S->C",
+          "chain_index": 0,
+          "modulus_bits": 40,
+          "bytes": 131193
+        }
+      ],
+      "online_up_bytes": 1311083,
+      "online_down_bytes": 917867,
+      "online_total_bytes": 2228950,
+      "M0_key_bytes": 184634972,
+      "key_sizes": {
+        "public_key_bytes": 1048689,
+        "galois_keys_bytes": 176245344,
+        "relin_keys_bytes": 7340887,
+        "galois_key_count": 24,
+        "compr": "none",
+        "seeded": 0,
+        "public_context_bytes": 184634972
+      },
+      "plan": {
+        "data_primes": [
+          1099510890497,
+          1196033,
+          1376257,
+          1589249,
+          1720321,
+          1769473,
+          1785857
+        ],
+        "send_abs": {
+          "hyb0": 4398046511120.0,
+          "hyb1": 4398046511168.0,
+          "out": 64.0,
+          "argmax": 4398046511168.0,
+          "dummy": 4398046511104.0
+        },
+        "chain_index": {
+          "logits": {
+            "M1": 3,
+            "re0": 3,
+            "re1": 1
+          },
+          "index": {
+            "M1": 3,
+            "re0": 3,
+            "re1": 3
+          }
+        }
+      },
+      "online_reduction_vs_baseline": 2.294,
+      "M0_reduction_vs_baseline": 1.0
+    },
+    {
+      "dataset": "uci_har",
+      "schedule": "00",
+      "wire": {
+        "name": "shortchain",
+        "compr": "none",
+        "seeded_client": false,
+        "seeded_keys": false,
+        "modswitch_send": false,
+        "short_chain": true
+      },
+      "messages": [
+        {
+          "msg": "M1",
+          "direction": "C->S",
+          "chain_index": 6,
+          "bytes": 917625
+        },
+        {
+          "msg": "M3",
+          "direction": "S->C",
+          "chain_index": 1,
+          "modulus_bits": 61,
+          "bytes": 262265
+        }
+      ],
+      "online_up_bytes": 917625,
+      "online_down_bytes": 262265,
+      "online_total_bytes": 1179890,
+      "M0_key_bytes": 184634972,
+      "key_sizes": {
+        "public_key_bytes": 1048689,
+        "galois_keys_bytes": 176245344,
+        "relin_keys_bytes": 7340887,
+        "galois_key_count": 24,
+        "compr": "none",
+        "seeded": 0,
+        "public_context_bytes": 184634972
+      },
+      "plan": {
+        "data_primes": [
+          1099510890497,
+          1196033,
+          1376257,
+          1589249,
+          1720321,
+          1769473,
+          1785857
+        ],
+        "send_abs": {
+          "out": 64.0,
+          "argmax": 4398046511168.0,
+          "dummy": 4398046511104.0
+        },
+        "chain_index": {
+          "logits": {
+            "M1": 6
+          },
+          "index": {
+            "M1": 6
+          }
+        }
+      },
+      "online_reduction_vs_baseline": 1.0,
+      "M0_reduction_vs_baseline": 1.0
+    },
+    {
+      "dataset": "uci_har",
+      "schedule": "01",
+      "wire": {
+        "name": "shortchain",
+        "compr": "none",
+        "seeded_client": false,
+        "seeded_keys": false,
+        "modswitch_send": false,
+        "short_chain": true
+      },
+      "messages": [
+        {
+          "msg": "M1",
+          "direction": "C->S",
+          "chain_index": 5,
+          "bytes": 786553
+        },
+        {
+          "msg": "①_2",
+          "direction": "S->C",
+          "chain_index": 2,
+          "modulus_bits": 82,
+          "bytes": 393337
+        },
+        {
+          "msg": "②_2",
+          "direction": "C->S",
+          "chain_index": 1,
+          "bytes": 262265
+        },
+        {
+          "msg": "M3",
+          "direction": "S->C",
+          "chain_index": 0,
+          "modulus_bits": 40,
+          "bytes": 131193
+        }
+      ],
+      "online_up_bytes": 1048818,
+      "online_down_bytes": 524530,
+      "online_total_bytes": 1573348,
+      "M0_key_bytes": 184634972,
+      "key_sizes": {
+        "public_key_bytes": 1048689,
+        "galois_keys_bytes": 176245344,
+        "relin_keys_bytes": 7340887,
+        "galois_key_count": 24,
+        "compr": "none",
+        "seeded": 0,
+        "public_context_bytes": 184634972
+      },
+      "plan": {
+        "data_primes": [
+          1099510890497,
+          1196033,
+          1376257,
+          1589249,
+          1720321,
+          1769473,
+          1785857
+        ],
+        "send_abs": {
+          "hyb1": 4398046511168.0,
+          "out": 64.0,
+          "argmax": 4398046511168.0,
+          "dummy": 4398046511104.0
+        },
+        "chain_index": {
+          "logits": {
+            "M1": 5,
+            "re1": 1
+          },
+          "index": {
+            "M1": 5,
+            "re1": 3
+          }
+        }
+      },
+      "online_reduction_vs_baseline": 2.0,
+      "M0_reduction_vs_baseline": 1.0
+    },
+    {
+      "dataset": "uci_har",
+      "schedule": "10",
+      "wire": {
+        "name": "shortchain",
+        "compr": "none",
+        "seeded_client": false,
+        "seeded_keys": false,
+        "modswitch_send": false,
+        "short_chain": true
+      },
+      "messages": [
+        {
+          "msg": "M1",
+          "direction": "C->S",
+          "chain_index": 3,
+          "bytes": 524409
+        },
+        {
+          "msg": "①_1",
+          "direction": "S->C",
+          "chain_index": 2,
+          "modulus_bits": 82,
+          "bytes": 393337
+        },
+        {
+          "msg": "②_1",
+          "direction": "C->S",
+          "chain_index": 3,
+          "bytes": 524409
+        },
+        {
+          "msg": "M3",
+          "direction": "S->C",
+          "chain_index": 0,
+          "modulus_bits": 40,
+          "bytes": 131193
+        }
+      ],
+      "online_up_bytes": 1048818,
+      "online_down_bytes": 524530,
+      "online_total_bytes": 1573348,
+      "M0_key_bytes": 184634972,
+      "key_sizes": {
+        "public_key_bytes": 1048689,
+        "galois_keys_bytes": 176245344,
+        "relin_keys_bytes": 7340887,
+        "galois_key_count": 24,
+        "compr": "none",
+        "seeded": 0,
+        "public_context_bytes": 184634972
+      },
+      "plan": {
+        "data_primes": [
+          1099510890497,
+          1196033,
+          1376257,
+          1589249,
+          1720321,
+          1769473,
+          1785857
+        ],
+        "send_abs": {
+          "hyb0": 4398046511120.0,
+          "out": 64.0,
+          "argmax": 4398046511168.0,
+          "dummy": 4398046511104.0
+        },
+        "chain_index": {
+          "logits": {
+            "M1": 3,
+            "re0": 3
+          },
+          "index": {
+            "M1": 3,
+            "re0": 5
+          }
+        }
+      },
+      "online_reduction_vs_baseline": 2.0,
+      "M0_reduction_vs_baseline": 1.0
+    },
+    {
+      "dataset": "uci_har",
+      "schedule": "11",
+      "wire": {
+        "name": "shortchain",
+        "compr": "none",
+        "seeded_client": false,
+        "seeded_keys": false,
+        "modswitch_send": false,
+        "short_chain": true
+      },
+      "messages": [
+        {
+          "msg": "M1",
+          "direction": "C->S",
+          "chain_index": 3,
+          "bytes": 524409
+        },
+        {
+          "msg": "①_1",
+          "direction": "S->C",
+          "chain_index": 2,
+          "modulus_bits": 82,
+          "bytes": 393337
+        },
+        {
+          "msg": "②_1",
+          "direction": "C->S",
+          "chain_index": 3,
+          "bytes": 524409
+        },
+        {
+          "msg": "①_2",
+          "direction": "S->C",
+          "chain_index": 2,
+          "modulus_bits": 82,
+          "bytes": 393337
+        },
+        {
+          "msg": "②_2",
+          "direction": "C->S",
+          "chain_index": 1,
+          "bytes": 262265
+        },
+        {
+          "msg": "M3",
+          "direction": "S->C",
+          "chain_index": 0,
+          "modulus_bits": 40,
+          "bytes": 131193
+        }
+      ],
+      "online_up_bytes": 1311083,
+      "online_down_bytes": 917867,
+      "online_total_bytes": 2228950,
+      "M0_key_bytes": 184634972,
+      "key_sizes": {
+        "public_key_bytes": 1048689,
+        "galois_keys_bytes": 176245344,
+        "relin_keys_bytes": 7340887,
+        "galois_key_count": 24,
+        "compr": "none",
+        "seeded": 0,
+        "public_context_bytes": 184634972
+      },
+      "plan": {
+        "data_primes": [
+          1099510890497,
+          1196033,
+          1376257,
+          1589249,
+          1720321,
+          1769473,
+          1785857
+        ],
+        "send_abs": {
+          "hyb0": 4398046511120.0,
+          "hyb1": 4398046511168.0,
+          "out": 64.0,
+          "argmax": 4398046511168.0,
+          "dummy": 4398046511104.0
+        },
+        "chain_index": {
+          "logits": {
+            "M1": 3,
+            "re0": 3,
+            "re1": 1
+          },
+          "index": {
+            "M1": 3,
+            "re0": 3,
+            "re1": 3
+          }
+        }
+      },
+      "online_reduction_vs_baseline": 2.294,
+      "M0_reduction_vs_baseline": 1.0
+    }
+  ]
+}

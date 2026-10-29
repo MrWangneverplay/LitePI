@@ -1,0 +1,71 @@
+{
+  "experiment": "r_h",
+  "measured_at": "2026-10-29T07:51:50+00:00",
+  "dataset": "mnist",
+  "seed": 73,
+  "backend": "stub",
+  "mpc_runtime": "python-ot (reference)",
+  "method": "flight counting on the loopback wire; schedules differenced",
+  "definition": "flight = maximal run of consecutive same-direction messages; one flight = one RTT in a lockstep protocol",
+  "per_schedule": {
+    "00": {
+      "messages": 9,
+      "bytes": 35286,
+      "flights": 7,
+      "by_tag": {
+        "CTXT": 3,
+        "REDY": 2,
+        "SPEC": 1,
+        "INIT": 1,
+        "BYE.": 1,
+        "STAT": 1
+      }
+    },
+    "01": {
+      "messages": 11,
+      "bytes": 36353,
+      "flights": 11,
+      "by_tag": {
+        "CTXT": 5,
+        "REDY": 2,
+        "SPEC": 1,
+        "INIT": 1,
+        "BYE.": 1,
+        "STAT": 1
+      }
+    },
+    "10": {
+      "messages": 11,
+      "bytes": 39422,
+      "flights": 11,
+      "by_tag": {
+        "CTXT": 5,
+        "REDY": 2,
+        "SPEC": 1,
+        "INIT": 1,
+        "BYE.": 1,
+        "STAT": 1
+      }
+    },
+    "11": {
+      "messages": 13,
+      "bytes": 40477,
+      "flights": 13,
+      "by_tag": {
+        "CTXT": 7,
+        "REDY": 2,
+        "SPEC": 1,
+        "INIT": 1,
+        "BYE.": 1,
+        "STAT": 1
+      }
+    }
+  },
+  "per_hybrid_layer": {
+    "flights": 3.0,
+    "messages": 2.0,
+    "bytes": 2595.5
+  },
+  "r_h_measured": 3.0,
+  "protocol_r_h": 1
+}

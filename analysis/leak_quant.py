@@ -180,6 +180,44 @@ def collect(model, loader, prepare, n_queries: int, device):
             np.vstack(LOGITS)[:n_queries], np.concatenate(Y)[:n_queries])
 
 
+# 成员/非成员候选池上限：足以覆盖三个数据集的整个测试集（≤10k），训练集取前 20k。
+MIA_POOL = 20_000
+
+
+def stratified_pair(lm, ym, ln, yn, n: int, rng: np.random.Generator):
+    """成员/非成员的攻击训练集与评估集，各 n 条，逐类别等量随机抽取。
+
+    训练集与评估集是两次互不重叠的分层抽样（每类先抽 2·per 条再对半分），
+    而不是把同一批 n 条对半切：固定总数的样本对半切时，某个预测类别里训练半边多出的
+    成员恰是评估半边少掉的，one-hot 特征上攻击学到的规律在评估时系统性反向，
+    无信号时 AUC 也稳定低于 0.5（UCI 修采样后五种子 0.45–0.49 即此偏差）。
+    每类 per = n // C，按最小可用量截断；两组逐类计数相等，余数不补。
+    """
+    classes = np.intersect1d(np.unique(ym), np.unique(yn))
+    per = n // len(classes)
+    per = min([per] + [int(min((ym == c).sum(), (yn == c).sum())) // 2 for c in classes])
+    if per <= 0:
+        raise ValueError("not enough samples per class for a matched MIA split")
+
+    def draw(y):
+        tr, te = [], []
+        for c in classes:
+            idx = rng.choice(np.flatnonzero(y == c), 2 * per, replace=False)
+            tr.append(idx[:per])
+            te.append(idx[per:])
+        return np.concatenate(tr), np.concatenate(te)
+
+    m_tr, m_te = draw(ym)
+    n_tr, n_te = draw(yn)
+    info = {"method": "class-stratified random, matched per-class counts; "
+                      "attack train/eval sets drawn disjointly",
+            "per_class": int(per), "classes": int(len(classes)),
+            "n_member": int(len(m_te)), "n_non_member": int(len(n_te)),
+            "member_pool": int(len(ym)), "non_member_pool": int(len(yn))}
+    return {"train": (lm[m_tr], ln[n_tr]), "eval": (lm[m_te], ln[n_te]),
+            "eval_labels": (ym[m_te], yn[n_te])}, info
+
+
 # ------------------------------------------------------------------ E10a
 def e10a_domain(Z: np.ndarray, rule: str):
     """M2 domain for one layer, from the same activations the attack sees.
@@ -252,11 +290,14 @@ def e10a(Z: np.ndarray, rng: np.random.Generator, reuse: bool,
 
 
 # ------------------------------------------------------------------ E10b
-def e10b(logits_member, logits_non, rng) -> dict:
+def e10b(split: dict, rng, n_perm: int = 200) -> dict:
     """成员推理 AUC：全 logits 档 vs 仅类别索引档。
 
     攻击模型为置信度/分数型（把攻击看作二分类的学习问题），不是完整的 shadow-model 攻击；
     论文中应以"confidence-based membership inference"称呼，避免夸大口径。
+    攻击分类器在 split["train"] 上训练、在不重叠的 split["eval"] 上评估；
+    另做置换检验：打乱训练集成员标签重训 n_perm 次，得到"无成员信号"时的 AUC 分布，
+    报告 null 均值与单侧 p 值。H6 的判据应是"AUC 与 null 无显著差异"，而不是"AUC≈0.5"。
     """
     def onehot(L):
         idx = L.argmax(axis=1)
@@ -265,22 +306,28 @@ def e10b(logits_member, logits_non, rng) -> dict:
         return H
 
     out = {}
-    for name, (fm, fn) in (
-        ("logits", (logits_member, logits_non)),
-        ("index_only", (onehot(logits_member), onehot(logits_non))),
-    ):
-        X = np.vstack([fm, fn])
-        y = np.concatenate([np.ones(len(fm)), np.zeros(len(fn))])
-        mu, sd = X.mean(axis=0), X.std(axis=0) + 1e-8
-        Xs = (X - mu) / sd
-        perm = rng.permutation(len(y))
-        Xs, y = Xs[perm], y[perm]
-        half = len(y) // 2
-        w = fit_logreg(Xs[:half], y[:half])
-        scores = predict_logreg(w, Xs[half:])
-        out[name] = {**auc_bootstrap(scores, y[half:], rng),
-                     "n_member": int(len(fm)), "n_non_member": int(len(fn)),
-                     "dim": int(X.shape[1]),
+    (tm, tn), (em, en) = split["train"], split["eval"]
+    for name, f in (("logits", lambda a: a), ("index_only", onehot)):
+        Xtr = np.vstack([f(tm), f(tn)])
+        ytr = np.concatenate([np.ones(len(tm)), np.zeros(len(tn))])
+        Xev = np.vstack([f(em), f(en)])
+        yev = np.concatenate([np.ones(len(em)), np.zeros(len(en))])
+        mu, sd = Xtr.mean(axis=0), Xtr.std(axis=0) + 1e-8
+        Xtr, Xev = (Xtr - mu) / sd, (Xev - mu) / sd
+        w = fit_logreg(Xtr, ytr)
+        scores = predict_logreg(w, Xev)
+        res = auc_bootstrap(scores, yev, rng)
+        null = np.array([auc(predict_logreg(fit_logreg(Xtr, rng.permutation(ytr)), Xev), yev)
+                         for _ in range(n_perm)])
+        res.update({
+            "null_auc_mean": float(null.mean()),
+            "null_auc_ci": [float(v) for v in np.quantile(null, [0.025, 0.975])],
+            "n_perm": int(n_perm),
+            "p_value": float((1 + np.sum(null >= res["auc"])) / (1 + n_perm)),
+            "auc_minus_null": float(res["auc"] - null.mean()),
+        })
+        out[name] = {**res, "n_member": int(len(em)), "n_non_member": int(len(en)),
+                     "dim": int(Xtr.shape[1]),
                      "auc_ties": "average ranks (fixed 2026-10-29; earlier "
                                  "index-only AUCs were biased below 0.5)"}
     return out
@@ -316,7 +363,7 @@ def main() -> None:
     ap.add_argument("--root", default=None)
     ap.add_argument("--datasets", default="mnist,cifar10,uci_har")
     ap.add_argument("--queries", type=int, default=200, help="每个数据集的查询次数 Q")
-    ap.add_argument("--mia-per-class", type=int, default=300, help="成员/非成员各取多少样本")
+    ap.add_argument("--mia-per-class", type=int, default=300, help="成员/非成员各取多少样本（按真标签分层、两组逐类等量）")
     ap.add_argument("--batch-size", type=int, default=256)
     ap.add_argument("--seed", type=int, default=73)
     ap.add_argument("--figure", action="store_true", help="额外输出 datas/E10_summary.png")
@@ -387,25 +434,33 @@ def main() -> None:
                             {"leakage": reused, "layer": layer_name, "mask_policy": "reused"})
 
         # ---- E10b ----
+        # 成员（训练集）/非成员（测试集）各取 n 条，按真标签分层随机抽样且两组类别计数相同。
+        # 旧做法取两个 loader 的前 n 条：UCI 测试集按受试者/动作顺序排列，前 300 条类别分布
+        # 严重偏斜，"仅索引"攻击学到的是类别先验差而非成员身份（2026-10-29 五种子 AUC 0.58）。
         n_pc = args.mia_per_class
-        cm = collect(model, train_loader, prepare, n_pc, device)          # 成员：训练集
-        cn = collect(model, test_loader, prepare, n_pc, device)           # 非成员：测试集
-        lm, ym = cm[2], cm[3]
-        ln, yn = cn[2], cn[3]
+        cm = collect(model, train_loader, prepare, MIA_POOL, device)      # 成员池：训练集
+        cn = collect(model, test_loader, prepare, MIA_POOL, device)       # 非成员池：测试集
+        split, mia_sampling = stratified_pair(
+            cm[2], cm[3], cn[2], cn[3], n_pc, np.random.default_rng(args.seed))
+        (lm, ln), (ym, yn) = split["eval"], split["eval_labels"]
         acc_m = float((lm.argmax(axis=1) == ym).mean())
         acc_n = float((ln.argmax(axis=1) == yn).mean())
-        mia = e10b(lm, ln, np.random.default_rng(args.seed))
+        mia = e10b(split, np.random.default_rng(args.seed))
         print(f"  [E10b] 成员子集训练精度={acc_m:.3f}  非成员子集测试精度={acc_n:.3f}  "
               f"（过拟合差距 {(acc_m - acc_n) * 100:+.1f} 个点）")
-        print(f"         成员推理 AUC: 全 logits={mia['logits']['auc']:.3f}   "
-              f"仅索引={mia['index_only']['auc']:.3f}")
+        print(f"         成员推理 AUC: 全 logits={mia['logits']['auc']:.3f}"
+              f"(null {mia['logits']['null_auc_mean']:.3f}, p={mia['logits']['p_value']:.3f})   "
+              f"仅索引={mia['index_only']['auc']:.3f}"
+              f"(null {mia['index_only']['null_auc_mean']:.3f}, p={mia['index_only']['p_value']:.3f})")
         if not args.smoke:
             save_record(root, "E10", ds, "mia_logits", args.seed,
                         {"membership_inference": mia["logits"], "output_mode": "full_logits",
-                         "member_train_acc": acc_m, "non_member_test_acc": acc_n})
+                         "member_train_acc": acc_m, "non_member_test_acc": acc_n,
+                         "sampling": mia_sampling})
             save_record(root, "E10", ds, "mia_index_only", args.seed,
                         {"membership_inference": mia["index_only"], "output_mode": "argmax_index",
-                         "member_train_acc": acc_m, "non_member_test_acc": acc_n})
+                         "member_train_acc": acc_m, "non_member_test_acc": acc_n,
+                         "sampling": mia_sampling})
 
         report[ds] = {
             "e10a_layer1_fresh": e10a_rows["layer1"]["fresh"]["relative_error"],

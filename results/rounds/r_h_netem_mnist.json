@@ -1,0 +1,71 @@
+{
+  "experiment": "r_h",
+  "measured_at": "2026-10-29T11:27:07+00:00",
+  "dataset": "mnist",
+  "device": "desktop",
+  "method": "tc/netem RTT sweep; least-squares slope of wall time vs RTT per schedule; r_h = (R_eff(s) - R_eff(00)) / K_h",
+  "scope": "end-to-end",
+  "sci_internal_rounds_counted": true,
+  "rtt_convention": "configured delay = added RTT; on loopback the bidirectional netem factor is divided out (delay_mult)",
+  "per_schedule": {
+    "00": {
+      "R_eff": 2.5606112943483863,
+      "R_eff_se": 0.3941342179592123,
+      "intercept_ms": 7732.032964877873,
+      "bandwidth_mbps": 0,
+      "n": 20,
+      "delay_mult": 2.0
+    },
+    "01": {
+      "R_eff": 8.098719691567151,
+      "R_eff_se": 0.30770248991087223,
+      "intercept_ms": 8261.950133713672,
+      "bandwidth_mbps": 0,
+      "n": 20,
+      "delay_mult": 2.0
+    },
+    "10": {
+      "R_eff": 8.795786904974166,
+      "R_eff_se": 0.42338360470282893,
+      "intercept_ms": 10467.586601889818,
+      "bandwidth_mbps": 0,
+      "n": 20,
+      "delay_mult": 2.0
+    },
+    "11": {
+      "R_eff": 11.122440497414903,
+      "R_eff_se": 1.4631698682184542,
+      "intercept_ms": 11787.435188981988,
+      "bandwidth_mbps": 0,
+      "n": 20,
+      "delay_mult": 2.0
+    }
+  },
+  "r_h_per_schedule": {
+    "01": 5.538108397218765,
+    "10": 6.23517561062578,
+    "11": 4.280914601533258
+  },
+  "r_h_wall_slope": 5.351,
+  "sci_rounds_per_schedule": {
+    "01": {
+      "sci_rounds_per_layer": 5.014173980061806,
+      "se": 0.0027166817794799856
+    },
+    "10": {
+      "sci_rounds_per_layer": 5.02313143682772,
+      "se": 0.0043608696269603255
+    },
+    "11": {
+      "sci_rounds_per_layer": 5.039109959068759,
+      "se": 0.009191127413453659
+    }
+  },
+  "r_h_measured": 6.025,
+  "r_h_basis": "1 (①/② exchange) + SCI rounds from client mpc_s vs RTT; wall-time slope kept as cross-check (it also counts TCP slow-start RTTs of the ciphertext transfers)",
+  "tcp_slow_start_after_idle": [
+    0
+  ],
+  "protocol_r_h": 1,
+  "note": "R_eff(00) should be ~2 (M1 up, M3 down) plus the session handshake when the context is not reused; the difference cancels the handshake."
+}

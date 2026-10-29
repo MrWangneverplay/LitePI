@@ -51,7 +51,7 @@
         "client_crypto": "E1 SEAL per_sample, n=3840 (desktop, SCI)",
         "mpc_fit": "mpc_ms = 9.659*K_h + 0.00374*elements (lstsq over 2880 hybrid samples)",
         "server": "E1 forward_s mean per (dataset, schedule) (desktop: MNIST on host 99, CIFAR/UCI on container 101); pooled linear-in-K_h fallback for fast/VGG is a model value.  forward_s includes the server's wait for the client inside each hybrid layer",
-        "r_h": "r_h_sci_cifar10.json (scope: control-plane)",
+        "r_h": "r_h_netem_mnist.json (scope: end-to-end)",
         "bytes": "E4 wire_bytes, profile baseline",
         "ot_bytes": "unmeasured: SCI bytes_sent() not recorded in E1/E2 yet",
         "memory": "E2: K_h=[0] only; hybrid increment unmeasured"
@@ -105,7 +105,7 @@
         "client_crypto": "E1 SEAL per_sample, n=3840 (desktop, SCI)",
         "mpc_fit": "mpc_ms = 9.659*K_h + 0.00374*elements (lstsq over 2880 hybrid samples)",
         "server": "E1 forward_s mean per (dataset, schedule) (desktop: MNIST on host 99, CIFAR/UCI on container 101); pooled linear-in-K_h fallback for fast/VGG is a model value.  forward_s includes the server's wait for the client inside each hybrid layer",
-        "r_h": "r_h_sci_cifar10.json (scope: control-plane)",
+        "r_h": "r_h_netem_mnist.json (scope: end-to-end)",
         "bytes": "E4 wire_bytes, profile baseline",
         "ot_bytes": "unmeasured: SCI bytes_sent() not recorded in E1/E2 yet",
         "memory": "E2: K_h=[0] only; hybrid increment unmeasured"
@@ -159,7 +159,7 @@
         "client_crypto": "E1 SEAL per_sample, n=3840 (desktop, SCI)",
         "mpc_fit": "mpc_ms = 9.659*K_h + 0.00374*elements (lstsq over 2880 hybrid samples)",
         "server": "E1 forward_s mean per (dataset, schedule) (desktop: MNIST on host 99, CIFAR/UCI on container 101); pooled linear-in-K_h fallback for fast/VGG is a model value.  forward_s includes the server's wait for the client inside each hybrid layer",
-        "r_h": "r_h_sci_cifar10.json (scope: control-plane)",
+        "r_h": "r_h_netem_mnist.json (scope: end-to-end)",
         "bytes": "E4 wire_bytes, profile baseline",
         "ot_bytes": "unmeasured: SCI bytes_sent() not recorded in E1/E2 yet",
         "memory": "E2: K_h=[0] only; hybrid increment unmeasured"
@@ -179,14 +179,14 @@
         "accuracy": 0.8459,
         "mpc_elements": 8448,
         "hybrid_layers": 3,
-        "R_online": 5.0,
+        "R_online": 20.075000000000003,
         "T_client_ms": 97.506,
         "T_server_ms": 21804.4,
-        "L_e2e_ms": 23242.6,
+        "L_e2e_ms": 23996.3,
         "S_online_bytes": 6816712,
         "M_client_mb": null,
         "E_client_mJ": null,
-        "objective_ms": 1438.18,
+        "objective_ms": 2191.93,
         "depth_ok": true
       },
       "excluded_by_memory": [
@@ -212,7 +212,7 @@
         "client_crypto": "E1 SEAL per_sample, n=3840 (desktop, SCI)",
         "mpc_fit": "mpc_ms = 9.659*K_h + 0.00374*elements (lstsq over 2880 hybrid samples)",
         "server": "E1 forward_s mean per (dataset, schedule) (desktop: MNIST on host 99, CIFAR/UCI on container 101); pooled linear-in-K_h fallback for fast/VGG is a model value.  forward_s includes the server's wait for the client inside each hybrid layer",
-        "r_h": "r_h_sci_cifar10.json (scope: control-plane)",
+        "r_h": "r_h_netem_mnist.json (scope: end-to-end)",
         "bytes": "E4 wire_bytes, profile baseline",
         "ot_bytes": "unmeasured: SCI bytes_sent() not recorded in E1/E2 yet",
         "memory": "E2: K_h=[0] only; hybrid increment unmeasured"
@@ -232,14 +232,14 @@
         "accuracy": 0.8555,
         "mpc_elements": 16384,
         "hybrid_layers": 1,
-        "R_online": 3.0,
+        "R_online": 8.025,
         "T_client_ms": 90.112,
         "T_server_ms": 15622.1,
-        "L_e2e_ms": 16407.5,
+        "L_e2e_ms": 16658.8,
         "S_online_bytes": 3408356,
         "M_client_mb": null,
         "E_client_mJ": null,
-        "objective_ms": 785.449,
+        "objective_ms": 1036.699,
         "depth_ok": true
       },
       "excluded_by_memory": [
@@ -273,7 +273,7 @@
         "client_crypto": "E1 SEAL per_sample, n=3840 (desktop, SCI)",
         "mpc_fit": "mpc_ms = 9.659*K_h + 0.00374*elements (lstsq over 2880 hybrid samples)",
         "server": "E1 forward_s mean per (dataset, schedule) (desktop: MNIST on host 99, CIFAR/UCI on container 101); pooled linear-in-K_h fallback for fast/VGG is a model value.  forward_s includes the server's wait for the client inside each hybrid layer",
-        "r_h": "r_h_sci_cifar10.json (scope: control-plane)",
+        "r_h": "r_h_netem_mnist.json (scope: end-to-end)",
         "bytes": "E4 wire_bytes, profile baseline",
         "ot_bytes": "unmeasured: SCI bytes_sent() not recorded in E1/E2 yet",
         "memory": "E2: K_h=[0] only; hybrid increment unmeasured"
@@ -329,7 +329,7 @@
         "mpc_fit": "mpc_ms = 9.659*K_h + 0.00374*elements (lstsq over 2880 hybrid samples)",
         "server": "E1 forward_s mean per (dataset, schedule) (desktop: MNIST on host 99, CIFAR/UCI on container 101); pooled linear-in-K_h fallback for fast/VGG is a model value.  forward_s includes the server's wait for the client inside each hybrid layer",
         "device_scale": "pi5/desktop T_enc ratio 4.02 (E2 HE-only); MPC scaled-from-desktop until hybrid runs on pi5 exist",
-        "r_h": "r_h_sci_cifar10.json (scope: control-plane)",
+        "r_h": "r_h_netem_mnist.json (scope: end-to-end)",
         "bytes": "E4 wire_bytes, profile baseline",
         "ot_bytes": "unmeasured: SCI bytes_sent() not recorded in E1/E2 yet",
         "memory": "E2_pi5: K_h=[0] only; hybrid increment unmeasured"
@@ -384,7 +384,7 @@
         "mpc_fit": "mpc_ms = 9.659*K_h + 0.00374*elements (lstsq over 2880 hybrid samples)",
         "server": "E1 forward_s mean per (dataset, schedule) (desktop: MNIST on host 99, CIFAR/UCI on container 101); pooled linear-in-K_h fallback for fast/VGG is a model value.  forward_s includes the server's wait for the client inside each hybrid layer",
         "device_scale": "pi5/desktop T_enc ratio 4.02 (E2 HE-only); MPC scaled-from-desktop until hybrid runs on pi5 exist",
-        "r_h": "r_h_sci_cifar10.json (scope: control-plane)",
+        "r_h": "r_h_netem_mnist.json (scope: end-to-end)",
         "bytes": "E4 wire_bytes, profile baseline",
         "ot_bytes": "unmeasured: SCI bytes_sent() not recorded in E1/E2 yet",
         "memory": "E2_pi5: K_h=[0] only; hybrid increment unmeasured"
@@ -439,7 +439,7 @@
         "mpc_fit": "mpc_ms = 9.659*K_h + 0.00374*elements (lstsq over 2880 hybrid samples)",
         "server": "E1 forward_s mean per (dataset, schedule) (desktop: MNIST on host 99, CIFAR/UCI on container 101); pooled linear-in-K_h fallback for fast/VGG is a model value.  forward_s includes the server's wait for the client inside each hybrid layer",
         "device_scale": "pi5/desktop T_enc ratio 4.02 (E2 HE-only); MPC scaled-from-desktop until hybrid runs on pi5 exist",
-        "r_h": "r_h_sci_cifar10.json (scope: control-plane)",
+        "r_h": "r_h_netem_mnist.json (scope: end-to-end)",
         "bytes": "E4 wire_bytes, profile baseline",
         "ot_bytes": "unmeasured: SCI bytes_sent() not recorded in E1/E2 yet",
         "memory": "E2_pi5: K_h=[0] only; hybrid increment unmeasured"
@@ -459,14 +459,14 @@
         "accuracy": 0.8459,
         "mpc_elements": 8448,
         "hybrid_layers": 3,
-        "R_online": 5.0,
+        "R_online": 20.075000000000003,
         "T_client_ms": 395.678,
         "T_server_ms": 21804.4,
-        "L_e2e_ms": 23540.7,
+        "L_e2e_ms": 24294.5,
         "S_online_bytes": 6816712,
         "M_client_mb": null,
         "E_client_mJ": null,
-        "objective_ms": 1736.352,
+        "objective_ms": 2490.102,
         "depth_ok": true
       },
       "excluded_by_memory": [
@@ -493,7 +493,7 @@
         "mpc_fit": "mpc_ms = 9.659*K_h + 0.00374*elements (lstsq over 2880 hybrid samples)",
         "server": "E1 forward_s mean per (dataset, schedule) (desktop: MNIST on host 99, CIFAR/UCI on container 101); pooled linear-in-K_h fallback for fast/VGG is a model value.  forward_s includes the server's wait for the client inside each hybrid layer",
         "device_scale": "pi5/desktop T_enc ratio 4.02 (E2 HE-only); MPC scaled-from-desktop until hybrid runs on pi5 exist",
-        "r_h": "r_h_sci_cifar10.json (scope: control-plane)",
+        "r_h": "r_h_netem_mnist.json (scope: end-to-end)",
         "bytes": "E4 wire_bytes, profile baseline",
         "ot_bytes": "unmeasured: SCI bytes_sent() not recorded in E1/E2 yet",
         "memory": "E2_pi5: K_h=[0] only; hybrid increment unmeasured"
@@ -513,14 +513,14 @@
         "accuracy": 0.8555,
         "mpc_elements": 16384,
         "hybrid_layers": 1,
-        "R_online": 3.0,
+        "R_online": 8.025,
         "T_client_ms": 364.106,
         "T_server_ms": 15622.1,
-        "L_e2e_ms": 16681.5,
+        "L_e2e_ms": 16932.8,
         "S_online_bytes": 3408356,
         "M_client_mb": null,
         "E_client_mJ": null,
-        "objective_ms": 1059.443,
+        "objective_ms": 1310.693,
         "depth_ok": true
       },
       "excluded_by_memory": [
@@ -555,7 +555,7 @@
         "mpc_fit": "mpc_ms = 9.659*K_h + 0.00374*elements (lstsq over 2880 hybrid samples)",
         "server": "E1 forward_s mean per (dataset, schedule) (desktop: MNIST on host 99, CIFAR/UCI on container 101); pooled linear-in-K_h fallback for fast/VGG is a model value.  forward_s includes the server's wait for the client inside each hybrid layer",
         "device_scale": "pi5/desktop T_enc ratio 4.02 (E2 HE-only); MPC scaled-from-desktop until hybrid runs on pi5 exist",
-        "r_h": "r_h_sci_cifar10.json (scope: control-plane)",
+        "r_h": "r_h_netem_mnist.json (scope: end-to-end)",
         "bytes": "E4 wire_bytes, profile baseline",
         "ot_bytes": "unmeasured: SCI bytes_sent() not recorded in E1/E2 yet",
         "memory": "E2_pi5: K_h=[0] only; hybrid increment unmeasured"

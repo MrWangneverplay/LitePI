@@ -5,8 +5,8 @@
   "bandwidth_mbps": null,
   "cost_device": "desktop",
   "wire": "baseline",
-  "r_h": 1.0,
-  "r_h_scope": "control-plane",
+  "r_h": 6.025,
+  "r_h_scope": "end-to-end",
   "basis": {
     "accuracy": "measured E1 canonical schedule means",
     "client_cost": "cost_model (E1 SEAL+SCI fit)",
@@ -41,14 +41,14 @@
       "accuracy": 0.9771,
       "mpc_elements": 320,
       "hybrid_layers": 2,
-      "R_online": 4.0,
+      "R_online": 14.05,
       "T_client_ms": 48.514,
       "T_server_ms": 7132.0,
-      "L_e2e_ms": 7380.5,
+      "L_e2e_ms": 7883.0,
       "S_online_bytes": 5112534,
       "M_client_mb": null,
       "E_client_mJ": null,
-      "objective_ms": 248.514,
+      "objective_ms": 751.014,
       "depth_ok": true,
       "meets_acc_min": true,
       "on_pareto_front": false,
@@ -133,8 +133,8 @@
     "random_x5": {
       "accuracy": 0.97856,
       "T_client_ms": 33.3342,
-      "R_online": 3.2,
-      "L_e2e_ms": 6765.54,
+      "R_online": 9.23,
+      "L_e2e_ms": 7067.0,
       "S_online_bytes": 3749191.6,
       "mpc_elements": 230.4,
       "draws": [
@@ -168,7 +168,7 @@
   ],
   "schedule_space": 4,
   "planner_cost": {
-    "solve_ms": 0.0631,
+    "solve_ms": 0.061,
     "evaluations": 4,
     "layer_sensitivity_evals": 0
   },

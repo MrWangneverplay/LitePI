@@ -15,15 +15,15 @@
     "bytes_up_hybrid": 917625,
     "bytes_per_elem_ot": null,
     "bytes_keys": 184634972,
-    "r_h": 1.0,
-    "r_h_scope": "control-plane",
+    "r_h": 6.025,
+    "r_h_scope": "end-to-end",
     "mem_base_mb": 812.86953125,
     "mem_per_hybrid_mb": null,
     "provenance": {
       "client_crypto": "E1 SEAL per_sample, n=3840 (desktop, SCI)",
       "mpc_fit": "mpc_ms = 9.659*K_h + 0.00374*elements (lstsq over 2880 hybrid samples)",
       "server": "E1 forward_s mean per (dataset, schedule) (desktop: MNIST on host 99, CIFAR/UCI on container 101); pooled linear-in-K_h fallback for fast/VGG is a model value.  forward_s includes the server's wait for the client inside each hybrid layer",
-      "r_h": "r_h_sci_cifar10.json (scope: control-plane)",
+      "r_h": "r_h_netem_mnist.json (scope: end-to-end)",
       "bytes": "E4 wire_bytes, profile baseline",
       "ot_bytes": "unmeasured: SCI bytes_sent() not recorded in E1/E2 yet",
       "memory": "E2: K_h=[0] only; hybrid increment unmeasured"
@@ -85,27 +85,27 @@
     "mnist": {
       "adaptive": "00",
       "pareto_size": 1,
-      "solve_ms": 0.0631
+      "solve_ms": 0.061
     },
     "cifar10": {
       "adaptive": "00",
       "pareto_size": 2,
-      "solve_ms": 0.0725
+      "solve_ms": 0.0603
     },
     "uci_har": {
       "adaptive": "00",
       "pareto_size": 2,
-      "solve_ms": 0.0503
+      "solve_ms": 0.0422
     },
     "fast": {
       "adaptive": "00111",
       "pareto_size": 7,
-      "solve_ms": 0.2245
+      "solve_ms": 0.1431
     },
     "vgg": {
       "adaptive": "00100",
       "pareto_size": 5,
-      "solve_ms": 0.1382
+      "solve_ms": 0.1267
     }
   }
 }

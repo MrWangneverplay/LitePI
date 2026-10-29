@@ -1,0 +1,29 @@
+{
+  "_note": "E8 设备档位（实验方案 §2.1 / E8）。e2_folder 指向该设备的 E2 结果目录；没有实测目录的设备会被 gen_e8_data.py 跳过并标注，不做外推。cpu_score 需按同一基准（如 SPEC/Geekbench 单核）填写后才能出归一化列；memory_budget_mb 是 planner 的内存约束（默认取可用内存的一半）。",
+  "devices": [
+    {
+      "name": "desktop",
+      "cpu": "Intel Core Ultra 5 125H (WSL2)",
+      "ram_mb": 15360,
+      "memory_budget_mb": 7680,
+      "cpu_score": null,
+      "e2_folder": "E2"
+    },
+    {
+      "name": "pi5",
+      "cpu": "Raspberry Pi 5, Cortex-A76 @2.4GHz",
+      "ram_mb": 8192,
+      "memory_budget_mb": 4096,
+      "cpu_score": null,
+      "e2_folder": "E2_pi5"
+    },
+    {
+      "name": "pi4",
+      "cpu": "Raspberry Pi 4, Cortex-A72 @1.5GHz",
+      "ram_mb": 4096,
+      "memory_budget_mb": 1024,
+      "cpu_score": null,
+      "e2_folder": "E2_pi4"
+    }
+  ]
+}

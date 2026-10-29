@@ -1,8 +1,17 @@
 """Export M2 per-layer mask domains from the canonical training split.
 
 The protocol samples the mask for nonlinear layer k from a domain covering the
-input distribution z_k.  This script records those distributions from the same
-canonical architecture and checkpoint used by ``pi_server.py``.
+input distribution z_k (protocol §8 M2).  This script records those
+distributions from the same canonical architecture and checkpoint used by
+``pi_server.py`` and writes the rule-v2 domain
+
+    B_k = next power of two >= 1.25 * max|z_k|      (observed, train split)
+    A_k = 2^sigma_k * B_k,  sigma_k = min(40, 42 - log2 B_k)
+    mask r_k ~ U[-A_k, A_k) on the 2^-F grid
+
+so the client's view z+r is 2^-(sigma_k+1)-close (per element) to uniform.
+The earlier rule (observed min/max + 5 %) gave A_k ~ B_k and only weak
+statistical hiding; see mask_session.py and params_pi.py.
 
 Run:
     python analysis/export_mask_domains.py --dataset cifar10 --schedule 11
@@ -22,6 +31,7 @@ import numpy as np
 import torch
 
 from canonical_net import CANONICAL_SPECS, load_canonical_model
+from mask_session import RULE_V2, MaskDomain, mask_security_report
 
 
 def _load_module(path: Path):
@@ -41,21 +51,20 @@ def _prepare_for_dataset(dataset: str, module, inputs: torch.Tensor) -> torch.Te
 
 
 def _distribution(values: np.ndarray) -> dict:
+    """Observed statistics plus the rule-v2 mask domain for one layer."""
     values = np.asarray(values, dtype=np.float64).ravel()
     lo, hi = float(np.min(values)), float(np.max(values))
-    span = max(hi - lo, 1e-12)
-    margin = max(span * 0.05, 1e-6)
+    domain = MaskDomain.from_observed(lo, hi)
     return {
         "samples": int(values.size),
         "min": lo,
         "max": hi,
+        "max_abs": max(abs(lo), abs(hi)),
         "mean": float(np.mean(values)),
         "std": float(np.std(values)),
         "q_low": float(np.quantile(values, 0.001)),
         "q_high": float(np.quantile(values, 0.999)),
-        "margin": margin,
-        "lo": lo - margin,
-        "hi": hi + margin,
+        **domain.to_dict(),
     }
 
 
@@ -139,16 +148,30 @@ def main() -> int:
         "timestamp_utc": datetime.now(timezone.utc).isoformat(timespec="seconds"),
         "layers": layer_stats,
         "output": output,
-        "rule": "M2: lo/hi cover full observed train min/max plus 5% margin",
+        "rule_version": RULE_V2,
+        "rule": ("M2 v2: B_k = pow2 >= 1.25*max|z_k| (train); "
+                 "A_k = 2^sigma_k * B_k, sigma_k = min(40, 42 - log2 B_k); "
+                 "r ~ U[-A_k, A_k) on the 2^-F grid"),
     }
+    hybrid_dims = {
+        i: n for i, (n, bit) in enumerate(
+            zip(payload["nonlinear_dims"], schedule)) if bit
+    }
+    domains = {int(k): MaskDomain.from_mapping(v) for k, v in layer_stats.items()}
+    payload["security"] = mask_security_report(domains, hybrid_dims)
     out.write_text(
         json.dumps(payload, indent=2, ensure_ascii=False) + "\n",
         encoding="utf-8",
     )
     print(
         f"M2 domains -> {out}  samples={payload['samples']}  "
-        f"z1={layer_stats['0']['min']:.3f}..{layer_stats['0']['max']:.3f}  "
-        f"z2={layer_stats['1']['min']:.3f}..{layer_stats['1']['max']:.3f}"
+        f"z1={layer_stats['0']['min']:.3f}..{layer_stats['0']['max']:.3f} "
+        f"(B=2^{np.log2(layer_stats['0']['activation_bound']):.0f}, "
+        f"sigma={layer_stats['0']['sigma']:.0f})  "
+        f"z2={layer_stats['1']['min']:.3f}..{layer_stats['1']['max']:.3f} "
+        f"(B=2^{np.log2(layer_stats['1']['activation_bound']):.0f}, "
+        f"sigma={layer_stats['1']['sigma']:.0f})  "
+        f"Q_max(2^-20)={payload['security']['q_max'].get('20')}"
     )
     return 0
 

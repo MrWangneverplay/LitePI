@@ -76,10 +76,14 @@ def main() -> None:
     ap.add_argument("--datasets", default="mnist,cifar10,uci_har")
     ap.add_argument("--slack", type=float, default=0.05,
                     help="planner 预算：(1+slack) x s=00 的期望时延")
+    ap.add_argument("--r-h", type=float, default=None,
+                    help="override the measured r_h (e.g. 7 = CrypTFlow2 log l + 2)")
     args = ap.parse_args()
 
     root = Path(args.root)
     datasets = [d.strip() for d in args.datasets.split(",") if d.strip()]
+    rtt.configure_r_h(root, args.r_h)
+    flights_for = lambda k_h: rtt.rounds_for(k_h)
 
     cost = rtt.load_hybrid_cost(root)
     rtt.S_HYBRID_PER_LAYER_KB = cost["per_layer_bytes"] / 1024.0
@@ -88,7 +92,8 @@ def main() -> None:
 
     print("E9 loss/jitter robustness   (per-layer %.1f KB, %.1f ms server MPC)"
           % (rtt.S_HYBRID_PER_LAYER_KB, rtt.T_SERVER_HYBRID_MS))
-    print("flights R = 2 + K_h ; K_h = 0/1/2 -> R = 2/3/4")
+    print("flights R = 2 + K_h * r_h ; r_h = %g (%s; %s)"
+          % (rtt.R_H, rtt.R_H_SCOPE, rtt.R_H_SOURCE))
     print("=" * 100)
 
     rows = []
@@ -104,7 +109,7 @@ def main() -> None:
                 for loss in LOSS_GRID:
                     for jitter in JITTER_GRID_MS:
                         for name, k_h in SCHEDULES:
-                            flights = 2 + k_h
+                            flights = flights_for(k_h)
                             clean = rtt.e2e_ms(m, k_h, 0.0, bw)      # RTT=0：计算 + 串行化
                             exp = expected_ms(clean, flights, rtt_ms, loss)
                             p95 = p95_ms(clean, flights, rtt_ms, loss, jitter)
@@ -134,7 +139,7 @@ def main() -> None:
                         cands = []
                         for _name, k_h in SCHEDULES:
                             clean = rtt.e2e_ms(m, k_h, 0.0, bw)
-                            cands.append((k_h, p95_ms(clean, 2 + k_h, rtt_ms, loss, jitter)))
+                            cands.append((k_h, p95_ms(clean, flights_for(k_h), rtt_ms, loss, jitter)))
                         cap = (1.0 + args.slack) * cands[0][1]
                         afford = [k for k, t in cands if t <= cap]
                         k_star = max(afford)
@@ -175,8 +180,9 @@ def main() -> None:
         m0 = measured[datasets[0]]
         clean = rtt.e2e_ms(m0, 2, 0.0, 10.0)                     # 纯计算 + 串行化
         clean_link = rtt.e2e_ms(m0, 2, 100.0, 10.0)              # 协议 s=11、无丢包无抖动
-        base_p95 = p95_ms(clean, 4, 100.0, loss, 30.0)
-        for label, flights in (("r_h=1 (protocol)", 4),
+        base_p95 = p95_ms(clean, flights_for(2), 100.0, loss, 30.0)
+        for label, flights in (("r_h=%g (%s)" % (rtt.R_H, rtt.R_H_SCOPE), flights_for(2)),
+                               ("r_h=7 (CrypTFlow2 log l+2, l=32)", 2 + 7 * 2),
                                ("per-element (108/layer)", 2 + per_element_flights * 2)):
             exp = expected_ms(clean, flights, 100.0, loss)
             p95 = p95_ms(clean, flights, 100.0, loss, 30.0)
@@ -206,7 +212,8 @@ def main() -> None:
         "model": "E[T] = C + R*RTT/(1-p); T_p95 = E[T] + 1.645*sqrt(R*((2J)^2/12 + RTT^2*p/(1-p)^2))",
         "grid": dict(rtt_ms=RTT_GRID_MS, bandwidth_mbps=BW_GRID,
                      loss_pct=[round(100 * p, 2) for p in LOSS_GRID], jitter_ms=JITTER_GRID_MS),
-        "flights": {"s=00 (HE-only)": 2, "s=10 (1 hybrid)": 3, "s=11 (all-hybrid)": 4},
+        "flights": {name: flights_for(k) for name, k in SCHEDULES},
+        "r_h": rtt.R_H, "r_h_scope": rtt.R_H_SCOPE, "r_h_source": rtt.R_H_SOURCE,
         "s_hybrid_per_layer_kb": round(rtt.S_HYBRID_PER_LAYER_KB, 3),
         "t_server_hybrid_ms": round(rtt.T_SERVER_HYBRID_MS, 3),
         "hybrid_cost_source": cost["source"],

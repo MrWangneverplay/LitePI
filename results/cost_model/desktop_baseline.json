@@ -1,0 +1,30 @@
+{
+  "device": "desktop",
+  "wire": "baseline",
+  "t_enc_input_ms": 6.93106875,
+  "t_dec_ms": 3.2738667100694445,
+  "t_reenc_ms": 5.6222972222222225,
+  "t_mpc_fixed_ms": 9.659232063985025,
+  "t_mpc_per_elem_ms": 0.0037446329941113183,
+  "t_server_base_ms": 12530.90095329861,
+  "t_server_per_hybrid_ms": 3091.1628354166683,
+  "bytes_m1": 917625,
+  "bytes_m3": 786553,
+  "bytes_down_hybrid": 786553,
+  "bytes_up_hybrid": 917625,
+  "bytes_per_elem_ot": null,
+  "bytes_keys": 184634972,
+  "r_h": 1.0,
+  "r_h_scope": "control-plane",
+  "mem_base_mb": 812.86953125,
+  "mem_per_hybrid_mb": null,
+  "provenance": {
+    "client_crypto": "E1 SEAL per_sample, n=3840 (desktop, SCI)",
+    "mpc_fit": "mpc_ms = 9.659*K_h + 0.00374*elements (lstsq over 2880 hybrid samples)",
+    "server": "E1 forward_s linear in K_h (desktop)",
+    "r_h": "r_h_sci_cifar10.json (scope: control-plane)",
+    "bytes": "E4 wire_bytes, profile baseline",
+    "ot_bytes": "unmeasured: SCI bytes_sent() not recorded in E1/E2 yet",
+    "memory": "E2 M_client_peak_mb (HE-only); hybrid increment unmeasured"
+  }
+}

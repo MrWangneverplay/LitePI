@@ -1,0 +1,31 @@
+{
+  "device": "pi5",
+  "wire": "baseline",
+  "t_enc_input_ms": 27.863151868748588,
+  "t_dec_ms": 14.086447655661352,
+  "t_reenc_ms": 22.60184208301514,
+  "t_mpc_fixed_ms": 38.83046895679698,
+  "t_mpc_per_elem_ms": 0.015053562671362972,
+  "t_server_base_ms": 12530.90095329861,
+  "t_server_per_hybrid_ms": 3091.1628354166683,
+  "bytes_m1": 917625,
+  "bytes_m3": 786553,
+  "bytes_down_hybrid": 786553,
+  "bytes_up_hybrid": 917625,
+  "bytes_per_elem_ot": null,
+  "bytes_keys": 184634972,
+  "r_h": 1.0,
+  "r_h_scope": "control-plane",
+  "mem_base_mb": 573.3427083333333,
+  "mem_per_hybrid_mb": null,
+  "provenance": {
+    "client_crypto": "E1 SEAL per_sample, n=3840 (desktop, SCI)",
+    "mpc_fit": "mpc_ms = 9.659*K_h + 0.00374*elements (lstsq over 2880 hybrid samples)",
+    "server": "E1 forward_s linear in K_h (desktop)",
+    "device_scale": "pi5/desktop T_enc ratio 4.02 (E2 HE-only); MPC scaled-from-desktop until hybrid runs on pi5 exist",
+    "r_h": "r_h_sci_cifar10.json (scope: control-plane)",
+    "bytes": "E4 wire_bytes, profile baseline",
+    "ot_bytes": "unmeasured: SCI bytes_sent() not recorded in E1/E2 yet",
+    "memory": "E2_pi5: K_h=[0] only; hybrid increment unmeasured"
+  }
+}

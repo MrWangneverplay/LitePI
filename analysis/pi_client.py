@@ -139,6 +139,31 @@ def upload_context(be, ctx) -> bytes:
     return be.public_context_bytes_wire(ctx)
 
 
+def setup_keys(be, wire: Wire, timings: dict, stream_keys: bool = False):
+    """M0: key generation + upload; returns (ctx, streamed).
+
+    stream_keys (E2 plan A): the context keeps only sk/pk and every
+    evaluation key is generated, sent as its own frame and freed, so the
+    client never holds the 176 MiB key set (one-shot: 758 MB peak, 242 MB
+    steady; streamed: ~83 / ~72 MB).  keygen_s then covers sk/pk only and
+    context_upload_s includes generating the evaluation keys.
+    """
+    streamed = bool(stream_keys and getattr(be, "supports_stream_keys",
+                                            lambda: False)())
+    t0 = time.perf_counter()
+    ctx = be.new_context(lazy_eval_keys=True) if streamed else be.new_context()
+    timings["keygen_s"] = time.perf_counter() - t0
+    t0 = time.perf_counter()
+    if streamed:
+        for tag, payload in be.m0_frames(ctx):
+            wire.send(tag, payload)
+    else:
+        wire.send(b"CTXT", upload_context(be, ctx))
+    wire.recv(b"REDY")
+    timings["context_upload_s"] = time.perf_counter() - t0
+    return ctx, streamed
+
+
 def _encrypt_blob(be, ctx, values, timings: dict, key: str,
                   chain_index=None) -> bytes:
     """Encrypt + serialise one client message, timing it under ``key``.
@@ -297,7 +322,8 @@ def _query_once(be, ctx, wire: Wire, x: np.ndarray, spec: dict,
 
 
 def run_client(host: str, port: int, x: np.ndarray, backend_name: str,
-               timeout: float = 600.0, output_mode: str = "logits") -> dict:
+               timeout: float = 600.0, output_mode: str = "logits",
+               stream_keys: bool = False) -> dict:
     """Connect to a server and execute one private inference query."""
     x = np.asarray(x, dtype=np.float64).ravel()
     if x.size == 0 or not np.all(np.isfinite(x)):
@@ -339,15 +365,8 @@ def run_client(host: str, port: int, x: np.ndarray, backend_name: str,
         })
         wire.recv(b"REDY")
 
-        # One-time key generation.  This is the client's largest fixed cost.
-        t0 = time.perf_counter()
-        ctx = be.new_context()
-        timings["keygen_s"] = time.perf_counter() - t0
-
-        t0 = time.perf_counter()
-        wire.send(b"CTXT", upload_context(be, ctx))
-        wire.recv(b"REDY")
-        timings["context_upload_s"] = time.perf_counter() - t0
+        # One-time key generation + upload: the client's largest fixed cost.
+        ctx, m0_streamed = setup_keys(be, wire, timings, stream_keys)
 
         output_kind, output_value = _query_once(
             be, ctx, wire, x, spec, timings, output_mode, sci_session,
@@ -387,6 +406,7 @@ def run_client(host: str, port: int, x: np.ndarray, backend_name: str,
         spec.get("profile", {}).get("mask_domain_aligned", False)
     )
     result["client_peak_rss_mb"] = _peak_rss_mb()
+    result["m0_streamed"] = m0_streamed
     result["wire"] = be.wire.to_dict()
     result["enc_timing_includes_serialization"] = not be.wire.is_baseline
     if output_kind == "logits":
@@ -398,7 +418,8 @@ def run_client(host: str, port: int, x: np.ndarray, backend_name: str,
 
 def run_reuse_session(host: str, port: int, x: np.ndarray, backend_name: str,
                       repeats: int = 3, timeout: float = 600.0,
-                      output_mode: str = "logits") -> dict:
+                      output_mode: str = "logits",
+                      stream_keys: bool = False) -> dict:
     """Run repeated queries over one connection with one CKKS context."""
     if repeats < 1:
         raise ValueError("repeats must be >= 1")
@@ -444,13 +465,7 @@ def run_reuse_session(host: str, port: int, x: np.ndarray, backend_name: str,
         })
         wire.recv(b"REDY")
 
-        t0 = time.perf_counter()
-        ctx = be.new_context()
-        timings["keygen_s"] = time.perf_counter() - t0
-        t0 = time.perf_counter()
-        wire.send(b"CTXT", upload_context(be, ctx))
-        wire.recv(b"REDY")
-        timings["context_upload_s"] = time.perf_counter() - t0
+        ctx, m0_streamed = setup_keys(be, wire, timings, stream_keys)
 
         for i in range(repeats):
             if i:
@@ -525,6 +540,7 @@ def run_reuse_session(host: str, port: int, x: np.ndarray, backend_name: str,
         spec.get("profile", {}).get("mask_domain_aligned", False)
     )
     result["client_peak_rss_mb"] = _peak_rss_mb()
+    result["m0_streamed"] = m0_streamed
     result["wire"] = be.wire.to_dict()
     result["enc_timing_includes_serialization"] = not be.wire.is_baseline
     if output_kind == "logits":
@@ -717,6 +733,9 @@ def main() -> int:
                     help="reuse one CKKS context across --repeat queries")
     ap.add_argument("--output-mode", choices=["logits", "index"], default="logits",
                     help="index mode requires a secure MPC argmax backend")
+    ap.add_argument("--stream-keys", action="store_true",
+                    help="E2 plan A: generate and send evaluation keys one "
+                         "frame at a time and never keep them (client memory)")
     ap.add_argument("--out", type=Path, default=None)
     ap.add_argument("--verbose", action="store_true")
     args = ap.parse_args()
@@ -770,12 +789,12 @@ def main() -> int:
             result = run_reuse_session(
                 args.host, args.port, x, args.backend,
                 repeats=args.repeat, timeout=args.timeout,
-                output_mode=args.output_mode,
+                output_mode=args.output_mode, stream_keys=args.stream_keys,
             )
         else:
             result = run_client(
                 args.host, args.port, x, args.backend, args.timeout,
-                output_mode=args.output_mode,
+                output_mode=args.output_mode, stream_keys=args.stream_keys,
             )
 
     result.setdefault("seed", int(args.seed))

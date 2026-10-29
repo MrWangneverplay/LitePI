@@ -445,12 +445,45 @@ class SealBackend:
         self.ctx = None
         self.version = getattr(seal, "SEAL_VERSION", "unknown")
 
-    def new_context(self):
+    def new_context(self, lazy_eval_keys: bool = False):
+        kwargs = {"lazy_eval_keys": True} if lazy_eval_keys else {}
         self.ctx = self.seal.new_context(
             POLY_MODULUS_DEGREE, COEFF_MOD_BIT_SIZES, 21,
-            max_rot_pow=getattr(self, "max_rot_pow", -1),
+            max_rot_pow=getattr(self, "max_rot_pow", -1), **kwargs,
         )
         return self.ctx
+
+    def supports_stream_keys(self) -> bool:
+        return hasattr(self.seal, "load_public_header")
+
+    def m0_frames(self, ctx):
+        """Client: M0 as (tag, payload) frames, one evaluation key per frame.
+
+        With a lazy context each key is generated right before its frame and
+        freed after it, so the client never holds the 176 MiB key set
+        (E2 plan A).  Codec and seeding follow the session's wire profile.
+        """
+        compr, seeded = self.wire.compr, bool(self.wire.seeded_keys)
+        yield b"KHDR", bytes(ctx.m0_header(compr, seeded))
+        yield b"KREL", bytes(ctx.m0_relin(compr, seeded))
+        for elt in ctx.galois_elts():
+            yield b"KGAL", bytes(ctx.m0_galois(elt, compr, seeded))
+
+    def load_public_stream(self, header: bytes, recv_frame):
+        """Server: rebuild the context from a streamed M0.
+
+        ``recv_frame(tag)`` returns the next frame's payload.
+        """
+        ctx = self.seal.load_public_header(header)
+        ctx.load_relin(recv_frame(b"KREL"))
+        for _ in range(int(ctx.galois_expected)):
+            ctx.add_galois(recv_frame(b"KGAL"))
+        if ctx.galois_loaded != ctx.galois_expected:
+            raise ProtocolError(
+                f"streamed M0 carried {ctx.galois_loaded} Galois keys, "
+                f"header announced {ctx.galois_expected}")
+        self.ctx = ctx
+        return ctx
 
     def public_context_bytes(self, ctx) -> bytes:
         return self.seal.public_context_bytes(ctx)

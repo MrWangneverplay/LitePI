@@ -8,7 +8,10 @@
     T_encode_enc  客户端 im2col 编码 + 加密（SEAL 在同一次 C++ 调用里完成，只报合计）
     T_enc         同槽位零向量加密的标定值；T_encode 由相减得到（标 derived）
     T_dec / T_post  解密 / argmax
-    M_client_peak_mb 客户端进程 RSS 峰值（@10 Hz）
+    M_client_peak_mb 本进程 RSS 峰值（@10 Hz）。注意：服务端前向、PyTorch、模型与
+                  测试集都在本进程里，所以这是"客户端+服务端"的整机内存，**不是**
+                  客户端内存（旧版 E2 的 0.5–0.9 GB 即此口径）。客户端内存请用
+                  measure_client_memory.py（服务端/客户端分进程，2026-10-29）。
     S_up / S_down / S_key  上下行密文字节与评估密钥字节（pk+galois+relin）
     T_server      服务端密文前向，§7.4 参考，不计入客户端
 

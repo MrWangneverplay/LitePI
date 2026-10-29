@@ -745,8 +745,17 @@ def serve_connection(conn: socket.socket, be, model,
                 wire.send(b"REDY")
             else:
                 wire.send(b"REDY")
-                _, blob = wire.recv(b"CTXT")
-                ctx = be.load_public_context(blob)
+                # M0 arrives either as one CTXT blob or, from a client that
+                # streams its keys (pi_client --stream-keys), as KHDR + KREL
+                # + one KGAL frame per Galois key.
+                tag, blob = wire.recv()
+                if tag == b"CTXT":
+                    ctx = be.load_public_context(blob)
+                elif tag == b"KHDR" and hasattr(be, "load_public_stream"):
+                    ctx = be.load_public_stream(
+                        blob, lambda want: wire.recv(want)[1])
+                else:
+                    raise ProtocolError(f"expected M0, got {tag!r}")
                 wire.send(b"REDY")
 
             _, blob = wire.recv(b"CTXT")

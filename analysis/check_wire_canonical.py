@@ -199,7 +199,7 @@ class FakeCanonical:
 
 
 def run_one(schedule, profile: str, seed: int = 0,
-            obfuscate: bool = False) -> dict:
+            obfuscate: bool = False, stream_keys: bool = False) -> dict:
     model = FakeCanonical(schedule, seed)
     rng = np.random.default_rng(seed + 1)
     x = rng.uniform(0.0, 1.0, model.input_dim)
@@ -231,7 +231,11 @@ def run_one(schedule, profile: str, seed: int = 0,
     t.start()
     t0 = time.perf_counter()
     try:
-        res = pi_client.run_client("127.0.0.1", port, x, "seal", timeout=300)
+        res = pi_client.run_client("127.0.0.1", port, x, "seal", timeout=300,
+                                   stream_keys=stream_keys)
+        if stream_keys and not res.get("m0_streamed"):
+            raise RuntimeError("--stream-keys requested but M0 was not streamed "
+                               "(rebuild litepi_seal)")
     finally:
         t.join(60)
         srv.close()
@@ -269,6 +273,8 @@ def main() -> int:
     ap.add_argument("--profiles", default="baseline,compact")
     ap.add_argument("--schedules", default="00,01,10,11")
     ap.add_argument("--tol", type=float, default=5e-2)
+    ap.add_argument("--stream-keys", action="store_true",
+                    help="client streams M0 one evaluation key per frame (plan A)")
     ap.add_argument("--obfuscate", action="store_true",
                     help="§7.2: also require schedule-independent wire traces")
     ap.add_argument("--size-tol", type=float, default=0.01,
@@ -283,7 +289,8 @@ def main() -> int:
     for prof in args.profiles.split(","):
         rows = []
         for sch in args.schedules.split(","):
-            r = run_one(tuple(int(b) for b in sch), prof, obfuscate=args.obfuscate)
+            r = run_one(tuple(int(b) for b in sch), prof, obfuscate=args.obfuscate,
+                        stream_keys=args.stream_keys)
             rows.append(r)
             passed = r["max_abs_err"] <= args.tol and r["argmax_ok"]
             ok &= passed

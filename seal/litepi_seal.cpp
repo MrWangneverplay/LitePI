@@ -266,6 +266,26 @@ public:
     std::unique_ptr<Encryptor> sym_encryptor_;
     std::vector<int> galois_steps_;
     bool galois_all_ = true;
+    // Client: relin / Galois keys are not kept; m0_relin / m0_galois generate
+    // one key at a time while M0 is streamed (E2 client memory, plan A).
+    bool lazy_eval_keys_ = false;
+    // Server: Galois frames announced in the streamed M0 header / received.
+    std::uint32_t galois_expected_ = 0;
+    std::uint32_t galois_loaded_ = 0;
+
+    // Galois elements the server's plan needs (all, or the ±2^i steps).
+    std::vector<std::uint32_t> galois_elts() const
+    {
+        const auto *tool = context_->key_context_data()->galois_tool();
+        auto elts = galois_all_ ? tool->get_elts_all()
+                                : tool->get_elts_from_steps(galois_steps_);
+        // get_elts_all lists 3^(N/4) twice (+N/4 and -N/4 are the same
+        // rotation); the one-shot GaloisKeys object stores it once, so the
+        // streamed form must send it once too.
+        std::sort(elts.begin(), elts.end());
+        elts.erase(std::unique(elts.begin(), elts.end()), elts.end());
+        return elts;
+    }
 
     // parms_id of a data level by chain index (top data level = largest).
     parms_id_type parms_id_at(int chain_index) const
@@ -392,7 +412,8 @@ EncryptionParameters read_parms(std::istream &in)
 
 std::shared_ptr<SealCtx> new_context(std::size_t poly_modulus_degree,
                                      std::vector<int> coeff_mod_bit_sizes,
-                                     int scale_bits, int max_rot_pow = -1)
+                                     int scale_bits, int max_rot_pow = -1,
+                                     bool lazy_eval_keys = false)
 {
     EncryptionParameters parms(scheme_type::ckks);
     parms.set_poly_modulus_degree(poly_modulus_degree);
@@ -407,11 +428,18 @@ std::shared_ptr<SealCtx> new_context(std::size_t poly_modulus_degree,
     handle->relin_keys_ = RelinKeys();
     handle->galois_keys_ = GaloisKeys();
     keygen.create_public_key(handle->public_key_);
-    keygen.create_relin_keys(handle->relin_keys_);
+    handle->lazy_eval_keys_ = lazy_eval_keys;
+    if (!lazy_eval_keys)
+    {
+        keygen.create_relin_keys(handle->relin_keys_);
+    }
     if (max_rot_pow < 0 || static_cast<std::size_t>(max_rot_pow) + 1
                                >= static_cast<std::size_t>(poly_modulus_degree / 2))
     {
-        keygen.create_galois_keys(handle->galois_keys_);
+        if (!lazy_eval_keys)
+        {
+            keygen.create_galois_keys(handle->galois_keys_);
+        }
         handle->galois_all_ = true;
     }
     else
@@ -429,7 +457,10 @@ std::shared_ptr<SealCtx> new_context(std::size_t poly_modulus_degree,
             steps.push_back(step);
             steps.push_back(-step);
         }
-        keygen.create_galois_keys(steps, handle->galois_keys_);
+        if (!lazy_eval_keys)
+        {
+            keygen.create_galois_keys(steps, handle->galois_keys_);
+        }
         handle->galois_all_ = false;
         handle->galois_steps_ = steps;
     }
@@ -459,6 +490,11 @@ py::dict key_sizes(const SealCtx &ctx)
     {
         throw std::runtime_error("key_sizes needs the key-owning context");
     }
+    if (ctx.lazy_eval_keys_)
+    {
+        throw std::runtime_error("key_sizes needs eagerly generated keys "
+                                 "(new_context(lazy_eval_keys=False))");
+    }
     // Uncompressed on every build (the E4 figures recorded so far); use
     // key_sizes_wire for the codec / seeded variants.
     auto size_of = [](const auto &obj)
@@ -483,6 +519,11 @@ py::bytes public_context_bytes(const SealCtx &ctx, const std::string &compr,
     if (!ctx.has_secret_)
     {
         throw std::runtime_error("public_context_bytes needs the key-owning context");
+    }
+    if (ctx.lazy_eval_keys_ && !seeded)
+    {
+        throw std::runtime_error("lazy context: stream M0 with m0_header / "
+                                 "m0_relin / m0_galois instead");
     }
     const auto mode = parse_compr(compr);
     std::ostringstream out(std::ios::binary);
@@ -580,6 +621,170 @@ std::shared_ptr<SealCtx> load_public_context(py::bytes blob)
         std::make_unique<Encryptor>(*handle->context_, handle->public_key_);
     handle->has_secret_ = false;
     return handle;
+}
+
+// ------------------------------------------------------- streamed M0 (plan A)
+//
+// The one-shot blob above needs every evaluation key in memory twice (the key
+// objects and their serialisation): 757 MB peak / 241 MB steady on the client
+// for 176 MiB of keys, although the client never rotates or relinearises.
+// The streamed form sends M0 as frames
+//     header  = scale | parms | pk | uint32 #galois
+//     relin   = RelinKeys
+//     galois  = GaloisKeys holding exactly one element      (x #galois)
+// and a lazy client context generates each key right before it is
+// serialised, so at most one key (~7 MB here) is alive at a time.  The
+// server rebuilds the same GaloisKeys object with add_galois().
+// Total bytes differ from the one-shot blob only by per-object headers.
+
+py::bytes m0_header(const SealCtx &ctx, const std::string &compr, bool seeded)
+{
+    if (!ctx.has_secret_)
+    {
+        throw std::runtime_error("m0_header needs the key-owning context");
+    }
+    const auto mode = parse_compr(compr);
+    std::ostringstream out(std::ios::binary);
+    out.write(reinterpret_cast<const char *>(&ctx.global_scale_),
+              sizeof(ctx.global_scale_));
+    write_parms(ctx.parms_, out);
+    if (seeded)
+    {
+#if !LITEPI_HAS_WIRE
+        throw std::runtime_error("seeded keys need SEAL >= 3.5 (build4.sh)");
+#else
+        ctx.keygen_->create_public_key().save(out, mode);
+#endif
+    }
+    else
+    {
+        save_obj(ctx.public_key_, out, mode);
+    }
+    std::uint32_t count = static_cast<std::uint32_t>(ctx.galois_elts().size());
+    out.write(reinterpret_cast<const char *>(&count), sizeof(count));
+    return py::bytes(out.str());
+}
+
+py::bytes m0_relin(const SealCtx &ctx, const std::string &compr, bool seeded)
+{
+    if (!ctx.has_secret_)
+    {
+        throw std::runtime_error("m0_relin needs the key-owning context");
+    }
+    const auto mode = parse_compr(compr);
+    std::ostringstream out(std::ios::binary);
+    if (seeded)
+    {
+#if !LITEPI_HAS_WIRE
+        throw std::runtime_error("seeded keys need SEAL >= 3.5 (build4.sh)");
+#else
+        ctx.keygen_->create_relin_keys().save(out, mode);
+#endif
+    }
+    else if (ctx.lazy_eval_keys_)
+    {
+        RelinKeys relin;
+        ctx.keygen_->create_relin_keys(relin);
+        save_obj(relin, out, mode);
+    }
+    else
+    {
+        save_obj(ctx.relin_keys_, out, mode);
+    }
+    return py::bytes(out.str());
+}
+
+py::bytes m0_galois(const SealCtx &ctx, std::uint32_t elt,
+                    const std::string &compr, bool seeded)
+{
+    if (!ctx.has_secret_)
+    {
+        throw std::runtime_error("m0_galois needs the key-owning context");
+    }
+    const auto mode = parse_compr(compr);
+    const std::vector<std::uint32_t> one{elt};
+    std::ostringstream out(std::ios::binary);
+    if (seeded)
+    {
+#if !LITEPI_HAS_WIRE
+        throw std::runtime_error("seeded keys need SEAL >= 3.5 (build4.sh)");
+#else
+        ctx.keygen_->create_galois_keys(one).save(out, mode);
+#endif
+    }
+    else
+    {
+        GaloisKeys g;
+        ctx.keygen_->create_galois_keys(one, g);
+        save_obj(g, out, mode);
+    }
+    return py::bytes(out.str());
+}
+
+// Server side of the streamed M0.
+std::shared_ptr<SealCtx> load_public_header(py::bytes blob)
+{
+    std::string raw = blob;
+    std::istringstream in(raw, std::ios::binary);
+    double global_scale = 0.0;
+    in.read(reinterpret_cast<char *>(&global_scale), sizeof(global_scale));
+    auto parms = read_parms(in);
+    auto handle = std::make_shared<SealCtx>(std::move(parms), global_scale);
+    handle->public_key_.load(*handle->context_, in);
+    std::uint32_t count = 0;
+    in.read(reinterpret_cast<char *>(&count), sizeof(count));
+    if (!in)
+    {
+        throw std::runtime_error("truncated M0 header");
+    }
+    handle->encryptor_ =
+        std::make_unique<Encryptor>(*handle->context_, handle->public_key_);
+    handle->has_secret_ = false;
+    handle->galois_expected_ = count;
+    return handle;
+}
+
+void load_relin(SealCtx &ctx, py::bytes blob)
+{
+    std::string raw = blob;
+    std::istringstream in(raw, std::ios::binary);
+    ctx.relin_keys_.load(*ctx.context_, in);
+}
+
+// Merge a one-element GaloisKeys object into the context's GaloisKeys.
+void add_galois(SealCtx &ctx, py::bytes blob)
+{
+    std::string raw = blob;
+    std::istringstream in(raw, std::ios::binary);
+    GaloisKeys part;
+    part.load(*ctx.context_, in);
+    auto &dst = ctx.galois_keys_.data();
+    auto &src = part.data();
+    if (dst.empty())
+    {
+        dst.resize(src.size());
+        ctx.galois_keys_.parms_id() = part.parms_id();
+    }
+    if (dst.size() != src.size() || ctx.galois_keys_.parms_id() != part.parms_id())
+    {
+        throw std::runtime_error("Galois key frame does not match the context");
+    }
+    for (std::size_t i = 0; i < src.size(); ++i)
+    {
+        if (!src[i].empty())
+        {
+            dst[i] = std::move(src[i]);
+            ++ctx.galois_loaded_;
+        }
+    }
+}
+
+// Client: forget the evaluation keys of an eager context after M0 is sent
+// (the memory returns to SEAL's pool; a lazy context never holds them).
+void drop_eval_keys(SealCtx &ctx)
+{
+    ctx.galois_keys_ = GaloisKeys();
+    ctx.relin_keys_ = RelinKeys();
 }
 
 // ------------------------------------------------------------------ encrypt
@@ -1338,6 +1543,25 @@ PYBIND11_MODULE(litepi_seal, m)
             return c.modulus_bits(x.ct_.parms_id());
         })
         .def("top_chain_index", &SealCtx::top_chain_index)
+        .def("galois_elts", &SealCtx::galois_elts)
+        .def("m0_header", &m0_header, py::arg("compr") = "none",
+             py::arg("seeded") = false)
+        .def("m0_relin", &m0_relin, py::arg("compr") = "none",
+             py::arg("seeded") = false)
+        .def("m0_galois", &m0_galois, py::arg("elt"), py::arg("compr") = "none",
+             py::arg("seeded") = false)
+        .def("load_relin", &load_relin)
+        .def("add_galois", &add_galois)
+        .def("drop_eval_keys", &drop_eval_keys)
+        .def_property_readonly("lazy_eval_keys", [](const SealCtx &c) {
+            return c.lazy_eval_keys_;
+        })
+        .def_property_readonly("galois_expected", [](const SealCtx &c) {
+            return c.galois_expected_;
+        })
+        .def_property_readonly("galois_loaded", [](const SealCtx &c) {
+            return c.galois_loaded_;
+        })
         .def("chain_prime_bits", &chain_prime_bits)
         .def("chain_primes", [](const SealCtx &c) {
             std::vector<std::uint64_t> out;
@@ -1351,7 +1575,8 @@ PYBIND11_MODULE(litepi_seal, m)
 
     m.def("new_context", &new_context, py::arg("poly_modulus_degree"),
           py::arg("coeff_mod_bit_sizes"), py::arg("scale_bits"),
-          py::arg("max_rot_pow") = -1);
+          py::arg("max_rot_pow") = -1, py::arg("lazy_eval_keys") = false);
+    m.def("load_public_header", &load_public_header);
     m.def("public_context_bytes",
           py::overload_cast<const SealCtx &, const std::string &, bool>(
               &public_context_bytes),

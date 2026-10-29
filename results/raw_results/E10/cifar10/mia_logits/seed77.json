@@ -3,15 +3,24 @@
   "dataset": "cifar10",
   "method": "mia_logits",
   "seed": 77,
-  "git_sha": "9487bea10d77dd0ad7c4d9b4bcaa08368d1bab8c",
-  "timestamp_utc": "2026-10-25T04:41:28+00:00",
+  "git_sha": "427d9e7585b7c96e41ada20728403edbbe78731d",
+  "timestamp_utc": "2026-10-29T10:22:39+00:00",
   "membership_inference": {
-    "auc": 0.6985592577724252,
+    "auc": 0.6951692760604844,
+    "auc_ci": [
+      0.6327612739194434,
+      0.7487042240956332
+    ],
+    "ci_level": 0.95,
+    "n_boot": 1000,
+    "auc_dir_free": 0.6951692760604844,
+    "ci_contains_0.5": false,
     "n_member": 300,
     "n_non_member": 300,
-    "dim": 10
+    "dim": 10,
+    "auc_ties": "average ranks (fixed 2026-10-29; earlier index-only AUCs were biased below 0.5)"
   },
   "output_mode": "full_logits",
-  "member_train_acc": 0.58,
+  "member_train_acc": 0.57,
   "non_member_test_acc": 0.61
 }

@@ -320,6 +320,8 @@ def main() -> None:
     ap.add_argument("--batch-size", type=int, default=256)
     ap.add_argument("--seed", type=int, default=73)
     ap.add_argument("--figure", action="store_true", help="额外输出 datas/E10_summary.png")
+    ap.add_argument("--skip-e10c", action="store_true",
+                    help="跳过 E10c 解析估算（E10c 已改为 pi_server --obfuscate-schedule 实测）")
     ap.add_argument("--smoke", action="store_true", help="小规模快速验证（不推荐用于论文）")
     args = ap.parse_args()
 
@@ -419,22 +421,26 @@ def main() -> None:
         }
 
     # ---- E10c ----
-    # 每次假交互的字节取 E4 实测（上行 fresh L7 + 下行 L4），而不是默认的 128 KB 估值。
-    per_layer_bytes = 128 * 1024
-    e4 = root / "results" / "raw_results" / "E4" / "all" / "comm_bytes" / "seed73.json"
-    if e4.exists():
-        ladder = {row["level"]: row["measured_bytes"]
-                  for row in json.loads(e4.read_text(encoding="utf-8"))["ciphertext_ladder"]}
-        per_layer_bytes = int(ladder["L7"] + ladder["L4"])
-    overhead = e10c(per_layer_bytes=per_layer_bytes)
-    print("\n[E10c] 调度混淆（dummy-round padding）的额外代价估算"
-          f"（per-layer={per_layer_bytes/1024:.0f} KB，取自 E4 实测）")
-    print(f"  {'K_h':>4}{'HE-only 层':>11}{'额外轮数':>10}{'额外上行':>12}{'额外延迟':>10}")
-    for row in overhead["rows"]:
-        print(f"  {row['K_h']:>4}{row['he_only_layers']:>11}{row['extra_rounds']:>10}"
-              f"{row['extra_uplink_bytes']/1024:>10.0f} KB{row['extra_latency_ms']:>8.0f} ms")
-    if not args.smoke:
-        save_record(root, "E10", "all", "scheduling_obfuscation", args.seed, overhead)
+    overhead = None
+    if args.skip_e10c:
+        print("\n[E10c] 跳过解析估算（实测见 pi_server --obfuscate-schedule 的 E10c 运行）")
+    else:
+        # 每次假交互的字节取 E4 实测（上行 fresh L7 + 下行 L4），而不是默认的 128 KB 估值。
+        per_layer_bytes = 128 * 1024
+        e4 = root / "results" / "raw_results" / "E4" / "all" / "comm_bytes" / "seed73.json"
+        if e4.exists():
+            ladder = {row["level"]: row["measured_bytes"]
+                      for row in json.loads(e4.read_text(encoding="utf-8"))["ciphertext_ladder"]}
+            per_layer_bytes = int(ladder["L7"] + ladder["L4"])
+        overhead = e10c(per_layer_bytes=per_layer_bytes)
+        print("\n[E10c] 调度混淆（dummy-round padding）的额外代价估算"
+              f"（per-layer={per_layer_bytes/1024:.0f} KB，取自 E4 实测）")
+        print(f"  {'K_h':>4}{'HE-only 层':>11}{'额外轮数':>10}{'额外上行':>12}{'额外延迟':>10}")
+        for row in overhead["rows"]:
+            print(f"  {row['K_h']:>4}{row['he_only_layers']:>11}{row['extra_rounds']:>10}"
+                  f"{row['extra_uplink_bytes']/1024:>10.0f} KB{row['extra_latency_ms']:>8.0f} ms")
+        if not args.smoke:
+            save_record(root, "E10", "all", "scheduling_obfuscation", args.seed, overhead)
 
     # ---- 汇总 ----
     print("\n" + "=" * 80)
@@ -467,11 +473,14 @@ def main() -> None:
             axes[1].axhline(0.5, ls="--", c="k", lw=0.8)
             axes[1].set_title("E10b membership inference AUC")
             axes[1].set_xticks(x); axes[1].set_xticklabels(names); axes[1].legend(); axes[1].grid(alpha=0.3)
-            axes[2].bar([str(r["K_h"]) for r in overhead["rows"]],
-                        [r["extra_latency_ms"] for r in overhead["rows"]])
-            axes[2].set_xlabel("K_h (hybrid layers)")
-            axes[2].set_title("E10c obfuscation: extra latency (ms)")
-            axes[2].grid(alpha=0.3)
+            if overhead is not None:
+                axes[2].bar([str(r["K_h"]) for r in overhead["rows"]],
+                            [r["extra_latency_ms"] for r in overhead["rows"]])
+                axes[2].set_xlabel("K_h (hybrid layers)")
+                axes[2].set_title("E10c obfuscation: extra latency (ms)")
+                axes[2].grid(alpha=0.3)
+            else:
+                axes[2].set_axis_off()
             fig.tight_layout()
             fig_path = data_dir / "E10_summary.png"
             fig.savefig(fig_path, dpi=150)

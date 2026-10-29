@@ -1,0 +1,38 @@
+{
+  "exp_id": "E10",
+  "dataset": "all",
+  "method": "scheduling_obfuscation",
+  "seed": 73,
+  "git_sha": "a13424fe332fd69da01100ffb9525511e9eb71c6",
+  "timestamp_utc": "2026-10-29T09:19:01+00:00",
+  "k_nonlinear": 2,
+  "per_layer_bytes": 1442034,
+  "rtt_ms": 50.0,
+  "rows": [
+    {
+      "K_h": 0,
+      "he_only_layers": 2,
+      "extra_rounds": 2,
+      "extra_uplink_bytes": 2884068,
+      "extra_downlink_bytes": 128,
+      "extra_latency_ms": 100.0
+    },
+    {
+      "K_h": 1,
+      "he_only_layers": 1,
+      "extra_rounds": 1,
+      "extra_uplink_bytes": 1442034,
+      "extra_downlink_bytes": 64,
+      "extra_latency_ms": 50.0
+    },
+    {
+      "K_h": 2,
+      "he_only_layers": 0,
+      "extra_rounds": 0,
+      "extra_uplink_bytes": 0,
+      "extra_downlink_bytes": 0,
+      "extra_latency_ms": 0.0
+    }
+  ],
+  "note": "字节数按参数量级估算；真实值以协议设计 §6 的字节预算与实测密文大小为准"
+}

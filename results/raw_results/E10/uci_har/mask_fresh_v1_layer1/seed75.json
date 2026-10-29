@@ -1,0 +1,29 @@
+{
+  "exp_id": "E10",
+  "dataset": "uci_har",
+  "method": "mask_fresh_v1_layer1",
+  "seed": 75,
+  "git_sha": "427d9e7585b7c96e41ada20728403edbbe78731d",
+  "timestamp_utc": "2026-10-29T10:21:05+00:00",
+  "leakage": {
+    "Q": 200,
+    "dim": 756,
+    "mask_rule": "M2-v1-observed-range",
+    "mask_policy": "fresh",
+    "mask_domain_R": 6.691954278945923,
+    "log2_mask_half_width": 2.7424275885676415,
+    "activation_bound_B": null,
+    "sigma": null,
+    "sd_bound_per_element": 0.5267333004832184,
+    "mse": 29.810103507021044,
+    "true_difference_energy": 0.8989946842193604,
+    "relative_error": 33.15937683536646,
+    "recovery_correlation": 0.17573712107042255,
+    "recovery_snr_db": -15.20606360252642,
+    "single_query_correlation": 0.22535648834287397,
+    "single_query_sign_accuracy": 0.5468981481481482
+  },
+  "layer": "layer1",
+  "mask_policy": "fresh",
+  "mask_rule": "v1-narrow-control"
+}

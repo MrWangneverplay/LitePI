@@ -1,0 +1,20 @@
+{
+  "exp_id": "E10",
+  "dataset": "cifar10",
+  "method": "mask_fresh_layer2",
+  "seed": 75,
+  "git_sha": "9487bea10d77dd0ad7c4d9b4bcaa08368d1bab8c",
+  "timestamp_utc": "2026-10-25T04:39:34+00:00",
+  "leakage": {
+    "Q": 200,
+    "dim": 128,
+    "mask_domain_R": 30.459114360809327,
+    "mse": 622.1161210630646,
+    "true_difference_energy": 8.049989700317383,
+    "relative_error": 77.28160460112598,
+    "recovery_correlation": 0.11089315754074662,
+    "recovery_snr_db": -18.88076130775191
+  },
+  "layer": "layer2",
+  "mask_policy": "fresh"
+}

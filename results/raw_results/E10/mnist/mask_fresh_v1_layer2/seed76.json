@@ -1,0 +1,29 @@
+{
+  "exp_id": "E10",
+  "dataset": "mnist",
+  "method": "mask_fresh_v1_layer2",
+  "seed": 76,
+  "git_sha": "427d9e7585b7c96e41ada20728403edbbe78731d",
+  "timestamp_utc": "2026-10-29T10:21:44+00:00",
+  "leakage": {
+    "Q": 200,
+    "dim": 64,
+    "mask_rule": "M2-v1-observed-range",
+    "mask_policy": "fresh",
+    "mask_domain_R": 23.585931873321535,
+    "log2_mask_half_width": 4.559854697343202,
+    "activation_bound_B": null,
+    "sigma": null,
+    "sd_bound_per_element": 0.5253777305794022,
+    "mse": 373.09083450586905,
+    "true_difference_energy": 26.58519172668457,
+    "relative_error": 14.03378385762716,
+    "recovery_correlation": 0.24422193051730498,
+    "recovery_snr_db": -11.471747834253252,
+    "single_query_correlation": 0.2976092423813627,
+    "single_query_sign_accuracy": 0.56828125
+  },
+  "layer": "layer2",
+  "mask_policy": "fresh",
+  "mask_rule": "v1-narrow-control"
+}

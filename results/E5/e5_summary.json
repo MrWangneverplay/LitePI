@@ -22,11 +22,61 @@
     "provenance": {
       "client_crypto": "E1 SEAL per_sample, n=3840 (desktop, SCI)",
       "mpc_fit": "mpc_ms = 9.659*K_h + 0.00374*elements (lstsq over 2880 hybrid samples)",
-      "server": "E1 forward_s linear in K_h (desktop)",
+      "server": "E1 forward_s mean per (dataset, schedule) (desktop: MNIST on host 99, CIFAR/UCI on container 101); pooled linear-in-K_h fallback for fast/VGG is a model value.  forward_s includes the server's wait for the client inside each hybrid layer",
       "r_h": "r_h_sci_cifar10.json (scope: control-plane)",
       "bytes": "E4 wire_bytes, profile baseline",
       "ot_bytes": "unmeasured: SCI bytes_sent() not recorded in E1/E2 yet",
       "memory": "E2: K_h=[0] only; hybrid increment unmeasured"
+    },
+    "t_server_table_ms": {
+      "cifar10": {
+        "00": 17954.254225,
+        "01": 19139.989978125,
+        "10": 27547.001265625,
+        "11": 28316.507675,
+        "_linear": [
+          18058.311560937487,
+          5181.126725000014
+        ],
+        "_n": {
+          "00": 320,
+          "01": 320,
+          "10": 320,
+          "11": 320
+        }
+      },
+      "mnist": {
+        "00": 4739.270084375,
+        "01": 5335.38240625,
+        "10": 6797.842353125,
+        "11": 7132.03169375,
+        "_linear": [
+          4804.750829687498,
+          1196.380804687503
+        ],
+        "_n": {
+          "00": 320,
+          "01": 320,
+          "10": 320,
+          "11": 320
+        }
+      },
+      "uci_har": {
+        "00": 14521.06668125,
+        "01": 15674.160359375,
+        "10": 20750.453846875,
+        "11": 20313.028634375,
+        "_linear": [
+          14918.696403906233,
+          2895.980976562512
+        ],
+        "_n": {
+          "00": 320,
+          "01": 320,
+          "10": 320,
+          "11": 320
+        }
+      }
     }
   },
   "rtt_ms": 50.0,
@@ -35,27 +85,27 @@
     "mnist": {
       "adaptive": "00",
       "pareto_size": 1,
-      "solve_ms": 0.0532
+      "solve_ms": 0.0631
     },
     "cifar10": {
       "adaptive": "00",
       "pareto_size": 2,
-      "solve_ms": 0.0562
+      "solve_ms": 0.0725
     },
     "uci_har": {
       "adaptive": "00",
       "pareto_size": 2,
-      "solve_ms": 0.0357
+      "solve_ms": 0.0503
     },
     "fast": {
       "adaptive": "00111",
       "pareto_size": 7,
-      "solve_ms": 0.2283
+      "solve_ms": 0.2245
     },
     "vgg": {
       "adaptive": "00100",
       "pareto_size": 5,
-      "solve_ms": 0.1248
+      "solve_ms": 0.1382
     }
   }
 }

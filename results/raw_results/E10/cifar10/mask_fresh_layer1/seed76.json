@@ -3,18 +3,27 @@
   "dataset": "cifar10",
   "method": "mask_fresh_layer1",
   "seed": 76,
-  "git_sha": "9487bea10d77dd0ad7c4d9b4bcaa08368d1bab8c",
-  "timestamp_utc": "2026-10-25T04:40:31+00:00",
+  "git_sha": "427d9e7585b7c96e41ada20728403edbbe78731d",
+  "timestamp_utc": "2026-10-29T10:21:51+00:00",
   "leakage": {
     "Q": 200,
     "dim": 1200,
-    "mask_domain_R": 6.122952890396118,
-    "mse": 24.95815968966131,
+    "mask_rule": "M2-v2-statdist",
+    "mask_policy": "fresh",
+    "mask_domain_R": 4398046511104.0,
+    "log2_mask_half_width": 42.0,
+    "activation_bound_B": 8.0,
+    "sigma": 39.0,
+    "sd_bound_per_element": 6.629515729786317e-13,
+    "mse": 1.2876871411940944e+25,
     "true_difference_energy": 1.030995488166809,
-    "relative_error": 24.20782629615468,
-    "recovery_correlation": 0.19891001123708618,
-    "recovery_snr_db": -13.83955794399693
+    "relative_error": 1.2489745648486815e+25,
+    "recovery_correlation": -0.0002803306097236941,
+    "recovery_snr_db": -250.9655359413207,
+    "single_query_correlation": 0.0014376752694503605,
+    "single_query_sign_accuracy": 0.49937916666666665
   },
   "layer": "layer1",
-  "mask_policy": "fresh"
+  "mask_policy": "fresh",
+  "mask_rule": "v2"
 }

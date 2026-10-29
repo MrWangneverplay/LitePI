@@ -3,15 +3,24 @@
   "dataset": "mnist",
   "method": "mia_index_only",
   "seed": 73,
-  "git_sha": "a13424fe332fd69da01100ffb9525511e9eb71c6",
-  "timestamp_utc": "2026-10-29T09:18:48+00:00",
+  "git_sha": "427d9e7585b7c96e41ada20728403edbbe78731d",
+  "timestamp_utc": "2026-10-29T10:17:10+00:00",
   "membership_inference": {
-    "auc": 0.4542341220423412,
+    "auc": 0.47829567692581393,
+    "auc_ci": [
+      0.4089113369507205,
+      0.5400818359722469
+    ],
+    "ci_level": 0.95,
+    "n_boot": 1000,
+    "auc_dir_free": 0.521704323074186,
+    "ci_contains_0.5": true,
     "n_member": 300,
     "n_non_member": 300,
-    "dim": 10
+    "dim": 10,
+    "auc_ties": "average ranks (fixed 2026-10-29; earlier index-only AUCs were biased below 0.5)"
   },
   "output_mode": "argmax_index",
-  "member_train_acc": 0.9866666666666667,
+  "member_train_acc": 0.9833333333333333,
   "non_member_test_acc": 0.9866666666666667
 }

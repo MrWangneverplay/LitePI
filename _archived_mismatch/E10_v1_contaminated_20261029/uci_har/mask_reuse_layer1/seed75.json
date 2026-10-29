@@ -1,0 +1,20 @@
+{
+  "exp_id": "E10",
+  "dataset": "uci_har",
+  "method": "mask_reuse_layer1",
+  "seed": 75,
+  "git_sha": "9487bea10d77dd0ad7c4d9b4bcaa08368d1bab8c",
+  "timestamp_utc": "2026-10-25T04:24:17+00:00",
+  "leakage": {
+    "Q": 200,
+    "dim": 756,
+    "mask_domain_R": 7.402237844467163,
+    "mse": 6.459354585475633e-16,
+    "true_difference_energy": 0.8989948034286499,
+    "relative_error": 7.1850855653898e-16,
+    "recovery_correlation": 0.9999999999999986,
+    "recovery_snr_db": 151.43568055594423
+  },
+  "layer": "layer1",
+  "mask_policy": "reused"
+}

@@ -10,7 +10,8 @@
   "basis": {
     "accuracy": "plaintext combination penalty 0.0025*k*(k-1) (model)",
     "client_cost": "cost_model (E1 SEAL+SCI fit)",
-    "server_cost": "canonical fit extrapolated - NOT a deep-net measurement",
+    "server_cost": "pooled canonical fit extrapolated - NOT a deep-net measurement",
+    "adaptive_executable": "constrained search over schedules the ciphertext code can run: every nonlinear layer before a conv must be hybrid (deep_hybrid.py has no P2->conv)",
     "E_client": "unmeasured (E6)",
     "M_client": "E2 HE-only peak; hybrid increment unmeasured"
   },
@@ -108,6 +109,25 @@
       "depth_ok": true,
       "meets_acc_min": true,
       "on_pareto_front": true,
+      "dominated_by_adaptive": false
+    },
+    "adaptive_executable": {
+      "schedule": "11100",
+      "naming": "conv1=ReLU conv2=ReLU conv3=ReLU conv4=P2 fc1=P2",
+      "accuracy": 0.8805,
+      "mpc_elements": 147456,
+      "hybrid_layers": 3,
+      "R_online": 5.0,
+      "T_client_ms": 618.04,
+      "T_server_ms": 21804.4,
+      "L_e2e_ms": 22672.4,
+      "S_online_bytes": 6816712,
+      "M_client_mb": null,
+      "E_client_mJ": null,
+      "objective_ms": 868.04,
+      "depth_ok": true,
+      "meets_acc_min": true,
+      "on_pareto_front": false,
       "dominated_by_adaptive": false
     },
     "random_x5": {
@@ -212,7 +232,7 @@
   ],
   "schedule_space": 32,
   "planner_cost": {
-    "solve_ms": 0.1248,
+    "solve_ms": 0.1382,
     "evaluations": 32,
     "layer_sensitivity_evals": 5
   },

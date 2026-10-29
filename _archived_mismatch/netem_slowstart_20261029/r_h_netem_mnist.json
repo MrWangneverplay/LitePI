@@ -1,0 +1,46 @@
+{
+  "experiment": "r_h",
+  "measured_at": "2026-10-29T10:09:25+00:00",
+  "dataset": "mnist",
+  "device": "desktop",
+  "method": "tc/netem RTT sweep; least-squares slope of wall time vs RTT per schedule; r_h = (R_eff(s) - R_eff(00)) / K_h",
+  "scope": "end-to-end",
+  "sci_internal_rounds_counted": true,
+  "rtt_convention": "configured delay = added RTT; on loopback the bidirectional netem factor is divided out (delay_mult)",
+  "per_schedule": {
+    "00": {
+      "R_eff": 3.6901185594579946,
+      "R_eff_se": 0.6625410131040277,
+      "intercept_ms": 7541.582320080824,
+      "bandwidth_mbps": 100.0,
+      "n": 15,
+      "delay_mult": 2.0
+    },
+    "11": {
+      "R_eff": 34.5147496087637,
+      "R_eff_se": 5.6869487330685216,
+      "intercept_ms": 11459.4082942097,
+      "bandwidth_mbps": 100.0,
+      "n": 15,
+      "delay_mult": 2.0
+    }
+  },
+  "r_h_per_schedule": {
+    "11": 15.412315524652854
+  },
+  "r_h_wall_slope": 15.412,
+  "sci_rounds_per_schedule": {
+    "11": {
+      "sci_rounds_per_layer": 10.107382795011986,
+      "se": 2.0108254965513064
+    }
+  },
+  "r_h_measured": 11.107,
+  "r_h_basis": "1 (①/② exchange) + SCI rounds from client mpc_s vs RTT; wall-time slope kept as cross-check (it also counts TCP slow-start RTTs of the ciphertext transfers)",
+  "tcp_slow_start_after_idle": [
+    1,
+    null
+  ],
+  "protocol_r_h": 1,
+  "note": "R_eff(00) should be ~2 (M1 up, M3 down) plus the session handshake when the context is not reused; the difference cancels the handshake."
+}

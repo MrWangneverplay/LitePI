@@ -3,8 +3,8 @@
   "dataset": "uci_har",
   "method": "mask_fresh_layer1",
   "seed": 73,
-  "git_sha": "a13424fe332fd69da01100ffb9525511e9eb71c6",
-  "timestamp_utc": "2026-10-29T09:19:00+00:00",
+  "git_sha": "427d9e7585b7c96e41ada20728403edbbe78731d",
+  "timestamp_utc": "2026-10-29T10:17:23+00:00",
   "leakage": {
     "Q": 200,
     "dim": 756,

@@ -1,0 +1,93 @@
+{
+  "cifar10/s00/hybrid_s00_acc_seal": {
+    "n_seeds": 5,
+    "agreement_mean": 1.0,
+    "agreement_std": 0.0,
+    "ciphertext_accuracy_mean": 0.5813,
+    "plaintext_accuracy_mean": 0.5813
+  },
+  "cifar10/s01/hybrid_s01_acc_seal": {
+    "n_seeds": 5,
+    "agreement_mean": 1.0,
+    "agreement_std": 0.0,
+    "ciphertext_accuracy_mean": 0.5781,
+    "plaintext_accuracy_mean": 0.5781
+  },
+  "cifar10/s10/hybrid_s10_acc_seal": {
+    "n_seeds": 5,
+    "agreement_mean": 0.9969,
+    "agreement_std": 0.007,
+    "ciphertext_accuracy_mean": 0.5969,
+    "plaintext_accuracy_mean": 0.5938
+  },
+  "cifar10/s11/hybrid_s11_acc_seal": {
+    "n_seeds": 5,
+    "agreement_mean": 0.9969,
+    "agreement_std": 0.007,
+    "ciphertext_accuracy_mean": 0.5656,
+    "plaintext_accuracy_mean": 0.5656
+  },
+  "mnist/s00/hybrid_s00_acc_seal": {
+    "n_seeds": 5,
+    "agreement_mean": 1.0,
+    "agreement_std": 0.0,
+    "ciphertext_accuracy_mean": 0.9813,
+    "plaintext_accuracy_mean": 0.9813
+  },
+  "mnist/s01/hybrid_s01_acc_seal": {
+    "n_seeds": 5,
+    "agreement_mean": 1.0,
+    "agreement_std": 0.0,
+    "ciphertext_accuracy_mean": 0.9781,
+    "plaintext_accuracy_mean": 0.9781
+  },
+  "mnist/s10/hybrid_s10_acc_seal": {
+    "n_seeds": 5,
+    "agreement_mean": 1.0,
+    "agreement_std": 0.0,
+    "ciphertext_accuracy_mean": 0.9906,
+    "plaintext_accuracy_mean": 0.9906
+  },
+  "mnist/s11/hybrid_s11_acc_seal": {
+    "n_seeds": 5,
+    "agreement_mean": 1.0,
+    "agreement_std": 0.0,
+    "ciphertext_accuracy_mean": 0.9781,
+    "plaintext_accuracy_mean": 0.9781
+  },
+  "mnist/s11/hybrid_s11_acc_seal_smoke": {
+    "n_seeds": 1,
+    "agreement_mean": 1.0,
+    "agreement_std": 0.0,
+    "ciphertext_accuracy_mean": 1.0,
+    "plaintext_accuracy_mean": 1.0
+  },
+  "uci_har/s00/hybrid_s00_acc_seal": {
+    "n_seeds": 5,
+    "agreement_mean": 1.0,
+    "agreement_std": 0.0,
+    "ciphertext_accuracy_mean": 0.9188,
+    "plaintext_accuracy_mean": 0.9188
+  },
+  "uci_har/s01/hybrid_s01_acc_seal": {
+    "n_seeds": 5,
+    "agreement_mean": 1.0,
+    "agreement_std": 0.0,
+    "ciphertext_accuracy_mean": 0.8937,
+    "plaintext_accuracy_mean": 0.8937
+  },
+  "uci_har/s10/hybrid_s10_acc_seal": {
+    "n_seeds": 5,
+    "agreement_mean": 1.0,
+    "agreement_std": 0.0,
+    "ciphertext_accuracy_mean": 0.9094,
+    "plaintext_accuracy_mean": 0.9094
+  },
+  "uci_har/s11/hybrid_s11_acc_seal": {
+    "n_seeds": 5,
+    "agreement_mean": 0.9969,
+    "agreement_std": 0.007,
+    "ciphertext_accuracy_mean": 0.8969,
+    "plaintext_accuracy_mean": 0.9
+  }
+}

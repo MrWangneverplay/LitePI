@@ -1,0 +1,403 @@
+{
+  "dataset": "cifar10",
+  "schedule": "10",
+  "seed": 75,
+  "backend": "seal",
+  "run_dir": "hybrid_s10_acc_seal",
+  "source_json": "results/raw_results/E1/cifar10/hybrid_s10_acc_seal/seed75.json",
+  "n_samples": 64,
+  "agreement": 1.0,
+  "agreement_ci95": [
+    0.9434,
+    1.0
+  ],
+  "ciphertext_accuracy": 0.6562,
+  "plaintext_accuracy_same_samples": 0.6562,
+  "mean_max_abs_err": 0.01602388,
+  "per_sample": [
+    {
+      "index": 0,
+      "label": 7,
+      "pred": 7,
+      "plain_pred": 7
+    },
+    {
+      "index": 1,
+      "label": 9,
+      "pred": 9,
+      "plain_pred": 9
+    },
+    {
+      "index": 2,
+      "label": 3,
+      "pred": 3,
+      "plain_pred": 3
+    },
+    {
+      "index": 3,
+      "label": 4,
+      "pred": 4,
+      "plain_pred": 4
+    },
+    {
+      "index": 4,
+      "label": 7,
+      "pred": 4,
+      "plain_pred": 4
+    },
+    {
+      "index": 5,
+      "label": 8,
+      "pred": 8,
+      "plain_pred": 8
+    },
+    {
+      "index": 6,
+      "label": 2,
+      "pred": 2,
+      "plain_pred": 2
+    },
+    {
+      "index": 7,
+      "label": 1,
+      "pred": 1,
+      "plain_pred": 1
+    },
+    {
+      "index": 8,
+      "label": 1,
+      "pred": 1,
+      "plain_pred": 1
+    },
+    {
+      "index": 9,
+      "label": 4,
+      "pred": 4,
+      "plain_pred": 4
+    },
+    {
+      "index": 10,
+      "label": 3,
+      "pred": 6,
+      "plain_pred": 6
+    },
+    {
+      "index": 11,
+      "label": 1,
+      "pred": 1,
+      "plain_pred": 1
+    },
+    {
+      "index": 12,
+      "label": 3,
+      "pred": 2,
+      "plain_pred": 2
+    },
+    {
+      "index": 13,
+      "label": 9,
+      "pred": 9,
+      "plain_pred": 9
+    },
+    {
+      "index": 14,
+      "label": 2,
+      "pred": 4,
+      "plain_pred": 4
+    },
+    {
+      "index": 15,
+      "label": 1,
+      "pred": 1,
+      "plain_pred": 1
+    },
+    {
+      "index": 16,
+      "label": 1,
+      "pred": 8,
+      "plain_pred": 8
+    },
+    {
+      "index": 17,
+      "label": 2,
+      "pred": 6,
+      "plain_pred": 6
+    },
+    {
+      "index": 18,
+      "label": 0,
+      "pred": 0,
+      "plain_pred": 0
+    },
+    {
+      "index": 19,
+      "label": 4,
+      "pred": 4,
+      "plain_pred": 4
+    },
+    {
+      "index": 20,
+      "label": 8,
+      "pred": 9,
+      "plain_pred": 9
+    },
+    {
+      "index": 21,
+      "label": 6,
+      "pred": 6,
+      "plain_pred": 6
+    },
+    {
+      "index": 22,
+      "label": 1,
+      "pred": 1,
+      "plain_pred": 1
+    },
+    {
+      "index": 23,
+      "label": 4,
+      "pred": 6,
+      "plain_pred": 6
+    },
+    {
+      "index": 24,
+      "label": 9,
+      "pred": 9,
+      "plain_pred": 9
+    },
+    {
+      "index": 25,
+      "label": 2,
+      "pred": 0,
+      "plain_pred": 0
+    },
+    {
+      "index": 26,
+      "label": 2,
+      "pred": 2,
+      "plain_pred": 2
+    },
+    {
+      "index": 27,
+      "label": 4,
+      "pred": 4,
+      "plain_pred": 4
+    },
+    {
+      "index": 28,
+      "label": 9,
+      "pred": 9,
+      "plain_pred": 9
+    },
+    {
+      "index": 29,
+      "label": 0,
+      "pred": 4,
+      "plain_pred": 4
+    },
+    {
+      "index": 30,
+      "label": 3,
+      "pred": 7,
+      "plain_pred": 7
+    },
+    {
+      "index": 31,
+      "label": 1,
+      "pred": 1,
+      "plain_pred": 1
+    },
+    {
+      "index": 32,
+      "label": 5,
+      "pred": 5,
+      "plain_pred": 5
+    },
+    {
+      "index": 33,
+      "label": 2,
+      "pred": 0,
+      "plain_pred": 0
+    },
+    {
+      "index": 34,
+      "label": 7,
+      "pred": 6,
+      "plain_pred": 6
+    },
+    {
+      "index": 35,
+      "label": 6,
+      "pred": 6,
+      "plain_pred": 6
+    },
+    {
+      "index": 36,
+      "label": 2,
+      "pred": 6,
+      "plain_pred": 6
+    },
+    {
+      "index": 37,
+      "label": 3,
+      "pred": 3,
+      "plain_pred": 3
+    },
+    {
+      "index": 38,
+      "label": 1,
+      "pred": 1,
+      "plain_pred": 1
+    },
+    {
+      "index": 39,
+      "label": 8,
+      "pred": 3,
+      "plain_pred": 3
+    },
+    {
+      "index": 40,
+      "label": 0,
+      "pred": 0,
+      "plain_pred": 0
+    },
+    {
+      "index": 41,
+      "label": 3,
+      "pred": 3,
+      "plain_pred": 3
+    },
+    {
+      "index": 42,
+      "label": 6,
+      "pred": 6,
+      "plain_pred": 6
+    },
+    {
+      "index": 43,
+      "label": 7,
+      "pred": 7,
+      "plain_pred": 7
+    },
+    {
+      "index": 44,
+      "label": 3,
+      "pred": 2,
+      "plain_pred": 2
+    },
+    {
+      "index": 45,
+      "label": 4,
+      "pred": 4,
+      "plain_pred": 4
+    },
+    {
+      "index": 46,
+      "label": 3,
+      "pred": 6,
+      "plain_pred": 6
+    },
+    {
+      "index": 47,
+      "label": 4,
+      "pred": 6,
+      "plain_pred": 6
+    },
+    {
+      "index": 48,
+      "label": 2,
+      "pred": 0,
+      "plain_pred": 0
+    },
+    {
+      "index": 49,
+      "label": 4,
+      "pred": 4,
+      "plain_pred": 4
+    },
+    {
+      "index": 50,
+      "label": 5,
+      "pred": 5,
+      "plain_pred": 5
+    },
+    {
+      "index": 51,
+      "label": 1,
+      "pred": 1,
+      "plain_pred": 1
+    },
+    {
+      "index": 52,
+      "label": 7,
+      "pred": 3,
+      "plain_pred": 3
+    },
+    {
+      "index": 53,
+      "label": 5,
+      "pred": 5,
+      "plain_pred": 5
+    },
+    {
+      "index": 54,
+      "label": 2,
+      "pred": 2,
+      "plain_pred": 2
+    },
+    {
+      "index": 55,
+      "label": 0,
+      "pred": 0,
+      "plain_pred": 0
+    },
+    {
+      "index": 56,
+      "label": 5,
+      "pred": 5,
+      "plain_pred": 5
+    },
+    {
+      "index": 57,
+      "label": 9,
+      "pred": 9,
+      "plain_pred": 9
+    },
+    {
+      "index": 58,
+      "label": 2,
+      "pred": 0,
+      "plain_pred": 0
+    },
+    {
+      "index": 59,
+      "label": 2,
+      "pred": 1,
+      "plain_pred": 1
+    },
+    {
+      "index": 60,
+      "label": 1,
+      "pred": 1,
+      "plain_pred": 1
+    },
+    {
+      "index": 61,
+      "label": 8,
+      "pred": 8,
+      "plain_pred": 8
+    },
+    {
+      "index": 62,
+      "label": 7,
+      "pred": 7,
+      "plain_pred": 7
+    },
+    {
+      "index": 63,
+      "label": 6,
+      "pred": 6,
+      "plain_pred": 6
+    }
+  ]
+}

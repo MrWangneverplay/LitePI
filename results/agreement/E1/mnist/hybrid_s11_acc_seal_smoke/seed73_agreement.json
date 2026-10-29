@@ -1,0 +1,31 @@
+{
+  "dataset": "mnist",
+  "schedule": "11",
+  "seed": 73,
+  "backend": "seal",
+  "run_dir": "hybrid_s11_acc_seal_smoke",
+  "source_json": "results/raw_results/E1/mnist/hybrid_s11_acc_seal_smoke/seed73.json",
+  "n_samples": 2,
+  "agreement": 1.0,
+  "agreement_ci95": [
+    0.3424,
+    1.0
+  ],
+  "ciphertext_accuracy": 1.0,
+  "plaintext_accuracy_same_samples": 1.0,
+  "mean_max_abs_err": 0.01904439,
+  "per_sample": [
+    {
+      "index": 0,
+      "label": 1,
+      "pred": 1,
+      "plain_pred": 1
+    },
+    {
+      "index": 1,
+      "label": 0,
+      "pred": 0,
+      "plain_pred": 0
+    }
+  ]
+}

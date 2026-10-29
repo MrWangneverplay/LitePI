@@ -6,7 +6,9 @@
 
 三个子实验：
   E10a 掩码复用攻击：比较"每次查询新鲜掩码（遵守 M1）"与"跨查询复用掩码（违反 M1）"下，
-       攻击者用两次查询的观测差恢复激活差分的精度（MSE / 相对误差 / 相关系数 / 信噪比）。
+       攻击者用两次查询的观测差恢复激活差分的精度（MSE / 相对误差 / 相关系数 / 信噪比）；
+       并加一组"新鲜 + 旧窄域（v1：观测范围 +5%）"对照，量化 M2 域过窄时单次查询的泄漏
+       （corr(z+r, z)、按符号猜 z 的命中率）。协议组用 M2 v2：A_k = 2^σ_k·B_k。
   E10b 成员推理：用成员（训练集）与非成员（测试集）样本，训练攻击分类器，
        比较两种输出档位的信息量 —— ① 解密全部 logits（默认）② 只解密类别索引（输出最小化）。
   E10c 调度混淆开销：把"HE-only 层也注入等量假交互"以隐藏调度向量的代价（轮数/字节/延迟），
@@ -80,17 +82,51 @@ def save_record(root: Path, exp_id: str, group: str, method: str, seed: int, pay
     return path
 
 
+def _average_ranks(x: np.ndarray) -> np.ndarray:
+    """1-based ranks; tied values share the mean of their ranks."""
+    order = np.argsort(x, kind="mergesort")
+    xs = x[order]
+    ranks = np.empty(len(x), dtype=float)
+    i = 0
+    while i < len(xs):
+        j = i
+        while j + 1 < len(xs) and xs[j + 1] == xs[i]:
+            j += 1
+        ranks[order[i:j + 1]] = 0.5 * (i + j) + 1.0
+        i = j + 1
+    return ranks
+
+
 def auc(scores: np.ndarray, labels: np.ndarray) -> float:
-    """Mann-Whitney U 形式的 AUC；labels: 1=阳性（成员）。"""
+    """Mann-Whitney U 形式的 AUC；labels: 1=阳性（成员）。
+
+    并列分数必须取平均秩：仅索引档的特征是 one-hot，打分只有 C 个取值，
+    若按稳定排序给秩（成员在前），并列块里成员系统性地拿小秩，AUC 被压到 0.5 以下
+    （旧版 E10b 的 0.45–0.47 即来自此偏差，不是小样本噪声）。
+    """
     pos = scores[labels == 1]
     neg = scores[labels == 0]
     if len(pos) == 0 or len(neg) == 0:
         return float("nan")
-    order = np.argsort(np.concatenate([pos, neg]), kind="mergesort")
-    ranks = np.empty(len(order), dtype=float)
-    ranks[order] = np.arange(1, len(order) + 1)
+    ranks = _average_ranks(np.concatenate([pos, neg]).astype(float))
     r_pos = ranks[: len(pos)].sum()
     return float((r_pos - len(pos) * (len(pos) + 1) / 2) / (len(pos) * len(neg)))
+
+
+def auc_bootstrap(scores: np.ndarray, labels: np.ndarray, rng: np.random.Generator,
+                  n_boot: int = 1000, level: float = 0.95) -> dict:
+    """AUC 的分层 bootstrap 置信区间，以及与方向无关的 max(AUC, 1−AUC)。"""
+    pos = np.flatnonzero(labels == 1)
+    neg = np.flatnonzero(labels == 0)
+    point = auc(scores, labels)
+    boots = []
+    for _ in range(n_boot):
+        idx = np.concatenate([rng.choice(pos, len(pos)), rng.choice(neg, len(neg))])
+        boots.append(auc(scores[idx], labels[idx]))
+    lo, hi = np.quantile(boots, [(1 - level) / 2, (1 + level) / 2])
+    return {"auc": point, "auc_ci": [float(lo), float(hi)], "ci_level": level,
+            "n_boot": n_boot, "auc_dir_free": max(point, 1.0 - point),
+            "ci_contains_0.5": bool(lo <= 0.5 <= hi)}
 
 
 def fit_logreg(X: np.ndarray, y: np.ndarray, epochs: int = 1500, lr: float = 0.5) -> np.ndarray:
@@ -145,28 +181,73 @@ def collect(model, loader, prepare, n_queries: int, device):
 
 
 # ------------------------------------------------------------------ E10a
-def e10a(Z: np.ndarray, rng: np.random.Generator, reuse: bool) -> dict:
-    """掩码复用 vs 新鲜的恢复误差。Z: (Q, n) 真实激活。"""
+def e10a_domain(Z: np.ndarray, rule: str):
+    """M2 domain for one layer, from the same activations the attack sees.
+
+    rule="v2": protocol rule (mask_session.MaskDomain.from_observed):
+               A = 2^sigma * B, B = pow2 >= 1.25*max|z|.
+    rule="v1": the earlier export (observed min/max + 5 %), kept as the
+               weak-hiding control the first E10a run measured.
+    """
+    from mask_session import MaskDomain
+    lo, hi = float(np.min(Z)), float(np.max(Z))
+    if rule == "v1":
+        margin = max((hi - lo) * 0.05, 1e-6)
+        return MaskDomain(lo - margin, hi + margin)
+    return MaskDomain.from_observed(lo, hi)
+
+
+def _grid_uniform(rng: np.random.Generator, dom, shape) -> np.ndarray:
+    """Uniform on the 2^-F grid in [lo, hi), like MaskSession.draw."""
+    from params_pi import F
+    scale = 1 << F
+    lo_int = math.floor(dom.lo * scale)
+    span = math.ceil(dom.hi * scale) - lo_int
+    return (lo_int + rng.integers(0, span, size=shape, dtype=np.int64)) / scale
+
+
+def e10a(Z: np.ndarray, rng: np.random.Generator, reuse: bool,
+         rule: str = "v2") -> dict:
+    """掩码复用 vs 新鲜的恢复误差 + 单次查询的泄漏。Z: (Q, n) 真实激活。
+
+    差分攻击（M1 的对照）：攻击者拿两次查询的 s_i = z_i + r_i 相减，
+    复用时 r 抵消，D_hat = z_i - z_j 精确恢复；新鲜时 D_hat 含 r_i - r_j。
+    单查询泄漏（M2 的对照）：只看一次 s = z + r 能知道多少 z ——
+    corr(s, z)、按 sign(s) 猜 sign(z) 的准确率，以及统计距离上界 B/(2A)。
+    """
     Q, n = Z.shape
-    R = float(np.max(np.abs(Z))) * 1.05      # M2：掩码域覆盖激活分布域
+    dom = e10a_domain(Z, rule)
     if reuse:
-        r = rng.uniform(-R, R, size=(1, n))
+        r = _grid_uniform(rng, dom, (1, n))
         S = Z + r
     else:
-        S = Z + rng.uniform(-R, R, size=(Q, n))
+        S = Z + _grid_uniform(rng, dom, (Q, n))
     D_true = Z[:-1] - Z[1:]
     D_hat = S[:-1] - S[1:]
     err = D_hat - D_true
     mse = float(np.mean(err ** 2))
     energy = float(np.mean(D_true ** 2))
     corr = float(np.corrcoef(D_hat.ravel(), D_true.ravel())[0, 1]) if D_true.size > 1 else float("nan")
+    single_corr = float(np.corrcoef(S.ravel(), Z.ravel())[0, 1])
+    nz = Z != 0
+    sign_acc = float(np.mean(np.sign(S[nz]) == np.sign(Z[nz]))) if nz.any() else float("nan")
+    max_abs = float(np.max(np.abs(Z)))
     return {
-        "Q": Q, "dim": int(n), "mask_domain_R": R,
+        "Q": Q, "dim": int(n),
+        "mask_rule": dom.rule if rule == "v2" else "M2-v1-observed-range",
+        "mask_policy": "reused" if reuse else "fresh",
+        "mask_domain_R": dom.half_width,
+        "log2_mask_half_width": dom.log2_half_width,
+        "activation_bound_B": dom.activation_bound,
+        "sigma": dom.sigma,
+        "sd_bound_per_element": min(1.0, max_abs / (dom.hi - dom.lo)),
         "mse": mse,
         "true_difference_energy": energy,
         "relative_error": (mse / energy) if energy > 0 else float("nan"),
         "recovery_correlation": corr,
         "recovery_snr_db": (10 * math.log10(energy / mse)) if mse > 0 else float("inf"),
+        "single_query_correlation": single_corr,
+        "single_query_sign_accuracy": sign_acc,
     }
 
 
@@ -197,8 +278,11 @@ def e10b(logits_member, logits_non, rng) -> dict:
         half = len(y) // 2
         w = fit_logreg(Xs[:half], y[:half])
         scores = predict_logreg(w, Xs[half:])
-        out[name] = {"auc": auc(scores, y[half:]), "n_member": int(len(fm)),
-                     "n_non_member": int(len(fn)), "dim": int(X.shape[1])}
+        out[name] = {**auc_bootstrap(scores, y[half:], rng),
+                     "n_member": int(len(fm)), "n_non_member": int(len(fn)),
+                     "dim": int(X.shape[1]),
+                     "auc_ties": "average ranks (fixed 2026-10-29; earlier "
+                                 "index-only AUCs were biased below 0.5)"}
     return out
 
 
@@ -277,15 +361,26 @@ def main() -> None:
         print(f"  取到激活: z1 {Z1.shape}, z2 {Z2.shape}, logits {LOGITS.shape}")
 
         # ---- E10a ----
+        # 三组：复用（违反 M1）/ 新鲜 + 旧窄域 v1（M2 不足的对照）/ 新鲜 + 协议 v2。
+        e10a_rows = {}
         for layer_name, Z in (("layer1", Z1), ("layer2", Z2)):
-            fresh = e10a(Z, np.random.default_rng(args.seed), reuse=False)
-            reused = e10a(Z, np.random.default_rng(args.seed), reuse=True)
-            print(f"  [E10a] {layer_name}: 新鲜掩码 相对误差={fresh['relative_error']:.3f} "
-                  f"相关系数={fresh['recovery_correlation']:+.3f} | "
-                  f"复用掩码 相对误差={reused['relative_error']:.3e} 相关系数={reused['recovery_correlation']:+.3f}")
+            fresh = e10a(Z, np.random.default_rng(args.seed), reuse=False, rule="v2")
+            narrow = e10a(Z, np.random.default_rng(args.seed), reuse=False, rule="v1")
+            reused = e10a(Z, np.random.default_rng(args.seed), reuse=True, rule="v2")
+            e10a_rows[layer_name] = {"fresh": fresh, "fresh_v1": narrow, "reuse": reused}
+            print(f"  [E10a] {layer_name}: 复用 相对误差={reused['relative_error']:.3e} | "
+                  f"新鲜+旧窄域 单查询corr={narrow['single_query_correlation']:+.3f} "
+                  f"符号命中={narrow['single_query_sign_accuracy']:.3f} | "
+                  f"新鲜+协议v2(σ={fresh['sigma']:.0f}) 单查询corr="
+                  f"{fresh['single_query_correlation']:+.2e} "
+                  f"符号命中={fresh['single_query_sign_accuracy']:.3f}")
             if not args.smoke:
                 save_record(root, "E10", ds, f"mask_fresh_{layer_name}", args.seed,
-                            {"leakage": fresh, "layer": layer_name, "mask_policy": "fresh"})
+                            {"leakage": fresh, "layer": layer_name,
+                             "mask_policy": "fresh", "mask_rule": "v2"})
+                save_record(root, "E10", ds, f"mask_fresh_v1_{layer_name}", args.seed,
+                            {"leakage": narrow, "layer": layer_name,
+                             "mask_policy": "fresh", "mask_rule": "v1-narrow-control"})
                 save_record(root, "E10", ds, f"mask_reuse_{layer_name}", args.seed,
                             {"leakage": reused, "layer": layer_name, "mask_policy": "reused"})
 
@@ -310,12 +405,18 @@ def main() -> None:
                         {"membership_inference": mia["index_only"], "output_mode": "argmax_index",
                          "member_train_acc": acc_m, "non_member_test_acc": acc_n})
 
-        report[ds] = {"e10a_layer1_fresh": e10a(Z1, np.random.default_rng(args.seed), False)["relative_error"],
-                      "e10a_layer1_reuse": e10a(Z1, np.random.default_rng(args.seed), True)["relative_error"],
-                      "e10a_layer2_fresh": e10a(Z2, np.random.default_rng(args.seed), False)["relative_error"],
-                      "e10a_layer2_reuse": e10a(Z2, np.random.default_rng(args.seed), True)["relative_error"],
-                      "mia_logits_auc": mia["logits"]["auc"],
-                      "mia_index_auc": mia["index_only"]["auc"]}
+        report[ds] = {
+            "e10a_layer1_fresh": e10a_rows["layer1"]["fresh"]["relative_error"],
+            "e10a_layer1_reuse": e10a_rows["layer1"]["reuse"]["relative_error"],
+            "e10a_layer2_fresh": e10a_rows["layer2"]["fresh"]["relative_error"],
+            "e10a_layer2_reuse": e10a_rows["layer2"]["reuse"]["relative_error"],
+            "e10a_layer1_v1_single_corr": e10a_rows["layer1"]["fresh_v1"]["single_query_correlation"],
+            "e10a_layer1_v2_single_corr": e10a_rows["layer1"]["fresh"]["single_query_correlation"],
+            "e10a_layer1_v1_sign_acc": e10a_rows["layer1"]["fresh_v1"]["single_query_sign_accuracy"],
+            "e10a_layer1_v2_sign_acc": e10a_rows["layer1"]["fresh"]["single_query_sign_accuracy"],
+            "mia_logits_auc": mia["logits"]["auc"],
+            "mia_index_auc": mia["index_only"]["auc"],
+        }
 
     # ---- E10c ----
     # 每次假交互的字节取 E4 实测（上行 fresh L7 + 下行 L4），而不是默认的 128 KB 估值。
@@ -338,12 +439,15 @@ def main() -> None:
     # ---- 汇总 ----
     print("\n" + "=" * 80)
     print("汇总")
-    print(f"  {'数据集':<10}{'E10a 复用(相对误差)':>20}{'E10a 新鲜(相对误差)':>20}"
-          f"{'MIA 全logits':>14}{'MIA 仅索引':>12}")
+    print(f"  {'数据集':<10}{'复用 相对误差':>14}{'v1 单查询corr':>15}{'v2 单查询corr':>15}"
+          f"{'v1 符号命中':>12}{'v2 符号命中':>12}{'MIA 全logits':>14}{'MIA 仅索引':>12}")
     for ds, r in report.items():
-        print(f"  {ds:<10}{r['e10a_layer1_reuse']:>20.2e}{r['e10a_layer1_fresh']:>20.3f}"
+        print(f"  {ds:<10}{r['e10a_layer1_reuse']:>14.2e}"
+              f"{r['e10a_layer1_v1_single_corr']:>15.3f}{r['e10a_layer1_v2_single_corr']:>15.2e}"
+              f"{r['e10a_layer1_v1_sign_acc']:>12.3f}{r['e10a_layer1_v2_sign_acc']:>12.3f}"
               f"{r['mia_logits_auc']:>14.3f}{r['mia_index_auc']:>12.3f}")
-    print("\n  期望：复用掩码的相对误差 ≈ 0（完全泄露）；新鲜掩码的相对误差为 O(1)（无泄漏）；")
+    print("\n  期望：复用掩码的相对误差 ≈ 0（完全泄露）；旧窄域 v1 单查询仍有可测相关；")
+    print("        协议 v2 掩码下单查询相关 ≈ 0、符号命中 ≈ 0.5（统计距离 ≤ 2^-(σ+1)/元素）；")
     print("        MIA 在输出最小化（仅索引）下 AUC 应回到 0.5 附近。")
 
     if args.figure:

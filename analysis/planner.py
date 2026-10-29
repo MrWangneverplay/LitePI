@@ -36,6 +36,7 @@ import argparse
 import itertools
 import json
 from dataclasses import dataclass
+from pathlib import Path
 from client_cost import estimate as estimate_client_cost
 
 
@@ -46,6 +47,11 @@ class Layer:
     linear_depth: int = 1  # HE depth of the preceding linear layer
     p2_depth: int = 1      # extra depth if P2
     sensitivity: float = 0.0  # accuracy drop if switched to P2
+    # The next linear layer is a convolution.  deep_hybrid.py can only run a
+    # ciphertext conv on client/server shares (the client im2col-encodes its
+    # share); P2 -> conv would need GAZELLE-style rotations that are not
+    # implemented, so such a layer must be hybrid to be executable today.
+    next_is_conv: bool = False
 
 
 @dataclass(frozen=True)
@@ -61,6 +67,25 @@ class Profile:
     # Canonical K=2 schedule order: 00, 01, 10, 11.
     schedule_accuracies: tuple[float, float, float, float] | None = None
     encoded_input_slots: int | None = None
+    # Measured cost model (cost_model.CostModel).  When set, it replaces the
+    # per_element_ms / bytes_per_element / rtts_per_hybrid constants above,
+    # which date from the Python P-256 OT reference (12.9 ms, 3996 B, 41).
+    cost: object | None = None
+    bandwidth_mbps: float | None = None
+    output_mode: str = "logits"
+    # "client": minimise client compute + client-visible network cost
+    #           (rounds * RTT + bytes / bandwidth) - the client-aware target;
+    # "server": minimise server compute only (E7 ablation w/o client-aware);
+    # "e2e":    client + server + network (end-to-end latency, E3).
+    objective: str = "client"
+    max_memory_mb: float | None = None
+    # Architecture key for the cost model's measured (arch, schedule) server
+    # table; None falls back to the pooled linear model.
+    arch: str | None = None
+    # Only schedules the current ciphertext code can run (see
+    # Layer.next_is_conv).  Off by default: the planner itself is
+    # protocol-level; gen_e5_data.py reports both.
+    executable_only: bool = False
 
     def penalty(self, k: int) -> float:
         return self.p2_penalty_coeff * k * (k - 1)
@@ -117,6 +142,23 @@ CKKS_PRESETS = (
     CKKSPlan("ckks-deep", 32768, (60, 40, 40, 40, 40, 40, 40, 60), 40, 5, None),
     CKKSPlan("ckks-full", 65536, tuple([60] + [40] * 9 + [60]), 40, 9, None),
 )
+
+
+DEFAULT_COST_MODEL = (Path(__file__).resolve().parent.parent / "results"
+                      / "cost_model" / "desktop_baseline.json")
+
+
+def load_cost(path):
+    """CostModel from cost_model.py, or None (legacy constants)."""
+    if path is None or str(path).lower() == "none":
+        return None
+    path = Path(path)
+    if not path.exists():
+        print(f"[planner] cost model {path} missing; run analysis/cost_model.py "
+              "(falling back to the legacy Python-OT constants)")
+        return None
+    from cost_model import CostModel
+    return CostModel.load(path)
 
 
 def required_depth(bits, layers) -> int:
@@ -232,8 +274,29 @@ def plan_result(bits, layers, profile: Profile,
         or client.peak_memory_mb <= budget.max_memory_mb,
         "packing": packing["input_fits_one_ciphertext"],
     }
+    measured = None
+    if profile.cost is not None:
+        sch_m = evaluate(bits, layers, profile)
+        measured = {
+            "objective": profile.objective,
+            "objective_ms": sch_m.time_ms,
+            "client_ms": sch_m.client_ms,
+            "server_ms": sch_m.server_ms,
+            "latency_ms": sch_m.latency_ms,
+            "rounds": sch_m.rtts,
+            "online_bytes": sch_m.bytes,
+            "memory_mb": sch_m.memory_mb,
+            "memory_ok": sch_m.memory_ok,
+            "r_h": profile.cost.r_h,
+            "r_h_scope": profile.cost.r_h_scope,
+            "cost_model": {"device": profile.cost.device,
+                           "wire": profile.cost.wire,
+                           "provenance": profile.cost.provenance},
+        }
+        constraints["memory"] = sch_m.memory_ok
     return {
         "s": list(schedule.bits),
+        "measured_cost": measured,
         "output_mode": output_mode,
         "accuracy": schedule.acc,
         "mpc_elements": schedule.mpc_elements,
@@ -271,18 +334,18 @@ def plan_result(bits, layers, profile: Profile,
 
 # Fast early-downsampling net: 20,736 ReLU elements in total.
 FAST_LAYERS = (
-    Layer("conv1", 8192, sensitivity=0.005),
-    Layer("conv2", 4096, sensitivity=0.008),
-    Layer("conv3", 4096, sensitivity=0.012),
+    Layer("conv1", 8192, sensitivity=0.005, next_is_conv=True),
+    Layer("conv2", 4096, sensitivity=0.008, next_is_conv=True),
+    Layer("conv3", 4096, sensitivity=0.012, next_is_conv=True),
     Layer("conv4", 4096, sensitivity=0.015),
     Layer("fc1",   256, sensitivity=0.014),
 )
 
 # 4-conv VGG (64 channels): 164,096 ReLU elements in total.
 VGG_LAYERS = (
-    Layer("conv1", 65536, sensitivity=0.010),
-    Layer("conv2", 65536, sensitivity=0.015),
-    Layer("conv3", 16384, sensitivity=0.020),
+    Layer("conv1", 65536, sensitivity=0.010, next_is_conv=True),
+    Layer("conv2", 65536, sensitivity=0.015, next_is_conv=True),
+    Layer("conv3", 16384, sensitivity=0.020, next_is_conv=True),
     Layer("conv4", 16384, sensitivity=0.025),
     Layer("fc1",    256, sensitivity=0.0105),
 )
@@ -323,9 +386,14 @@ class Schedule:
     acc: float
     mpc_elements: int
     rtts: int
-    time_ms: float
+    time_ms: float          # the planner objective (see Profile.objective)
     bytes: int
     depth_ok: bool
+    client_ms: float | None = None
+    server_ms: float | None = None
+    latency_ms: float | None = None
+    memory_mb: float | None = None
+    memory_ok: bool = True
 
     @property
     def hybrid_layers(self) -> int:
@@ -363,12 +431,32 @@ def evaluate(bits, layers, profile: Profile) -> Schedule:
     depth += 1
     if depth > profile.depth_budget:
         ok = False
+    if profile.executable_only and any(
+            layer.next_is_conv and not bit for layer, bit in zip(layers, bits)):
+        ok = False
     if profile.schedule_accuracies is not None and len(bits) == 2:
         acc = profile.schedule_accuracies[(int(bits[0]) << 1) | int(bits[1])]
     else:
         acc = profile.base_acc - profile.penalty(p2_count)
-    time_ms = mpc * profile.per_element_ms + rtts * profile.rtt_ms
-    return Schedule(tuple(bits), acc, mpc, rtts, time_ms, nbytes, ok)
+    cm = profile.cost
+    if cm is None:          # legacy constants (kept for regression only)
+        time_ms = mpc * profile.per_element_ms + rtts * profile.rtt_ms
+        return Schedule(tuple(bits), acc, mpc, rtts, time_ms, nbytes, ok)
+    k_h = sum(int(b) for b in bits)
+    rounds = cm.rounds(k_h, profile.output_mode)
+    nbytes = cm.online_bytes(k_h, mpc)
+    net_ms = rounds * profile.rtt_ms + (
+        nbytes * 8 / (profile.bandwidth_mbps * 1e3) if profile.bandwidth_mbps else 0.0)
+    client_ms = cm.client_ms(k_h, mpc)
+    server_ms = cm.server_ms(k_h, profile.arch, bits)
+    latency = client_ms + server_ms + net_ms
+    objective = {"client": client_ms + net_ms, "server": server_ms,
+                 "e2e": latency}[profile.objective]
+    mem = cm.memory_mb(k_h)
+    mem_ok = (profile.max_memory_mb is None
+              or (mem is not None and mem <= profile.max_memory_mb))
+    return Schedule(tuple(bits), acc, mpc, rounds, objective, nbytes, ok,
+                    client_ms, server_ms, latency, mem, mem_ok)
 
 
 def _repair_depth(bits, layers, profile: Profile):
@@ -418,8 +506,24 @@ def feasible_schedules(layers, profile: Profile, acc_min: float):
     out = []
     for bits in itertools.product((0, 1), repeat=len(layers)):
         sch = evaluate(bits, layers, profile)
-        if sch.depth_ok and sch.acc >= acc_min:
+        if sch.depth_ok and sch.memory_ok and sch.acc >= acc_min:
             out.append(sch)
+    return out
+
+
+def random_schedules(layers, profile: Profile, acc_min: float,
+                     draws: int = 5, seed: int = 0):
+    """E5 baseline "随机调度 ×5": uniform random bit vectors, depth-repaired.
+
+    Accuracy is not enforced (a random scheduler does not know it); the
+    report averages the five draws and states how many met acc_min.
+    """
+    import random
+    rng = random.Random(seed)
+    out = []
+    for _ in range(draws):
+        bits = [rng.randint(0, 1) for _ in layers]
+        out.append(evaluate(_repair_depth(bits, layers, profile), layers, profile))
     return out
 
 
@@ -427,6 +531,10 @@ def constrained(layers, profile: Profile, acc_min: float):
     feasible = feasible_schedules(layers, profile, acc_min)
     if not feasible:
         return None
+    if profile.objective == "server":
+        # Ties must not be broken with client quantities (MPC elements,
+        # rounds), or the "w/o client-aware" ablation is client-aware again.
+        return min(feasible, key=lambda s: (s.time_ms, s.bits))
     return min(feasible, key=lambda s: (s.time_ms, s.mpc_elements, s.rtts))
 
 
@@ -467,7 +575,14 @@ def main() -> int:
     ap.add_argument("--output-mode", choices=["logits", "index"],
                     default="logits")
     ap.add_argument("--pareto", action="store_true")
+    ap.add_argument("--cost-model", type=Path, default=DEFAULT_COST_MODEL,
+                    help="cost_model.py JSON (default desktop_baseline); "
+                         "'none' = legacy Python-OT constants")
+    ap.add_argument("--bandwidth-mbps", type=float, default=None)
+    ap.add_argument("--objective", choices=["client", "server", "e2e"],
+                    default="client")
     args = ap.parse_args()
+    cost = load_cost(args.cost_model)
 
     if args.arch in CANONICAL_MODELS:
         canonical = CANONICAL_MODELS[args.arch]
@@ -490,6 +605,12 @@ def main() -> int:
         base_acc=base_acc,
         schedule_accuracies=schedule_accuracies,
         encoded_input_slots=encoded_input_slots,
+        cost=cost,
+        bandwidth_mbps=args.bandwidth_mbps,
+        output_mode=args.output_mode,
+        objective=args.objective,
+        max_memory_mb=args.max_memory_mb,
+        arch=args.arch,
     )
     client = ClientProfile(per_element_ms=args.per_element_ms,
                            peak_memory_mb=args.client_memory_mb)
@@ -502,9 +623,12 @@ def main() -> int:
         max_time_ms=(args.max_time_s * 1000 if args.max_time_s else None),
         max_memory_mb=args.max_memory_mb,
     )
-    print(f"arch={args.arch} acc_min={args.acc_min:.2%} rtt={args.rtt_ms}ms "
-          f"per_element={args.per_element_ms}ms depth_budget={profile.depth_budget} "
-          f"accuracy={accuracy_source}")
+    if not args.json:
+      print(f"arch={args.arch} acc_min={args.acc_min:.2%} rtt={args.rtt_ms}ms "
+          f"depth_budget={profile.depth_budget} accuracy={accuracy_source} "
+          f"cost={'legacy-python-OT' if cost is None else cost.device + '/' + cost.wire}"
+          f"{'' if cost is None else f' r_h={cost.r_h:g} ({cost.r_h_scope})'} "
+          f"objective={args.objective}")
 
     if args.pareto:
         feasible = feasible_schedules(layers, profile, args.acc_min)
@@ -535,6 +659,15 @@ def main() -> int:
         print(json.dumps(plan, indent=2, ensure_ascii=False))
         return 0 if plan["feasible"] and sch.acc >= args.acc_min else 1
     print(f"schedule: {sch.describe(layers)}")
+    m = plan.get("measured_cost")
+    if m:
+        print(f"accuracy={sch.acc:.2%}  mpc_elements={sch.mpc_elements:,}  "
+              f"hybrid_layers={sch.hybrid_layers}  rounds={m['rounds']:g}  "
+              f"client={m['client_ms']:.1f}ms  server={m['server_ms']/1e3:.2f}s  "
+              f"e2e={m['latency_ms']/1e3:.2f}s  online={m['online_bytes']/1e6:.2f}MB  "
+              f"memory={m['memory_mb']}  depth_ok={sch.depth_ok}")
+        print(f"ckks={plan['p']['name']}  feasible={plan['feasible']}")
+        return 0 if plan["feasible"] and sch.acc >= args.acc_min else 1
     print(f"accuracy={sch.acc:.2%}  mpc_elements={sch.mpc_elements:,}  "
           f"hybrid_layers={sch.hybrid_layers}  "
           f"target_rtts={plan['rtts']}  target_time={plan['time_ms']/1000:.2f}s  "

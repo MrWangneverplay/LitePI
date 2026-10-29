@@ -5,7 +5,9 @@ from pi_client import loopback_once
 
 
 def main() -> int:
-    domains = {1: MaskDomain(-32.0, 32.0)}
+    # Mode B needs a rule-v2 (statistically bounded) output domain; a bare
+    # MaskDomain(lo, hi) is refused by the server since the M2 fix.
+    domains = {1: MaskDomain.for_bound(32.0)}
     logits = loopback_once(
         "stub", [16, 8, 4], schedule=(0,),
         output_mode="logits",

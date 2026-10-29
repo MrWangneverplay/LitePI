@@ -65,7 +65,8 @@ from params_pi import (
     K_RING,
     POLY_MODULUS_DEGREE,
 )
-from pi_proto import ProtocolError, Wire, make_backend
+from pi_proto import WIRE_PROFILES, ProtocolError, Wire, make_backend
+from pi_client import adopt_wire, ciphertext_loop, send_input, upload_context
 from pi_server import serve_connection
 from secure_relu_net import run_party_batch
 from sci_relu import SCI_AVAILABLE, SciReLUSession
@@ -115,68 +116,26 @@ def _empty_query_timings() -> dict:
 
 
 def _query(be, ctx, wire: Wire, prepared: np.ndarray, model,
-           sci_session, timings: dict) -> np.ndarray:
+           sci_session, timings: dict, spec: dict | None = None) -> np.ndarray:
     """One client query over an already-authenticated session.
 
-    Mirrors the wire loop of `pi_client._query_once`; only the input encoding
-    lives here so the driver controls preprocessing (see `_prepare`).
+    Uses the protocol client's own send/receive loop (pi_client.send_input /
+    ciphertext_loop) so E1 and the deployed client cannot drift apart; only
+    the input preprocessing lives here (see `_prepare`).
     """
-    t0 = time.perf_counter()
-    ct, windows = be.im2col_encrypt(
-        ctx, prepared, model.im2col_kernel, model.stride,
-    )
-    if windows != model.windows:
-        raise ProtocolError(
-            f"im2col produced {windows} windows, protocol expects {model.windows}"
-        )
-    timings["encrypt_input_s"] += time.perf_counter() - t0
-    wire.send(b"CTXT", be.serialize(ct))
-
-    while True:
-        _, payload = wire.recv(b"CTXT")
-        if not payload:
-            raise ProtocolError("empty ciphertext message")
-        kind, blob = payload[0], payload[1:]
-        ct = be.deserialize(ctx, blob)
-
-        t0 = time.perf_counter()
-        share = np.asarray(be.decrypt(ct), dtype=np.float64)
-        timings["decrypt_s"] += time.perf_counter() - t0
-
-        if kind == 1:
-            return share
-        if kind == 3:
-            # §7.2 dummy round: refresh a zero plaintext, no MPC.
-            t0 = time.perf_counter()
-            ct_out = be.encrypt(ctx, np.zeros(share.size, dtype=np.float64))
-            timings["reencrypt_s"] += time.perf_counter() - t0
-            wire.send(b"CTXT", b"\x03" + be.serialize(ct_out))
-            continue
-        if kind != 0:
-            raise ProtocolError(f"unknown ciphertext kind {kind}")
-
-        t0 = time.perf_counter()
-        if sci_session is not None:
-            out_share = np.asarray(
-                sci_session.relu(share.tolist(), F, K_RING),
-                dtype=np.float64,
-            )
-        else:
-            out_share = np.asarray(
-                run_party_batch(wire.mpc_ctx(), share.tolist(), K_RING, F,
-                                K_COMPARE),
-                dtype=np.float64,
-            )
-        timings["mpc_s"] += time.perf_counter() - t0
-
-        t0 = time.perf_counter()
-        ct_out = be.encrypt(ctx, out_share)
-        timings["reencrypt_s"] += time.perf_counter() - t0
-        wire.send(b"CTXT", b"\x00" + be.serialize(ct_out))
+    spec = spec or model.client_spec()
+    send_input(be, ctx, wire, prepared, spec, timings,
+               kernel=model.im2col_kernel, stride=model.stride,
+               expected_windows=model.windows)
+    kind, value = ciphertext_loop(be, ctx, wire, spec, timings, sci_session)
+    if kind != "logits":
+        raise ProtocolError(f"expected logits, got {kind}")
+    return np.asarray(value, dtype=np.float64)
 
 
 def session_eval(be, model, test, dataset: str, rows: list[dict], n: int,
-                 timeout: float, domains, state: dict, flush_cb) -> None:
+                 timeout: float, domains, state: dict, flush_cb,
+                 wire: str = "baseline") -> None:
     """Run one persistent server session over samples [len(rows), n).
 
     `state` is updated in place (mpc_runtime / keygen / context upload) so the
@@ -194,6 +153,7 @@ def session_eval(be, model, test, dataset: str, rows: list[dict], n: int,
                 holder["stats"] = serve_connection(
                     conn, be_server, model, reference_input=None,
                     timeout=timeout, mask_domains=domains,
+                    wire_profile=WIRE_PROFILES[wire],
                 )
         except BaseException as exc:  # surface it in the caller
             holder["error"] = exc
@@ -207,6 +167,7 @@ def session_eval(be, model, test, dataset: str, rows: list[dict], n: int,
     wire = Wire(conn, party=1)
     try:
         spec = wire.recv_json(b"SPEC")
+        adopt_wire(be, spec)
         sci_session = None
         if spec.get("sci_port") is not None:
             if not SCI_AVAILABLE:
@@ -243,7 +204,7 @@ def session_eval(be, model, test, dataset: str, rows: list[dict], n: int,
         keygen_s = time.perf_counter() - t0
         t0 = time.perf_counter()
         bytes_before = wire.cc.sent
-        wire.send(b"CTXT", be.public_context_bytes(ctx))
+        wire.send(b"CTXT", upload_context(be, ctx))
         wire.recv(b"REDY")
         context_upload_s = time.perf_counter() - t0
         state.update({
@@ -269,7 +230,7 @@ def session_eval(be, model, test, dataset: str, rows: list[dict], n: int,
             sent_before = wire.cc.sent
             recv_before = wire.cc.recvd
             t_q = time.perf_counter()
-            got = _query(be, ctx, wire, prepared, model, sci_session, q)
+            got = _query(be, ctx, wire, prepared, model, sci_session, q, spec)
             wire.send(b"BYE.")
             stats = wire.recv_json(b"STAT")
             wall_s = time.perf_counter() - t_q
@@ -432,6 +393,8 @@ def main() -> int:
     ap.add_argument("--checkpoint", default=None)
     ap.add_argument("--backend", default="seal",
                     choices=["seal", "tenseal", "stub"])
+    ap.add_argument("--wire", choices=sorted(WIRE_PROFILES), default="baseline",
+                    help="E4 线格式；非 baseline 时结果目录自动加 _wire<名字> 后缀")
     ap.add_argument("--out-tag", default=None,
                     help="目录后缀，默认 _<backend>")
     ap.add_argument("--resume", action="store_true",
@@ -458,6 +421,8 @@ def main() -> int:
     n = len(test) if args.samples == 0 else min(args.samples, len(test))
 
     suffix = args.out_tag if args.out_tag is not None else f"_{args.backend}"
+    if args.out_tag is None and args.wire != "baseline":
+        suffix += f"_wire{args.wire}"
     out_path = (root / "results" / "raw_results" / "E1" / args.dataset
                 / f"hybrid_s{tag}_acc{suffix}" / f"seed{args.seed}.json")
 
@@ -502,13 +467,18 @@ def main() -> int:
     if len(rows) < n:
         be = make_backend(args.backend)
         session_eval(be, model, test, args.dataset, rows, n,
-                     args.timeout, domains, state, flush)
+                     args.timeout, domains, state, flush, wire=args.wire)
 
     payload = build_payload(args, rows, n, model, len(test), state, False)
     payload["setup"] = {k: state.get(k) for k in (
         "mpc_runtime", "keygen_s", "context_upload_s", "context_up_bytes",
         "queries", "sessions",
     )}
+    payload["wire"] = WIRE_PROFILES[args.wire].to_dict()
+    payload["mask_domains"] = (
+        {str(k): v.to_dict() for k, v in sorted(domains.items())}
+        if domains else None
+    )
     write_record(out_path, payload, root)
     print(f"accuracy {sum(1 for r in rows if r['pred'] == r['label'])}/"
           f"{len(rows)} = {payload['accuracy']:.4f}  "

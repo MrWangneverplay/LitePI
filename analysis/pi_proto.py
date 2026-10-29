@@ -25,7 +25,9 @@ stub mode are labelled ``simulation`` and must not be cited.
 from __future__ import annotations
 
 import json
+import math
 import socket
+from dataclasses import asdict, dataclass
 from typing import Any
 
 import numpy as np
@@ -124,9 +126,157 @@ class Wire:
             pass
 
 
+# ------------------------------------------------------------- wire profile
+
+@dataclass(frozen=True)
+class WireProfile:
+    """How ciphertexts and keys are put on the wire (E4 byte compression).
+
+    The server chooses the profile and announces it in SPEC; the client adopts
+    it before key upload, so both directions use the same accounting.
+
+    compr           SEAL serialisation codec: none | zlib | zstd.  "none"
+                    reproduces every byte figure recorded before 2026-10-29.
+    seeded_client   M1 and ②_k are encrypted under the client's secret key and
+                    sent in SEAL's seeded form (second polynomial -> 32-byte
+                    seed): ~half of every client->server ciphertext.
+    seeded_keys     pk / relin / Galois keys in seeded form (~half of S_key).
+    modswitch_send  the server drops data primes the receiver does not need
+                    before sending ①_k and M3 (no rescale, message unchanged).
+    short_chain     the client encrypts M1 / ②_k at the lowest chain index the
+                    following segment needs (protocol §4.2 property 2, the
+                    p<->s coupling) instead of the top of the chain.
+    """
+
+    name: str = "baseline"
+    compr: str = "none"
+    seeded_client: bool = False
+    seeded_keys: bool = False
+    modswitch_send: bool = False
+    short_chain: bool = False
+
+    def to_dict(self) -> dict:
+        return asdict(self)
+
+    @classmethod
+    def from_dict(cls, value: dict | None) -> "WireProfile":
+        return cls(**(value or {}))
+
+    @property
+    def is_baseline(self) -> bool:
+        return self == WireProfile()
+
+
+WIRE_PROFILES = {
+    "baseline": WireProfile(),
+    # One knob at a time, for the E4 compression ablation table.
+    "zstd": WireProfile("zstd", compr="zstd"),
+    "seeded": WireProfile("seeded", seeded_client=True, seeded_keys=True),
+    "modswitch": WireProfile("modswitch", modswitch_send=True),
+    "shortchain": WireProfile("shortchain", short_chain=True),
+    # Everything that changes no protocol message semantics.
+    "compact": WireProfile("compact", compr="zstd", seeded_client=True,
+                           seeded_keys=True, modswitch_send=True,
+                           short_chain=True),
+}
+
+# Modulus sizing for a ciphertext the receiver decrypts (or the server encodes
+# into): the coefficients are ~ max|value| * scale plus the decryption noise
+# (~2^14 at this profile: 5e-3 * 2^21), so the modulus needs
+#     max(log2(max|value| * scale), NOISE_BITS) + WIRE_GUARD_BITS  bits.
+# check_wire_canonical.py exercises this bound on every schedule.
+NOISE_BITS = 16
+WIRE_GUARD_BITS = 4
+
+
+def needed_modulus_bits(max_abs: float, scale: float) -> int:
+    """Bits a ciphertext modulus must have to hold values up to max_abs."""
+    value_bits = math.ceil(math.log2(max(float(max_abs), 2.0 ** -20) * float(scale)))
+    return int(max(value_bits, NOISE_BITS)) + WIRE_GUARD_BITS
+
+
+def _is_prime(n: int) -> bool:
+    if n < 2:
+        return False
+    for p in (2, 3, 5, 7, 11, 13, 17, 19, 23, 29, 31, 37):
+        if n % p == 0:
+            return n == p
+    d, r = n - 1, 0
+    while d % 2 == 0:
+        d //= 2
+        r += 1
+    for a in (2, 3, 5, 7, 11, 13, 17, 19, 23, 29, 31, 37):   # exact below 3.3e24
+        x = pow(a, d, n)
+        if x in (1, n - 1):
+            continue
+        for _ in range(r - 1):
+            x = x * x % n
+            if x == n - 1:
+                break
+        else:
+            return False
+    return True
+
+
+def seal_coeff_primes(poly_modulus_degree: int, bit_sizes) -> list[int]:
+    """SEAL's CoeffModulus::Create, reproduced (checked against chain_primes()).
+
+    For each bit size SEAL searches downward from 2^b for primes = 1 mod 2N
+    and hands them out smallest-first in the order the sizes are listed.  The
+    data primes of this profile are 1.20M-1.79M, i.e. visibly below 2^21,
+    which is why the CKKS scale drifts upward after every rescale.
+    """
+    factor = 2 * int(poly_modulus_degree)
+    counts: dict[int, int] = {}
+    for b in bit_sizes:
+        counts[int(b)] = counts.get(int(b), 0) + 1
+    table: dict[int, list[int]] = {}
+    for size, cnt in counts.items():
+        value = ((1 << size) - 1) // factor * factor + 1
+        lower = 1 << (size - 1)
+        found: list[int] = []
+        while cnt > 0 and value > lower:
+            if _is_prime(value):
+                found.append(value)
+                cnt -= 1
+            value -= factor
+        table[size] = found
+    return [table[int(b)].pop() for b in bit_sizes]
+
+
+class _WireFallback:
+    """Wire methods for backends without SEAL's codec support (baseline only)."""
+
+    wire = WireProfile()
+
+    def set_wire(self, wire: WireProfile) -> None:
+        if not wire.is_baseline:
+            raise ProtocolError(
+                f"backend {self.name!r} supports only the baseline wire profile"
+            )
+        self.wire = wire
+
+    def encrypt_for_send(self, ctx, values, chain_index=None) -> bytes:
+        return self.serialize(self.encrypt(ctx, values))
+
+    def im2col_encrypt_for_send(self, ctx, values, kernel, stride,
+                                chain_index=None):
+        ct, windows = self.im2col_encrypt(ctx, values, kernel, stride)
+        return self.serialize(ct), windows
+
+    def shrink_for_send(self, ct, max_abs: float):
+        return ct
+
+    def public_context_bytes_wire(self, ctx) -> bytes:
+        return self.public_context_bytes(ctx)
+
+    def chain_prime_bits(self) -> list[int] | None:
+        return None
+
+
 # ------------------------------------------------------------- HE backends
 
-class TenSEALBackend:
+class TenSEALBackend(_WireFallback):
     """Real CKKS via TenSEAL, using the Pi demo parameter set."""
 
     name = "tenseal"
@@ -362,9 +512,6 @@ class SealBackend:
             raise ValueError("mm expects a 2-D matrix")
         return self.ctx.mm(ct, mat)
 
-    def serialize(self, ct) -> bytes:
-        return bytes(ct.serialize())
-
     def deserialize(self, ctx, blob: bytes):
         return ctx.deserialize(blob)
 
@@ -383,6 +530,94 @@ class SealBackend:
         # §3.1 one-level form: add the shift (no depth), then one square+rescale.
         return self.ctx.square(self.ctx.add_plain_scalar(ct, float(shift)))
 
+    # ------------------------------------------------------------ wire (E4)
+    wire = WireProfile()
+
+    def set_wire(self, wire: WireProfile) -> None:
+        modes = list(self.seal.compr_modes()) if hasattr(self.seal, "compr_modes") \
+            else ["none"]
+        if wire.compr not in modes:
+            raise ProtocolError(
+                f"wire codec {wire.compr!r} is not in this SEAL build {modes}; "
+                "rebuild SEAL with -DSEAL_USE_ZSTD=ON (seal/build_seal4_deps.sh)"
+            )
+        if not wire.is_baseline and not hasattr(self.seal, "compr_modes"):
+            raise ProtocolError("litepi_seal predates the wire API; rebuild it")
+        self.wire = wire
+
+    def serialize(self, ct) -> bytes:
+        if self.wire.compr == "none":
+            return bytes(ct.serialize())
+        return bytes(ct.serialize(self.wire.compr))
+
+    def encrypt_for_send(self, ctx, values, chain_index=None) -> bytes:
+        """Client: encrypt + serialise one message under the wire profile."""
+        arr = np.asarray(values, dtype=np.float64).ravel()
+        idx = -1 if (chain_index is None or not self.wire.short_chain) \
+            else int(chain_index)
+        if self.wire.is_baseline:
+            return self.serialize(ctx.encrypt(arr, 0.0))
+        return bytes(ctx.encrypt_wire(
+            arr, 0.0, idx, bool(self.wire.seeded_client), self.wire.compr,
+        ))
+
+    def im2col_encrypt_for_send(self, ctx, values, kernel, stride,
+                                chain_index=None):
+        if self.wire.is_baseline:
+            ct, windows = self.im2col_encrypt(ctx, values, kernel, stride)
+            return self.serialize(ct), windows
+        arr = np.asarray(values, dtype=np.float64)
+        if arr.ndim == 3 and arr.shape[0] == 1:
+            arr = arr[0]
+        kh, kw = (int(v) for v in kernel)
+        if isinstance(stride, (tuple, list)):
+            sh, sw = (int(v) for v in stride)
+        else:
+            sh = sw = int(stride)
+        flat, windows = ctx.im2col_flat(arr, kh, kw, sh, sw)
+        return self.encrypt_for_send(ctx, flat, chain_index), int(windows)
+
+    def shrink_for_send(self, ct, max_abs: float):
+        """Server: drop the data primes the receiver does not need.
+
+        Sized from the ciphertext's *actual* scale (it drifts upward with
+        depth, 2^29 at the s=00 output), so the bound stays exact.
+        """
+        if not self.wire.modswitch_send:
+            return ct
+        bits = needed_modulus_bits(max_abs, self.ctx.scale(ct))
+        return self.ctx.mod_switch_to_bits(ct, int(bits))
+
+    def scale_of(self, ct) -> float:
+        return float(self.ctx.scale(ct))
+
+    def supports_switch_to_bits(self) -> bool:
+        return hasattr(self.seal.SealContext, "mod_switch_to_bits")
+
+    def switch_to_bits(self, ct, bits: int):
+        """Plain mod-switch down to ``bits`` of remaining modulus (no rescale:
+        message and scale unchanged).  Used for §7.2 size hiding."""
+        return self.ctx.mod_switch_to_bits(ct, int(bits))
+
+    def public_context_bytes_wire(self, ctx) -> bytes:
+        if self.wire.compr == "none" and not self.wire.seeded_keys:
+            return self.seal.public_context_bytes(ctx)
+        return self.seal.public_context_bytes(
+            ctx, self.wire.compr, bool(self.wire.seeded_keys),
+        )
+
+    def chain_prime_bits(self) -> list[int] | None:
+        if self.ctx is None or not hasattr(self.ctx, "chain_prime_bits"):
+            return None
+        return [int(b) for b in self.ctx.chain_prime_bits()]
+
+    def modulus_bits(self, ct) -> int | None:
+        """Remaining modulus bits, or None on a litepi_seal built before the
+        wire API (rebuild with seal/build4.sh to enable fit_mask_domain)."""
+        if not hasattr(self.ctx, "modulus_bits"):
+            return None
+        return int(self.ctx.modulus_bits(ct))
+
 
 class StubCiphertext:
     __slots__ = ("values",)
@@ -391,7 +626,7 @@ class StubCiphertext:
         self.values = np.asarray(values, dtype=np.float64).ravel().copy()
 
 
-class StubBackend:
+class StubBackend(_WireFallback):
     """Transparent stand-in for CKKS.  Protocol testing only -- NOT private."""
 
     name = "stub"
@@ -511,7 +746,14 @@ class StubBackend:
         return self.square(self.add_plain(ct, [float(shift)] * self.slot_count(ct)))
 
 
-def make_backend(name: str):
+def make_backend(name: str, wire: "WireProfile | str | None" = None):
+    be = _make_backend(name)
+    if wire is not None:
+        be.set_wire(WIRE_PROFILES[wire] if isinstance(wire, str) else wire)
+    return be
+
+
+def _make_backend(name: str):
     if name == "tenseal":
         return TenSEALBackend()
     if name == "seal":
@@ -530,7 +772,11 @@ def profile_info(backend: str, mask_domain_aligned: bool = False) -> dict:
         "simulation": backend == "stub",
         "deployment_compliant": compliance["compliant"],
         "protocol_failures": compliance["failures"],
-        "mpc_backend": compliance["reference_mpc_backend"],
+        "protocol_pending": compliance.get("pending", []),
+        # The item's "actual" is litepi_sci when the SCI binding is importable;
+        # the old code always reported the Python reference backend here.
+        "mpc_backend": next(i["actual"] for i in compliance["items"]
+                            if i["name"] == "mpc_backend"),
         "required_mpc_backend": compliance["required_mpc_backend"],
         "mask_policy": "prg(seed_session,query,layer)",
         "mask_domain_aligned": bool(mask_domain_aligned),

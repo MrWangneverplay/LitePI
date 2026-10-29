@@ -47,6 +47,42 @@ class ComplianceItem:
     actual: str
     passed: bool
     detail: str = ""
+    # Implemented but not yet measured: does not fail the contract, but must
+    # not be reported as PASS either (e.g. r_h before the netem measurement).
+    pending: bool = False
+
+
+def _r_h_status() -> tuple[bool, str, str]:
+    """(measured end-to-end?, actual, detail) from results/rounds/r_h_*.json.
+
+    The message-counting files (r_h_sci_*.json) only see the main wire, so
+    they bound the control plane, not SCI's own socket.  Only an end-to-end
+    measurement (netem_e2e.py --mode e3 -> r_h_netem_*.json, scope
+    "end-to-end") settles the protocol's r_h.
+    """
+    import json
+    rounds = Path(__file__).resolve().parent.parent / "results" / "rounds"
+    e2e, ctrl = [], []
+    for f in sorted(rounds.glob("r_h_*.json")):
+        try:
+            d = json.loads(f.read_text(encoding="utf-8"))
+        except (OSError, ValueError):
+            continue
+        r = d.get("r_h_measured")
+        if r is None:
+            continue
+        scope = d.get("scope") or ("end-to-end" if d.get("sci_internal_rounds_counted")
+                                   else "control-plane")
+        (e2e if scope == "end-to-end" else ctrl).append((f.name, float(r)))
+    if e2e:
+        worst = max(e2e, key=lambda t: t[1])
+        return True, f"r_h={worst[1]:.2f} end-to-end ({worst[0]})", (
+            "Measured from the latency-vs-RTT slope, SCI-internal rounds included.")
+    if ctrl:
+        return False, "r_h=1 on the main wire only (" + ", ".join(n for n, _ in ctrl) + ")", (
+            "SCI's ReLU runs on its own socket and is not counted; CrypTFlow2 reports "
+            "log l + 2 rounds per ReLU.  Run netem_e2e.py --mode e3 to measure r_h.")
+    return False, "unmeasured", "No results/rounds/r_h_*.json yet."
 
 
 def _module_available(name: str) -> bool:
@@ -83,6 +119,7 @@ def collect() -> dict[str, Any]:
     sci_available = _module_available("litepi_sci")
     sec_ok, sec_required, sec_actual = security_check()
     profile_is_paper = bool(PAPER_PROFILE) and PROFILE_NAME.startswith("paper")
+    r_h_measured, r_h_actual, r_h_detail = _r_h_status()
     items = [
         ComplianceItem(
             "python_runtime",
@@ -169,18 +206,20 @@ def collect() -> dict[str, Any]:
         ),
         ComplianceItem(
             "client_cost",
-            "s=00: 2 rounds; each hybrid: +1 round",
-            "r_h=1 via litepi_sci" if sci_available
+            "s=00: 2 rounds; each hybrid: +r_h rounds (protocol target r_h=1)",
+            r_h_actual if sci_available
             else "python OT path (41 RTTs/hybrid layer)",
             sci_available,
-            "SCI runs one silent-OT extension round inside step 3, overlapping the "
-            "①_k/②_k exchange; asserted by check_protocol_modes.hybrid_roundtrips.",
+            r_h_detail,
+            pending=sci_available and not r_h_measured,
         ),
     ]
     failures = [i.name for i in items if not i.passed]
+    pending = [i.name for i in items if i.passed and i.pending]
     return {
         "compliant": not failures,
         "failures": failures,
+        "pending": pending,
         "items": [asdict(i) for i in items],
         "required_mpc_backend": REQUIRED_MPC_BACKEND,
         "reference_mpc_backend": REFERENCE_MPC_BACKEND,

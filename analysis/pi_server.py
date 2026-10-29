@@ -30,20 +30,33 @@ from pathlib import Path
 import numpy as np
 
 from canonical_net import CanonicalCNN, load_canonical_model
-from params_pi import MASK_HALF_WIDTH
+import math
+
+from params_pi import COEFF_MOD_BIT_SIZES, GLOBAL_SCALE_BITS, POLY_MODULUS_DEGREE
 from pi_proto import (
     F,
     K_COMPARE,
     K_RING,
+    WIRE_GUARD_BITS,
+    WIRE_PROFILES,
     ProtocolError,
     Wire,
+    WireProfile,
     make_backend,
+    needed_modulus_bits,
     ots_per_relu,
+    seal_coeff_primes,
     profile_info,
 )
 from secure_relu_net import run_party_batch
 from secure_argmax import run_party_argmax
-from mask_session import MaskSession, load_mask_domains
+from mask_session import (
+    DEFAULT_DOMAIN,
+    MaskDomain,
+    MaskSession,
+    _grid_draw,
+    load_mask_domains,
+)
 from sci_relu import SCI_AVAILABLE, SciReLUSession
 
 P2_A0 = 0.0625
@@ -178,21 +191,22 @@ class HybridMLP:
                     )
                 else:
                     if getattr(self, "schedule_obfuscated", False):
-                        ct = dummy_round_server(be, ctx, ct, wire)
+                        ct = dummy_round_server(be, ctx, ct, wire, i)
                     ct = he_poly_server(be, ct)
                 timings["hybrid_relu_s"] += time.perf_counter() - t0
         return ct
 
 
 def draw_mask(n: int) -> np.ndarray:
-    """Fresh uniform mask in [-MASK_HALF_WIDTH, +MASK_HALF_WIDTH), OS CSPRNG."""
+    """Fresh M2 mask without a session (legacy self-test path only).
+
+    Uses the widest admissible domain (+/- 2^MASK_MAX_BITS on the 2^-F grid)
+    from the OS CSPRNG; protocol runs always go through ``MaskSession``.
+    """
     if n <= 0:
         raise ValueError("mask size must be positive")
-    out = np.empty(n, dtype=np.float64)
-    span = 2.0 * MASK_HALF_WIDTH
-    for i in range(n):
-        out[i] = -MASK_HALF_WIDTH + span * (secrets.randbits(53) / float(1 << 53))
-    return out
+    stream = secrets.token_bytes(16 * n)
+    return np.asarray(_grid_draw(stream, n, DEFAULT_DOMAIN), dtype=np.float64)
 
 
 def he_poly_server(be, ct):
@@ -200,7 +214,7 @@ def he_poly_server(be, ct):
     return be.poly2(ct, P2_A0, P2_A1, P2_A2)
 
 
-def he_poly_layer(be, ctx, ct, wire: Wire, model):
+def he_poly_layer(be, ctx, ct, wire: Wire, model, layer_index: int):
     """§3.1 1-level P2: return ct_{(z+c)^2} plus the folded (a2, d) coefficients.
 
     P2(z) = a2(z + c)^2 + d with c = a1/(2a2), d = a0 - a1^2/(4a2), so the
@@ -210,7 +224,7 @@ def he_poly_layer(be, ctx, ct, wire: Wire, model):
     keeps NonlinearEval at the one level the depth table budgets.
     """
     if getattr(model, "schedule_obfuscated", False):
-        ct = dummy_round_server(be, ctx, ct, wire)
+        ct = dummy_round_server(be, ctx, ct, wire, layer_index)
     c = P2_A1 / (2.0 * P2_A2)
     d = P2_A0 - P2_A1 * P2_A1 / (4.0 * P2_A2)
     return be.poly2_shifted(ct, c), (P2_A2, d)
@@ -223,18 +237,55 @@ def fold_poly_into(weight_t, bias, weight, folded) -> tuple:
     return a2 * weight_t, np.asarray(bias, dtype=np.float64) + d * row_sum
 
 
-def dummy_round_server(be, ctx, ct, wire: Wire):
-    """§7.2: one dummy ciphertext exchange without consuming HE depth."""
-    n = be.slot_count(ct)
-    # Zero-multiplication preserves the current level and ciphertext size, so
-    # the dummy leg has the same observable shape as a real hybrid leg.
-    dummy = be.mul_plain(ct, 0.0)
-    wire.send(b"CTXT", b"\x03" + be.serialize(dummy))
-    _, payload = wire.recv(b"CTXT")
-    if not payload or payload[0] != 3:
-        raise ProtocolError("expected dummy re-encryption")
-    be.deserialize(ctx, payload[1:])
+def dummy_round_server(be, ctx, ct, wire: Wire, layer_index: int):
+    """§7.2 dummy leg on a P2 layer: a complete Hybrid-ReLU exchange on this
+    layer's z whose result is discarded; the P2 path then continues on ``ct``.
+
+    A network observer must not be able to tell it from a real leg, so it
+    reuses the real code path: frame kind 0 (the old kind byte 3 was sent in
+    the clear), a fresh M2 mask under the layer's own (q, k) PRG label, the
+    same SCI ReLU traffic (the old dummy produced none), and the obfuscation
+    level for ① (_obf_align).  The old ``ct * 0`` was also a transparent
+    all-zero ciphertext that zstd compresses to almost nothing.
+    The client sees z_k + r_k, exactly the view of a real hybrid layer.
+    """
+    q = wire.query_ctx
+    timings = q["timings"]
+    counters = (timings["hybrid_wire_sends"], timings["hybrid_wire_recvs"])
+    hybrid_relu_server(
+        be, ctx, ct, wire, wire.mpc_ctx(), timings,
+        mask_session=q["mask_session"], query_index=q["query_index"],
+        layer_index=layer_index, sci_session=q["sci_session"],
+    )
+    # r_h witnesses count real hybrid layers only.
+    timings["hybrid_wire_sends"], timings["hybrid_wire_recvs"] = counters
+    timings["dummy_legs"] = timings.get("dummy_legs", 0) + 1
     return ct
+
+
+def fit_mask_domain(be, ct, domain: MaskDomain) -> MaskDomain:
+    """Shrink an M2 domain so that z + r still fits the ciphertext modulus.
+
+    The full-width mask needs log2(A_k + B_k) + log2(scale) + guard bits.  A
+    ciphertext deep in the chain (output mode B after s=00 has 61 bits at
+    scale 2^29) cannot hold 2^42, so the width is lowered to what fits and
+    sigma_k drops with it; MaskDomain.for_bound refuses anything below
+    MASK_MIN_SIGMA.  The achieved domain is reported in STAT
+    (mask_domains_fitted), never silently weakened.
+    """
+    if not hasattr(be, "modulus_bits") or domain.activation_bound is None:
+        return domain
+    have = be.modulus_bits(ct)
+    if have is None:            # old litepi_seal build: keep the full width
+        return domain
+    scale = be.scale_of(ct)
+    if needed_modulus_bits(domain.half_width + domain.activation_bound,
+                           scale) <= have:
+        return domain
+    # A + B <= 2^(max_bits+1) with max_bits = have - guard - log2(scale) - 1
+    max_bits = math.floor(have - WIRE_GUARD_BITS - math.log2(scale)) - 1
+    return MaskDomain.for_bound(domain.activation_bound, max_bits=max_bits,
+                                fitted_to_modulus_bits=have)
 
 
 def hybrid_relu_server(be, ctx, ct, wire: Wire, mpc_ctx, timings: dict,
@@ -245,17 +296,24 @@ def hybrid_relu_server(be, ctx, ct, wire: Wire, mpc_ctx, timings: dict,
     n = be.slot_count(ct)
     if n <= 0:
         raise ProtocolError("cannot run ReLU on an empty ciphertext")
+    # ct_z is replaced by a fresh ciphertext after step 5, so lowering it
+    # first costs nothing; under obfuscation it fixes the size of ①_k.
+    ct = _obf_align(be, wire, ct, f"nl{layer_index}")
 
     if mask_session is None:
         r = draw_mask(n)
     else:
+        domain = fit_mask_domain(be, ct, mask_session.domain(layer_index))
+        if domain is not mask_session.domain(layer_index):
+            getattr(wire, "fitted_domains", {})[str(layer_index)] = domain.to_dict()
         r = np.asarray(
-            mask_session.draw(query_index, layer_index, n),
+            mask_session.draw(query_index, layer_index, n, domain=domain),
             dtype=np.float64,
         )
     # Protocol step 1: ct_{z+r} = ct_z + Enc_pk(r).  The server has only the
     # public context and therefore encrypts the mask with pk, never with sk.
     ct_zr = be.add_cipher(ct, be.encrypt_like(ctx, r, ct))
+    ct_zr = _shrink(be, wire, ct_zr, f"hyb{layer_index}")
     wire.send(b"CTXT", b"\x00" + be.serialize(ct_zr))
     timings["hybrid_wire_sends"] += 1
 
@@ -310,7 +368,7 @@ def _nonlinear_server(be, ctx, ct, wire, timings, model, layer_index,
             sci_session=sci_session,
         )
     if getattr(model, "schedule_obfuscated", False):
-        ct = dummy_round_server(be, ctx, ct, wire)
+        ct = dummy_round_server(be, ctx, ct, wire, layer_index)
     return he_poly_server(be, ct)
 
 
@@ -342,7 +400,7 @@ def canonical_encrypted_forward(model: CanonicalCNN, be, ctx, ct, wire: Wire,
     t0 = time.perf_counter()
     w1, b1 = model.fc1_weight_t_np, model.fc1_bias_np
     if model.schedule[0] == 0:
-        ct, folded = he_poly_layer(be, ctx, ct, wire, model)
+        ct, folded = he_poly_layer(be, ctx, ct, wire, model, 0)
         w1, b1 = fold_poly_into(w1, b1, model.fc1_weight, folded)
     else:
         ct = _nonlinear_server(
@@ -359,7 +417,7 @@ def canonical_encrypted_forward(model: CanonicalCNN, be, ctx, ct, wire: Wire,
     t0 = time.perf_counter()
     w2, b2 = model.fc2_weight_t_np, model.fc2_bias_np
     if model.schedule[1] == 0:
-        ct, folded = he_poly_layer(be, ctx, ct, wire, model)
+        ct, folded = he_poly_layer(be, ctx, ct, wire, model, 1)
         w2, b2 = fold_poly_into(w2, b2, model.fc2_weight, folded)
     else:
         ct = _nonlinear_server(
@@ -405,11 +463,16 @@ def secure_argmax_server(be, ctx, ct, wire: Wire, timings: dict,
     if classes < 2:
         raise ProtocolError("argmax needs at least two logits")
     layer_id = output_layer_id(model)
+    ct = _obf_align(be, wire, ct, "out")
+    domain = fit_mask_domain(be, ct, mask_session.domain(layer_id))
+    if domain is not mask_session.domain(layer_id):
+        getattr(wire, "fitted_domains", {})[str(layer_id)] = domain.to_dict()
     r = np.asarray(
-        mask_session.draw(query_index, layer_id, classes),
+        mask_session.draw(query_index, layer_id, classes, domain=domain),
         dtype=np.float64,
     )
-    wire.send(b"CTXT", b"\x02" + be.serialize(be.add_plain(ct, r)))
+    ct_masked = _shrink(be, wire, be.add_plain(ct, r), "argmax")
+    wire.send(b"CTXT", b"\x02" + be.serialize(ct_masked))
 
     t0 = time.perf_counter()
     server_share = run_party_argmax(
@@ -422,18 +485,197 @@ def secure_argmax_server(be, ctx, ct, wire: Wire, timings: dict,
     return server_share
 
 
+# Bounds used only for modulus sizing (public: derived from parameters).
+INPUT_ABS_BOUND = 2.0 ** 8          # canonical inputs are normalised
+OUTPUT_ABS_DEFAULT = 2.0 ** 16      # logits bound when no M2 output domain
+SHARE_ABS_BOUND = 2.0 ** (K_RING - F - 1)   # |c_c|, |c_s| after ring_to_float
+
+
+def protocol_trace(model, schedule=None) -> list[tuple]:
+    """The ciphertext trace as ops, for modulus planning.
+
+    ("fresh", tag)          a client encryption: "M1" or ("re", k)
+    ("rescale", n)          n rescales on the server
+    ("decrypt", tag)        a client decryption: ("hyb", k) or "out"
+    ("nl", k)               marker: nonlinear layer k starts here
+    ``schedule`` overrides model.schedule (obfuscation_levels uses all zeros).
+    Levels follow litepi_seal's policy (one rescale per conv+pack, mm and
+    one-level P2; the general quadratic poly2_eval of HybridMLP costs two).
+    """
+    schedule = list(model.schedule if schedule is None else schedule)
+    ops: list[tuple] = [("fresh", "M1")]
+    if (isinstance(model, CanonicalCNN)
+            or getattr(model, "architecture", None) == "canonical_cnn"):
+        ops.append(("rescale", 1))                       # conv + pack
+        for k, bit in enumerate(schedule):
+            ops.append(("nl", k))
+            if bit:
+                ops += [("decrypt", ("hyb", k)), ("fresh", ("re", k))]
+            else:
+                ops.append(("rescale", 1))               # (z+c)^2, folded P2
+            ops.append(("rescale", 1))                   # fc1 / fc2
+    else:
+        last = len(model.weights) - 1
+        for i in range(len(model.weights)):
+            ops.append(("rescale", 1))                   # mm
+            if i < last:
+                ops.append(("nl", i))
+                if schedule[i]:
+                    ops += [("decrypt", ("hyb", i)), ("fresh", ("re", i))]
+                else:
+                    ops.append(("rescale", 2))           # poly2_eval
+    ops.append(("decrypt", "out"))
+    return ops
+
+
+def wire_plan(model, mask_session: MaskSession, wire: WireProfile) -> dict:
+    """Modulus plan for mod-switch-before-send and short-chain encryption.
+
+    Every value that crosses the wire is bounded by public parameters: the M2
+    domain A_k + B_k at ①_k, the output bound at M3 (logits) or the output
+    M2 domain (mode B).  ``send_abs`` carries those magnitudes; the backend
+    sizes the modulus from them and the ciphertext's actual scale.
+
+    For short-chain encryption the client needs a chain index *before* the
+    segment runs, so the scale is simulated exactly: a fresh ciphertext has
+    scale 2^21, every rescale maps s -> s^2 / q with q the prime being dropped
+    (the profile's 21-bit primes are 1.20M-1.79M, so s drifts upward; it is
+    2^29.2 at the s=00 output).  The chain index is the smallest whose
+    remaining modulus still holds the segment's end value, for each output
+    mode (the client picks by its own mode).
+    """
+    data_primes = seal_coeff_primes(POLY_MODULUS_DEGREE, COEFF_MOD_BIT_SIZES)[:-1]
+    top = len(data_primes) - 1
+    fresh_scale = float(2 ** GLOBAL_SCALE_BITS)
+
+    def end_abs(tag, mode: str) -> float:
+        if tag != "out":
+            dom = mask_session.domain(tag[1])
+            return dom.half_width + (dom.activation_bound or 0.0)
+        dom = mask_session.domain(output_layer_id(model))
+        if mode == "index":
+            return dom.half_width + (dom.activation_bound or 0.0)
+        return dom.activation_bound or OUTPUT_ABS_DEFAULT
+
+    def fits(c: int, rescales: int, value_abs: float, fresh_abs: float) -> bool:
+        if c - rescales < 0:
+            return False
+        if needed_modulus_bits(fresh_abs, fresh_scale) > \
+                sum(math.log2(q) for q in data_primes[:c + 1]):
+            return False
+        scale = fresh_scale
+        for i in range(rescales):
+            scale = scale * scale / data_primes[c - i]
+        have = sum(math.log2(q) for q in data_primes[:c - rescales + 1])
+        return needed_modulus_bits(value_abs, scale) <= have
+
+    def chain_for(start: int, fresh_abs: float, mode: str) -> int:
+        rescales, tag = 0, None
+        for op in ops[start + 1:]:
+            if op[0] == "rescale":
+                rescales += op[1]
+            elif op[0] == "decrypt":
+                tag = op[1]
+                break
+        for c in range(rescales, top + 1):
+            if fits(c, rescales, end_abs(tag, mode), fresh_abs):
+                return c
+        return top
+
+    ops = protocol_trace(model)
+    plan = {"data_primes": data_primes, "send_abs": {},
+            "chain_index": {"logits": {}, "index": {}}}
+    for i, op in enumerate(ops):
+        if op[0] == "decrypt":
+            if op[1] == "out":
+                plan["send_abs"]["out"] = end_abs("out", "logits")
+                plan["send_abs"]["argmax"] = end_abs("out", "index")
+            else:
+                plan["send_abs"][f"hyb{op[1][1]}"] = end_abs(op[1], "logits")
+        elif op[0] == "fresh":
+            key = "M1" if op[1] == "M1" else f"re{op[1][1]}"
+            bound = INPUT_ABS_BOUND if op[1] == "M1" else SHARE_ABS_BOUND
+            for mode in ("logits", "index"):
+                plan["chain_index"][mode][key] = (
+                    chain_for(i, bound, mode) if wire.short_chain else top)
+    # Dummy legs (§7.2) run the real hybrid path and are sized by
+    # obfuscation_levels(), not by this plan.
+    return plan
+
+
+def obfuscation_levels(model) -> dict[str, int]:
+    """§7.2: the public modulus size of every server->client ciphertext.
+
+    Without this, ①_k and M3 leave at whatever level the schedule produced
+    (a hybrid layer resets to the chain top), so their byte sizes alone
+    reveal s.  Each sent ciphertext is therefore mod-switched to the level
+    the all-P2 trace has at the same position: the lowest level and the
+    largest scale any schedule can reach there, so every schedule's value
+    fits (fit_mask_domain still narrows a mask that does not).
+    Returns {"nl<k>": bits, "out": bits} in litepi_seal's modulus_bits units
+    (sum of the remaining data primes' bit counts).
+    """
+    bits = [int(b) for b in COEFF_MOD_BIT_SIZES[:-1]]   # data primes, bottom first
+    top = len(bits) - 1
+    levels, rescales = {}, 0
+    for op in protocol_trace(model, schedule=[0] * len(model.schedule)):
+        if op[0] == "rescale":
+            rescales += op[1]
+        elif op[0] == "nl":
+            levels[f"nl{op[1]}"] = sum(bits[:top - rescales + 1])
+        elif op == ("decrypt", "out"):
+            levels["out"] = sum(bits[:top - rescales + 1])
+    return levels
+
+
+def _obf_align(be, wire: Wire, ct, key: str):
+    """Mod-switch ``ct`` to the schedule-independent level (obfuscation only)."""
+    levels = getattr(wire, "obf_bits", None)
+    if not levels or key not in levels:
+        return ct
+    return be.switch_to_bits(ct, levels[key])
+
+
+def _shrink(be, wire: Wire, ct, key: str):
+    if getattr(wire, "obf_bits", None):
+        # Already at the public obfuscation level; a scale-dependent
+        # mod-switch here would make the size schedule-dependent again.
+        return ct
+    plan = getattr(wire, "plan", None)
+    if plan is None or key not in plan["send_abs"]:
+        return ct
+    return be.shrink_for_send(ct, plan["send_abs"][key])
+
+
 def serve_connection(conn: socket.socket, be, model,
                      reference_input=None, timeout: float = 600.0,
                      mask_domains=None,
-                     obfuscate_schedule: bool = False) -> dict:
+                     obfuscate_schedule: bool = False,
+                     wire_profile: WireProfile | None = None) -> dict:
     conn.settimeout(timeout)
     wire = Wire(conn, party=0)
+    if wire_profile is not None:
+        be.set_wire(wire_profile)
+    if obfuscate_schedule and be.wire.short_chain:
+        # A dummy ②_k would have to copy the chain index of a real one; the
+        # differing sizes would otherwise reveal the schedule (§7.2).
+        raise ProtocolError("short_chain cannot be combined with schedule "
+                            "obfuscation; use the 'zstd'/'seeded'/'modswitch' "
+                            "wire profiles instead")
     mask_session = MaskSession(domains=mask_domains or {})
+    wire.plan = (None if be.wire.is_baseline
+                 else wire_plan(model, mask_session, be.wire))
     hybrid_ids = [
         i for i, bit in enumerate(model.schedule) if int(bit) == 1
     ]
     model.mask_domain_aligned = mask_session.covers(hybrid_ids)
     model.schedule_obfuscated = bool(obfuscate_schedule)
+    # §7.2 size hiding needs mod-switching to a fixed level (litepi_seal with
+    # the wire API).  Without it the obfuscation only hides the frame pattern;
+    # STAT reports which one ran.
+    wire.obf_bits = (obfuscation_levels(model)
+                     if obfuscate_schedule and hasattr(be, "switch_to_bits")
+                     and be.supports_switch_to_bits() else None)
     try:
         aligned = bool(getattr(model, "mask_domain_aligned", False))
         spec = model.client_spec()
@@ -444,6 +686,11 @@ def serve_connection(conn: socket.socket, be, model,
                 "adaptive": "schedule supplied by planner",
             },
             "profile": profile_info(be.name, mask_domain_aligned=aligned),
+            "wire": be.wire.to_dict(),
+            "wire_plan": wire.plan,
+            # The client already knows s; this tells it that every nonlinear
+            # layer gets one ①/② leg (dummy legs included), in layer order.
+            "schedule_obfuscated": bool(obfuscate_schedule),
         })
         sci_port = None
         if SCI_AVAILABLE:
@@ -523,6 +770,10 @@ def serve_connection(conn: socket.socket, be, model,
                 "hybrid_wire_sends": 0,
                 "hybrid_wire_recvs": 0,
             }
+            wire.fitted_domains = {}
+            wire.query_ctx = {"timings": timings, "mask_session": mask_session,
+                              "query_index": query_index,
+                              "sci_session": sci_session}
             t0 = time.perf_counter()
             mask_session.begin_query(query_index)
             ct_out = encrypted_forward(
@@ -539,6 +790,8 @@ def serve_connection(conn: socket.socket, be, model,
                     mask_session, query_index, model,
                 )
             else:
+                ct_out = _shrink(be, wire, _obf_align(be, wire, ct_out, "out"),
+                                 "out")
                 wire.send(b"CTXT", b"\x01" + be.serialize(ct_out))
             wire.recv(b"BYE.")
 
@@ -566,7 +819,23 @@ def serve_connection(conn: socket.socket, be, model,
                     + 2 * int(requested_output == "index")
                 ),
                 "mask_domain_aligned": aligned,
+                # M2 provenance: rule, log2 A_k and sigma_k of every layer that
+                # drew a mask in this query (hybrid layers + output mode B).
+                "mask_domains": {
+                    str(i): mask_session.domain(i).to_dict()
+                    for i in sorted(set(hybrid_ids) | (
+                        {output_layer_id(model)}
+                        if requested_output == "index" else set()))
+                },
+                # Domains narrowed to fit a ciphertext's remaining modulus
+                # (fit_mask_domain); empty when every layer used full width.
+                "mask_domains_fitted": dict(wire.fitted_domains),
                 "schedule_obfuscated": bool(obfuscate_schedule),
+                "obfuscation_level_aligned": bool(wire.obf_bits),
+                "obfuscation_levels_bits": wire.obf_bits,
+                "dummy_legs": int(timings.get("dummy_legs", 0)),
+                "wire": be.wire.to_dict(),
+                "wire_plan": wire.plan,
                 # §4 r_h witness: complete ①_k -> ②_k exchanges.  Real hybrid
                 # layers only; dummy obfuscation legs are not counted.
                 "hybrid_roundtrips": min(
@@ -609,8 +878,8 @@ def serve_connection(conn: socket.socket, be, model,
 
 def serve(host: str, port: int, model, backend: str,
           once: bool = True, mask_domains=None,
-          obfuscate_schedule: bool = False) -> None:
-    be = make_backend(backend)
+          obfuscate_schedule: bool = False, wire: str = "baseline") -> None:
+    be = make_backend(backend, wire)
     with socket.create_server((host, port), reuse_port=False) as srv:
         print(
             f"[server] listening on {host}:{port}  backend={backend}  "
@@ -660,6 +929,10 @@ def main() -> int:
                     help="M2 JSON exported by analysis/export_mask_domains.py")
     ap.add_argument("--obfuscate-schedule", action="store_true",
                     help="§7.2 dummy ciphertext pairs on every nonlinear layer")
+    ap.add_argument("--wire", choices=sorted(WIRE_PROFILES), default="baseline",
+                    help="E4 wire profile (baseline reproduces the recorded "
+                         "bytes; compact = zstd + seeded + modswitch + "
+                         "short-chain)")
     args = ap.parse_args()
 
     mask_domains = None
@@ -730,7 +1003,7 @@ def main() -> int:
     serve(
         args.host, args.port, model, args.backend,
         once=not args.serve, mask_domains=mask_domains,
-        obfuscate_schedule=args.obfuscate_schedule,
+        obfuscate_schedule=args.obfuscate_schedule, wire=args.wire,
     )
     return 0
 

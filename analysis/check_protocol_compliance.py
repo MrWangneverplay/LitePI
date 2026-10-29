@@ -18,12 +18,15 @@ def main() -> int:
     else:
         print("LitePI strict protocol compliance:", "PASS" if report["compliant"] else "FAIL")
         for item in report["items"]:
-            mark = "PASS" if item["passed"] else "FAIL"
+            mark = ("FAIL" if not item["passed"]
+                    else "PEND" if item.get("pending") else "PASS")
             print(f"  [{mark}] {item['name']}: required={item['required']} actual={item['actual']}")
             if item["detail"]:
                 print(f"         {item['detail']}")
         if report["failures"]:
             print("Failures:", ", ".join(report["failures"]))
+        if report.get("pending"):
+            print("Pending measurement:", ", ".join(report["pending"]))
     return 0 if report["compliant"] else 1
 
 

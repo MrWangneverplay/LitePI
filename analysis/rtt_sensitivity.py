@@ -45,6 +45,13 @@ BW_GRID = [10.0, 50.0, 100.0]
 # 这两个常数在 main() 里会被实测值覆盖（§6.3 的 550–650 KB 是紧凑口径，实测是 RNS 编码）。
 S_HYBRID_PER_LAYER_KB = 600.0
 T_SERVER_HYBRID_MS = 0.0
+# Round trips per hybrid layer.  Loaded in main() from results/rounds/r_h_*.json
+# (cost_model.load_r_h) together with its scope: the 2026-10-29 files count
+# the main-wire control plane only, SCI's internal rounds are not included.
+# --r-h overrides it (e.g. 7 = CrypTFlow2's log l + 2 at l = 32).
+R_H = 1.0
+R_H_SCOPE = "protocol-target"
+R_H_SOURCE = "LitePI 协议设计 §4.1"
 
 SEEDS = (73, 74, 75, 76, 77)
 
@@ -172,8 +179,12 @@ def load_measured(root: Path, dataset: str) -> dict:
     return out
 
 
+def rounds_for(k_h: int) -> float:
+    return 2 + k_h * R_H
+
+
 def e2e_ms(m: dict, k_h: int, rtt_ms: float, bw_mbps: float) -> float:
-    rounds = 2 + k_h
+    rounds = rounds_for(k_h)
     t_client = m["T_client"] + k_h * (m["T_dec"] + m["T_enc"])
     t_server = m["T_server"] + k_h * T_SERVER_HYBRID_MS
     nbytes = m["S_up"] + m["S_down"] + k_h * S_HYBRID_PER_LAYER_KB * 1024.0
@@ -182,8 +193,18 @@ def e2e_ms(m: dict, k_h: int, rtt_ms: float, bw_mbps: float) -> float:
 
 
 def marginal_cost_ms(m: dict, rtt_ms: float, bw_mbps: float) -> float:
-    return (rtt_ms + (m["T_dec"] + m["T_enc"])
+    return (R_H * rtt_ms + (m["T_dec"] + m["T_enc"])
             + S_HYBRID_PER_LAYER_KB * 1024.0 * 8.0 / (bw_mbps * 1e6) * 1000.0)
+
+
+def configure_r_h(root: Path, override: float | None = None) -> None:
+    """Set R_H from the measured file (or an explicit override)."""
+    global R_H, R_H_SCOPE, R_H_SOURCE
+    if override is not None:
+        R_H, R_H_SCOPE, R_H_SOURCE = float(override), "override", "--r-h"
+        return
+    from cost_model import load_r_h
+    R_H, R_H_SCOPE, R_H_SOURCE = load_r_h(root)
 
 
 def main() -> None:
@@ -195,10 +216,13 @@ def main() -> None:
     ap.add_argument("--slack", type=float, default=0.05,
                     help="§7.3 planner 的 max_time_ms 约束按 (1+slack)*T_e2e(s=00) 取")
     ap.add_argument("--no-save", action="store_true")
+    ap.add_argument("--r-h", type=float, default=None,
+                    help="override the measured r_h (sensitivity, e.g. 7)")
     args = ap.parse_args()
 
     root = Path(args.root)
     datasets = [d.strip() for d in args.datasets.split(",") if d.strip()]
+    configure_r_h(root, args.r_h)
 
     # §6.3：每 hybrid 层的字节与 MPC 时间取实测（E4 密文梯度 / E1 s=11 端到端）。
     global S_HYBRID_PER_LAYER_KB, T_SERVER_HYBRID_MS
@@ -206,7 +230,8 @@ def main() -> None:
     S_HYBRID_PER_LAYER_KB = cost["per_layer_bytes"] / 1024.0
     T_SERVER_HYBRID_MS = cost["t_server_per_layer_ms"]
 
-    print("root=%s  bandwidth=%s Mbps  rounds = 2 + K_h" % (root, args.bw))
+    print("root=%s  bandwidth=%s Mbps  rounds = 2 + K_h * r_h, r_h=%g (%s; %s)"
+          % (root, args.bw, R_H, R_H_SCOPE, R_H_SOURCE))
     print("hybrid per-layer: %.1f KB, %.3f ms server MPC  <- %s"
           % (S_HYBRID_PER_LAYER_KB, T_SERVER_HYBRID_MS, cost["source"]))
     print("=" * 96)
@@ -275,7 +300,8 @@ def main() -> None:
             "seed_note": "E3 是确定性解析模型，无随机种子；输入为 E2 的 seed73–77 聚合值",
             "timestamp_utc": datetime.now(timezone.utc).isoformat(timespec="seconds"),
             "git_sha": _git_sha(root),
-            "model": "T_e2e = T_client(s) + T_server(s) + (2+K_h)*RTT + bytes(s)/BW",
+            "model": "T_e2e = T_client(s) + T_server(s) + (2+K_h*r_h)*RTT + bytes(s)/BW",
+            "r_h": R_H, "r_h_scope": R_H_SCOPE, "r_h_source": R_H_SOURCE,
             "bandwidth_mbps": args.bw,
             "bandwidth_grid_mbps": BW_GRID,
             "slack_for_adaptive": args.slack,
@@ -287,9 +313,11 @@ def main() -> None:
                                 for ds in datasets},
             "measured_sources": {ds: measured[ds]["source"] for ds in datasets},
             "note": "per-hybrid-layer bytes from E4 ciphertext ladder (L4 down + L7 fresh up + 2KB OT); "
-                    "per-layer server MPC time from E1 s=11; r_h=1 per protocol §7.1. "
+                    "per-layer server MPC time from E1 s=11; r_h from r_h_source (see r_h_scope). "
                     "解析模型换算值，不是 netem 端到端实测（后者需 tc qdisc + 两机跑批）",
-            "delphi_baseline": "【待补】Delphi 复现版未就绪（实验方案 W5–6 关键路径），本表只含 LitePI 三个配置点",
+            "delphi_baseline": ("Delphi 官方实现已复现（results/E_delphi，同机回环、无网络时延）；"
+                                "其在线轮数未计数，故未并入 RTT 曲线——需在 Delphi client 侧统计"
+                                "在线阶段的收发轮次后再加入"),
             "rows": all_rows,
             "adaptive": adaptive_rows,
         }

@@ -34,8 +34,10 @@ from pi_proto import (
     F,
     K_COMPARE,
     K_RING,
+    WIRE_PROFILES,
     ProtocolError,
     Wire,
+    WireProfile,
     make_backend,
     ots_per_relu,
     profile_info,
@@ -102,36 +104,101 @@ def _prepare_model_input(x: np.ndarray, spec: dict) -> np.ndarray:
     raise ProtocolError(f"unknown client preprocessing mode {name!r}")
 
 
-def _encode_model_input(be, ctx, x: np.ndarray, spec: dict):
-    if spec.get("encoding") != "im2col":
-        return be.encrypt(ctx, x), None
-    arr = _prepare_model_input(x, spec)
-    if arr.ndim == 3 and arr.shape[0] == 1:
-        arr = arr[0]
-    kernel = tuple(int(v) for v in spec["im2col_kernel"])
-    # TenSEAL 0.3.x swaps a non-square kernel inside the Python wrapper.
-    if be.name == "tenseal" and spec.get("dataset") == "uci_har":
-        kernel = (kernel[1], kernel[0])
-    ct, windows = be.im2col_encrypt(
-        ctx, arr, kernel, int(spec["encoding_stride"]),
-    )
-    if windows != int(spec["windows"]):
-        raise ProtocolError(
-            f"im2col produced {windows} windows, protocol expects {spec['windows']}"
-        )
-    return ct, windows
+def _peak_rss_mb() -> float | None:
+    """Peak RSS of this client process (E2 M_client / E8 memory model).
+
+    Valid only when the client runs in its own process (pi_client.py against
+    a remote server); loopback runs include the server's memory.
+    """
+    try:
+        import resource
+        peak = resource.getrusage(resource.RUSAGE_SELF).ru_maxrss
+        return round(peak / 1024.0, 2)          # Linux reports KiB
+    except (ImportError, OSError):
+        return None
 
 
-def _query_once(be, ctx, wire: Wire, x: np.ndarray, spec: dict,
-                timings: dict, output_mode: str = "logits",
-                sci_session=None):
-    """Run one already-authenticated private query over the open session."""
+def _plan_chain_index(spec: dict, key: str, output_mode: str = "logits"):
+    """Chain index from the server's wire plan (short_chain), or None.
+
+    The plan has one entry per output mode because mode B needs room for the
+    output mask; the client picks by the mode it requested.
+    """
+    plan = spec.get("wire_plan") or {}
+    return ((plan.get("chain_index") or {}).get(output_mode) or {}).get(key)
+
+
+def adopt_wire(be, spec: dict) -> None:
+    """Use the wire profile the server announced in SPEC (before key upload)."""
+    if "wire" in spec:
+        be.set_wire(WireProfile.from_dict(spec["wire"]))
+
+
+def upload_context(be, ctx) -> bytes:
+    """M0 blob under the session's wire profile (seeded keys / codec)."""
+    return be.public_context_bytes_wire(ctx)
+
+
+def _encrypt_blob(be, ctx, values, timings: dict, key: str,
+                  chain_index=None) -> bytes:
+    """Encrypt + serialise one client message, timing it under ``key``.
+
+    Baseline: only the encryption is timed (serialisation outside), exactly as
+    in every run recorded before the wire profiles existed.  Other profiles
+    time encrypt+serialise together, because SEAL's seeded symmetric
+    ciphertext only exists in serialised form.
+    """
+    if be.wire.is_baseline:
+        t0 = time.perf_counter()
+        ct = be.encrypt(ctx, values)
+        timings[key] += time.perf_counter() - t0
+        return be.serialize(ct)
     t0 = time.perf_counter()
-    ct, _ = _encode_model_input(be, ctx, x, spec)
-    timings["encrypt_input_s"] += time.perf_counter() - t0
-    wire.send(b"CTXT", be.serialize(ct))
+    blob = be.encrypt_for_send(ctx, values, chain_index)
+    timings[key] += time.perf_counter() - t0
+    return blob
 
+
+def send_input(be, ctx, wire: Wire, arr: np.ndarray, spec: dict,
+               timings: dict, kernel=None, stride=None,
+               expected_windows=None, output_mode: str = "logits") -> None:
+    """M1: im2col-encode (when ``kernel`` is given) + encrypt + send."""
+    m1 = _plan_chain_index(spec, "M1", output_mode)
+    if kernel is None:
+        wire.send(b"CTXT", _encrypt_blob(be, ctx, arr, timings,
+                                         "encrypt_input_s", m1))
+        return
+    if be.wire.is_baseline:
+        t0 = time.perf_counter()
+        ct, windows = be.im2col_encrypt(ctx, arr, kernel, stride)
+        timings["encrypt_input_s"] += time.perf_counter() - t0
+        blob = be.serialize(ct)
+    else:
+        t0 = time.perf_counter()
+        blob, windows = be.im2col_encrypt_for_send(ctx, arr, kernel, stride, m1)
+        timings["encrypt_input_s"] += time.perf_counter() - t0
+    if expected_windows is not None and windows != int(expected_windows):
+        raise ProtocolError(
+            f"im2col produced {windows} windows, protocol expects {expected_windows}"
+        )
+    wire.send(b"CTXT", blob)
+
+
+def ciphertext_loop(be, ctx, wire: Wire, spec: dict, timings: dict,
+                    sci_session=None, output_mode: str = "logits"):
+    """Client side of every server ciphertext until the output arrives.
+
+    kind 0  ①_k: decrypt (= share), MPC ReLU, re-encrypt ②_k
+    kind 1  M3 logits (output mode A)
+    kind 2  output mode B: masked logits -> secure argmax
+    kind 3  legacy §7.2 dummy leg (old servers): answer with a fresh Enc(0);
+            current servers send dummy legs as kind 0
+    Returns ("logits", ndarray) | ("index", int).
+    """
     mpc_ctx = wire.mpc_ctx()
+    schedule = [int(b) for b in spec.get("schedule", [])]
+    hybrid_ids = [i for i, b in enumerate(schedule) if b]
+    hybrid_seen = 0
     while True:
         _, payload = wire.recv(b"CTXT")
         if not payload:
@@ -140,21 +207,21 @@ def _query_once(be, ctx, wire: Wire, x: np.ndarray, spec: dict,
         ct = be.deserialize(ctx, blob)
 
         t0 = time.perf_counter()
-        share = be.decrypt(ct)
+        share = np.asarray(be.decrypt(ct), dtype=np.float64)
         timings["decrypt_s"] += time.perf_counter() - t0
 
         if kind == 1:
-            return "logits", np.asarray(share, dtype=np.float64)
+            return "logits", share
         if kind == 2:
             t0 = time.perf_counter()
             client_share = run_party_argmax(
                 mpc_ctx, share.tolist(), K_RING, F, K_COMPARE,
             )
             timings["mpc_s"] += time.perf_counter() - t0
-            timings["mpc_elements"] += int(share.size)
-            timings["base_ots"] += (
-                int(share.size) - 1
-            ) * max(K_COMPARE - 1, 1)
+            if "mpc_elements" in timings:
+                timings["mpc_elements"] += int(share.size)
+            if "base_ots" in timings:
+                timings["base_ots"] += (int(share.size) - 1) * max(K_COMPARE - 1, 1)
             idx_msg = wire.recv_json(b"IDXS")
             index = combine_index_share(
                 client_share, int(idx_msg["share"]), K_RING,
@@ -163,17 +230,25 @@ def _query_once(be, ctx, wire: Wire, x: np.ndarray, spec: dict,
                 raise ProtocolError(f"secure argmax returned invalid index {index}")
             return "index", index
         if kind == 3:
-            t0 = time.perf_counter()
-            ct_out = be.encrypt(ctx, np.zeros(share.size, dtype=np.float64))
-            timings["reencrypt_s"] += time.perf_counter() - t0
-            wire.send(b"CTXT", b"\x03" + be.serialize(ct_out))
+            # Pre-2026-10-29 servers marked dummy legs in the clear; current
+            # servers send them as kind 0.  Kept so old servers still work.
+            out = _encrypt_blob(be, ctx, np.zeros(share.size, dtype=np.float64),
+                                timings, "reencrypt_s")
+            wire.send(b"CTXT", b"\x03" + out)
             continue
         if kind != 0:
             raise ProtocolError(f"unknown ciphertext kind {kind}")
 
+        # Under §7.2 obfuscation every nonlinear layer sends one kind-0 leg
+        # (dummy legs look exactly like real ones), so legs map 1:1 to layers.
+        if spec.get("schedule_obfuscated"):
+            layer = hybrid_seen
+        else:
+            layer = hybrid_ids[hybrid_seen] if hybrid_seen < len(hybrid_ids) else hybrid_seen
+        hybrid_seen += 1
         if os.environ.get("LITEPI_DEBUG"):
             print(f"[DBG cli] s_c=decrypt(z+r): "
-                  f"{np.round(np.asarray(share, dtype=np.float64).ravel()[:4], 6).tolist()}",
+                  f"{np.round(share.ravel()[:4], 6).tolist()}",
                   file=sys.stderr, flush=True)
         t0 = time.perf_counter()
         if sci_session is not None:
@@ -187,18 +262,38 @@ def _query_once(be, ctx, wire: Wire, x: np.ndarray, spec: dict,
                 dtype=np.float64,
             )
         timings["mpc_s"] += time.perf_counter() - t0
-        timings["mpc_elements"] += int(share.size)
-        if sci_session is None:
+        if "mpc_elements" in timings:
+            timings["mpc_elements"] += int(share.size)
+        if sci_session is None and "base_ots" in timings:
             timings["base_ots"] += int(share.size) * ots_per_relu()
         if os.environ.get("LITEPI_DEBUG"):
             print(f"[DBG cli] c_c out-share: "
                   f"{np.round(out_share.ravel()[:4], 6).tolist()}",
                   file=sys.stderr, flush=True)
+        out = _encrypt_blob(be, ctx, out_share, timings, "reencrypt_s",
+                            _plan_chain_index(spec, f"re{layer}", output_mode))
+        wire.send(b"CTXT", b"\x00" + out)
 
-        t0 = time.perf_counter()
-        ct_out = be.encrypt(ctx, out_share)
-        timings["reencrypt_s"] += time.perf_counter() - t0
-        wire.send(b"CTXT", b"\x00" + be.serialize(ct_out))
+
+def _query_once(be, ctx, wire: Wire, x: np.ndarray, spec: dict,
+                timings: dict, output_mode: str = "logits",
+                sci_session=None):
+    """Run one already-authenticated private query over the open session."""
+    if spec.get("encoding") != "im2col":
+        send_input(be, ctx, wire, x, spec, timings, output_mode=output_mode)
+    else:
+        arr = _prepare_model_input(x, spec)
+        if arr.ndim == 3 and arr.shape[0] == 1:
+            arr = arr[0]
+        kernel = tuple(int(v) for v in spec["im2col_kernel"])
+        # TenSEAL 0.3.x swaps a non-square kernel inside the Python wrapper.
+        if be.name == "tenseal" and spec.get("dataset") == "uci_har":
+            kernel = (kernel[1], kernel[0])
+        send_input(be, ctx, wire, arr, spec, timings, kernel,
+                   int(spec["encoding_stride"]), int(spec["windows"]),
+                   output_mode)
+    return ciphertext_loop(be, ctx, wire, spec, timings, sci_session,
+                           output_mode)
 
 
 def run_client(host: str, port: int, x: np.ndarray, backend_name: str,
@@ -226,6 +321,7 @@ def run_client(host: str, port: int, x: np.ndarray, backend_name: str,
         wire = Wire(conn, party=1)
 
         spec = wire.recv_json(b"SPEC")
+        adopt_wire(be, spec)
         sci_session = None
         if SCI_AVAILABLE and spec.get("sci_port") is not None:
             sci_session = SciReLUSession(2, int(spec["sci_port"]), host)
@@ -249,7 +345,7 @@ def run_client(host: str, port: int, x: np.ndarray, backend_name: str,
         timings["keygen_s"] = time.perf_counter() - t0
 
         t0 = time.perf_counter()
-        wire.send(b"CTXT", be.public_context_bytes(ctx))
+        wire.send(b"CTXT", upload_context(be, ctx))
         wire.recv(b"REDY")
         timings["context_upload_s"] = time.perf_counter() - t0
 
@@ -290,6 +386,9 @@ def run_client(host: str, port: int, x: np.ndarray, backend_name: str,
     result["mask_domain_aligned"] = bool(
         spec.get("profile", {}).get("mask_domain_aligned", False)
     )
+    result["client_peak_rss_mb"] = _peak_rss_mb()
+    result["wire"] = be.wire.to_dict()
+    result["enc_timing_includes_serialization"] = not be.wire.is_baseline
     if output_kind == "logits":
         result["logits"] = [round(float(v), 6) for v in output_value]
     else:
@@ -325,6 +424,7 @@ def run_reuse_session(host: str, port: int, x: np.ndarray, backend_name: str,
         conn.settimeout(timeout)
         wire = Wire(conn, party=1)
         spec = wire.recv_json(b"SPEC")
+        adopt_wire(be, spec)
         sci_session = None
         if SCI_AVAILABLE and spec.get("sci_port") is not None:
             sci_session = SciReLUSession(2, int(spec["sci_port"]), host)
@@ -348,7 +448,7 @@ def run_reuse_session(host: str, port: int, x: np.ndarray, backend_name: str,
         ctx = be.new_context()
         timings["keygen_s"] = time.perf_counter() - t0
         t0 = time.perf_counter()
-        wire.send(b"CTXT", be.public_context_bytes(ctx))
+        wire.send(b"CTXT", upload_context(be, ctx))
         wire.recv(b"REDY")
         timings["context_upload_s"] = time.perf_counter() - t0
 
@@ -424,6 +524,9 @@ def run_reuse_session(host: str, port: int, x: np.ndarray, backend_name: str,
     result["mask_domain_aligned"] = bool(
         spec.get("profile", {}).get("mask_domain_aligned", False)
     )
+    result["client_peak_rss_mb"] = _peak_rss_mb()
+    result["wire"] = be.wire.to_dict()
+    result["enc_timing_includes_serialization"] = not be.wire.is_baseline
     if output_kind == "logits":
         result["logits"] = [round(float(v), 6) for v in output_value]
     else:
@@ -440,7 +543,8 @@ def loopback_once(backend_name: str, dims: list[int], seed: int = 7,
                   checkpoint: Path | None = None,
                   mask_domains=None,
                   output_mode: str = "logits",
-                  obfuscate_schedule: bool = False) -> dict:
+                  obfuscate_schedule: bool = False,
+                  wire: str = "baseline") -> dict:
     """Run server and client over a real localhost socket in one process.
 
     Loopback is a test harness: it lets the driver compare the final logits with
@@ -481,6 +585,7 @@ def loopback_once(backend_name: str, dims: list[int], seed: int = 7,
                     conn, be, model, reference_input=x, timeout=timeout,
                     mask_domains=mask_domains,
                     obfuscate_schedule=obfuscate_schedule,
+                    wire_profile=WIRE_PROFILES[wire],
                 )
         except BaseException as exc:  # surface it in the caller
             holder["error"] = exc
@@ -595,6 +700,9 @@ def main() -> int:
                     help="loopback only: canonical checkpoint override")
     ap.add_argument("--mask-domains", type=Path, default=None,
                     help="loopback only: M2 per-layer domain JSON")
+    ap.add_argument("--wire", choices=sorted(WIRE_PROFILES), default="baseline",
+                    help="loopback only: E4 wire profile for the in-process "
+                         "server (a remote client adopts the server's choice)")
     ap.add_argument("--obfuscate-schedule", action="store_true",
                     help="loopback only: protect s with dummy ciphertext pairs")
     ap.add_argument("--schedule", type=_as_schedule, default=None,
@@ -652,6 +760,7 @@ def main() -> int:
             mask_domains=domains,
             output_mode=args.output_mode,
             obfuscate_schedule=args.obfuscate_schedule,
+            wire=args.wire,
         )
     else:
         # A real client learns the input dimension from the server's SPEC

@@ -33,6 +33,24 @@
 //     Keeping the product un-rescaled is what lets the two ops share one level,
 //     which is exactly the one-level-per-conv accounting of the protocol.
 //
+// Wire format (E4 byte compression, all opt-in; defaults reproduce the bytes
+// recorded before 2026-10-29, i.e. uncompressed SEAL serialisation):
+//   * compr = "none" | "zlib" | "zstd" selects SEAL's serialisation codec
+//     explicitly.  The old code used SEAL's build-dependent default, so a
+//     zstd-enabled build and a plain build produced 437,668 vs 917,625 bytes
+//     for the same fresh ciphertext.
+//   * encrypt_wire(..., symmetric=True) encrypts under the client's secret key
+//     and serialises the seeded form (the second polynomial is replaced by its
+//     PRNG seed), halving client->server ciphertexts.  Security: RLWE
+//     symmetric encryption is IND-CPA, so the §11 simulator Enc(0) is
+//     unchanged; only the client holds sk, so only M1 and ②_k can use it.
+//   * public_context_bytes(seeded=True) sends pk / relin / Galois keys in
+//     SEAL's seeded form (half size) - S_key is the client's largest cost.
+//   * mod_switch_to_bits drops data primes the receiver does not need before
+//     a server->client ciphertext (①_k, M3) is sent; encrypt_at() lets the
+//     client encrypt ②_k at the chain index the remaining segment needs
+//     (protocol §4.2 property 2: the p<->s coupling).
+//
 // Multiplication plaintexts are encoded at the ciphertext's *current* scale.
 // SEAL tracks that scale exactly (it is 2^21 only on a fresh ciphertext and
 // grows by 2^21/q_i on every rescale), and SEAL refuses to add ciphertexts
@@ -47,6 +65,15 @@
 
 #include "seal/seal.h"
 #include "seal/util/uintcore.h"
+
+// SEAL >= 3.5 has the codec-aware save(), Serializable<> seeded objects and
+// symmetric encryption; the SCI-bundled 3.3.2 has none of them.
+#if defined(SEAL_VERSION_MAJOR) && \
+    (SEAL_VERSION_MAJOR > 3 || (SEAL_VERSION_MAJOR == 3 && SEAL_VERSION_MINOR >= 5))
+#define LITEPI_HAS_WIRE 1
+#else
+#define LITEPI_HAS_WIRE 0
+#endif
 
 #include <algorithm>
 #include <cmath>
@@ -233,7 +260,97 @@ public:
     RelinKeys relin_keys_;
     SecretKey secret_key_;
     bool has_secret_ = false;
+    // Client only: kept so that seeded (Serializable) keys can be emitted and
+    // so that M1 / ②_k can be encrypted symmetrically.
+    std::unique_ptr<KeyGenerator> keygen_;
+    std::unique_ptr<Encryptor> sym_encryptor_;
+    std::vector<int> galois_steps_;
+    bool galois_all_ = true;
+
+    // parms_id of a data level by chain index (top data level = largest).
+    parms_id_type parms_id_at(int chain_index) const
+    {
+        auto data = context_->first_context_data();
+        if (chain_index < 0 ||
+            static_cast<std::size_t>(chain_index) > data->chain_index())
+        {
+            throw std::invalid_argument("chain index out of range");
+        }
+        while (data && data->chain_index() != static_cast<std::size_t>(chain_index))
+        {
+            data = data->next_context_data();
+        }
+        return data->parms_id();
+    }
+
+    int top_chain_index() const
+    {
+        return static_cast<int>(context_->first_context_data()->chain_index());
+    }
+
+    int modulus_bits(const parms_id_type &pid) const
+    {
+        int bits = 0;
+        for (const auto &mod : context_->get_context_data(pid)->parms().coeff_modulus())
+        {
+            bits += util::get_significant_bit_count(mod.value());
+        }
+        return bits;
+    }
 };
+
+#if LITEPI_HAS_WIRE
+using wire_mode_t = compr_mode_type;
+template <class T>
+void save_obj(const T &obj, std::ostream &out, wire_mode_t mode)
+{
+    obj.save(out, mode);
+}
+#else
+enum class wire_mode_t
+{
+    none
+};
+template <class T>
+void save_obj(const T &obj, std::ostream &out, wire_mode_t)
+{
+    obj.save(out);
+}
+#endif
+
+wire_mode_t parse_compr(const std::string &name)
+{
+    if (name == "none")
+    {
+        return wire_mode_t::none;
+    }
+#if LITEPI_HAS_WIRE && defined(SEAL_USE_ZLIB)
+    if (name == "zlib")
+    {
+        return compr_mode_type::zlib;
+    }
+#endif
+#if LITEPI_HAS_WIRE && defined(SEAL_USE_ZSTD)
+    if (name == "zstd")
+    {
+        return compr_mode_type::zstd;
+    }
+#endif
+    throw std::invalid_argument("compression mode '" + name +
+                                "' is not available in this SEAL build");
+}
+
+std::vector<std::string> compr_modes()
+{
+    std::vector<std::string> out{"none"};
+#if LITEPI_HAS_WIRE && defined(SEAL_USE_ZLIB)
+    out.push_back("zlib");
+#endif
+#if LITEPI_HAS_WIRE && defined(SEAL_USE_ZSTD)
+    out.push_back("zstd");
+#endif
+    return out;
+}
 
 // ------------------------------------------------------------------ context
 
@@ -283,7 +400,8 @@ std::shared_ptr<SealCtx> new_context(std::size_t poly_modulus_degree,
         CoeffModulus::Create(poly_modulus_degree, coeff_mod_bit_sizes));
     auto handle = std::make_shared<SealCtx>(std::move(parms),
                                             std::ldexp(1.0, scale_bits));
-    KeyGenerator keygen(*handle->context_);
+    handle->keygen_ = std::make_unique<KeyGenerator>(*handle->context_);
+    KeyGenerator &keygen = *handle->keygen_;
     handle->secret_key_ = keygen.secret_key();
     handle->public_key_ = PublicKey();
     handle->relin_keys_ = RelinKeys();
@@ -294,6 +412,7 @@ std::shared_ptr<SealCtx> new_context(std::size_t poly_modulus_degree,
                                >= static_cast<std::size_t>(poly_modulus_degree / 2))
     {
         keygen.create_galois_keys(handle->galois_keys_);
+        handle->galois_all_ = true;
     }
     else
     {
@@ -311,10 +430,16 @@ std::shared_ptr<SealCtx> new_context(std::size_t poly_modulus_degree,
             steps.push_back(-step);
         }
         keygen.create_galois_keys(steps, handle->galois_keys_);
+        handle->galois_all_ = false;
+        handle->galois_steps_ = steps;
     }
     handle->has_secret_ = true;
     handle->encryptor_ =
         std::make_unique<Encryptor>(*handle->context_, handle->public_key_);
+#if LITEPI_HAS_WIRE
+    handle->sym_encryptor_ =
+        std::make_unique<Encryptor>(*handle->context_, handle->secret_key_);
+#endif
     handle->decryptor_ =
         std::make_unique<Decryptor>(*handle->context_, handle->secret_key_);
     return handle;
@@ -325,6 +450,8 @@ std::shared_ptr<SealCtx> new_context(std::size_t poly_modulus_degree,
 // figures to the E4 measurement); the sizes are the SEAL wire encoding of the
 // same objects the server loads, so they are comparable to the ciphertext bytes.
 py::bytes public_context_bytes(const SealCtx &ctx);
+py::bytes public_context_bytes(const SealCtx &ctx, const std::string &compr,
+                               bool seeded);
 
 py::dict key_sizes(const SealCtx &ctx)
 {
@@ -332,10 +459,12 @@ py::dict key_sizes(const SealCtx &ctx)
     {
         throw std::runtime_error("key_sizes needs the key-owning context");
     }
+    // Uncompressed on every build (the E4 figures recorded so far); use
+    // key_sizes_wire for the codec / seeded variants.
     auto size_of = [](const auto &obj)
     {
         std::ostringstream out(std::ios::binary);
-        obj.save(out);
+        save_obj(obj, out, wire_mode_t::none);
         return static_cast<std::int64_t>(out.str().size());
     };
     py::dict out;
@@ -348,21 +477,92 @@ py::dict key_sizes(const SealCtx &ctx)
     return out;
 }
 
-py::bytes public_context_bytes(const SealCtx &ctx)
+py::bytes public_context_bytes(const SealCtx &ctx, const std::string &compr,
+                               bool seeded)
 {
     if (!ctx.has_secret_)
     {
         throw std::runtime_error("public_context_bytes needs the key-owning context");
     }
+    const auto mode = parse_compr(compr);
     std::ostringstream out(std::ios::binary);
     // The server needs the profile scale to encode its plaintext factors.
     out.write(reinterpret_cast<const char *>(&ctx.global_scale_),
               sizeof(ctx.global_scale_));
     write_parms(ctx.parms_, out);
-    ctx.public_key_.save(out);
-    ctx.galois_keys_.save(out);
-    ctx.relin_keys_.save(out);
+    if (!seeded)
+    {
+        save_obj(ctx.public_key_, out, mode);
+        save_obj(ctx.galois_keys_, out, mode);
+        save_obj(ctx.relin_keys_, out, mode);
+        return py::bytes(out.str());
+    }
+#if !LITEPI_HAS_WIRE
+    throw std::runtime_error("seeded keys need SEAL >= 3.5 (build4.sh)");
+#else
+    // Seeded form: SEAL serialises a key's second polynomial as its PRNG seed.
+    // The objects are freshly generated for the same secret key, which is all
+    // the server needs (the client itself never rotates or relinearises).
+    KeyGenerator &kg = *ctx.keygen_;
+    kg.create_public_key().save(out, mode);
+    if (ctx.galois_all_)
+    {
+        kg.create_galois_keys().save(out, mode);
+    }
+    else
+    {
+        kg.create_galois_keys(ctx.galois_steps_).save(out, mode);
+    }
+    kg.create_relin_keys().save(out, mode);
     return py::bytes(out.str());
+#endif
+}
+
+py::bytes public_context_bytes(const SealCtx &ctx)
+{
+    return public_context_bytes(ctx, "none", false);
+}
+
+// E4: per-object key bytes under a given wire format (codec x seeded).
+py::dict key_sizes_wire(const SealCtx &ctx, const std::string &compr, bool seeded)
+{
+    if (!ctx.has_secret_)
+    {
+        throw std::runtime_error("key_sizes_wire needs the key-owning context");
+    }
+    const auto mode = parse_compr(compr);
+    auto size_of = [mode](const auto &obj)
+    {
+        std::ostringstream out(std::ios::binary);
+        save_obj(obj, out, mode);
+        return static_cast<std::int64_t>(out.str().size());
+    };
+    py::dict out;
+    if (seeded)
+    {
+#if !LITEPI_HAS_WIRE
+        throw std::runtime_error("seeded keys need SEAL >= 3.5 (build4.sh)");
+#else
+        KeyGenerator &kg = *ctx.keygen_;
+        out["public_key_bytes"] = size_of(kg.create_public_key());
+        out["galois_keys_bytes"] = ctx.galois_all_
+            ? size_of(kg.create_galois_keys())
+            : size_of(kg.create_galois_keys(ctx.galois_steps_));
+        out["relin_keys_bytes"] = size_of(kg.create_relin_keys());
+#endif
+    }
+    else
+    {
+        out["public_key_bytes"] = size_of(ctx.public_key_);
+        out["galois_keys_bytes"] = size_of(ctx.galois_keys_);
+        out["relin_keys_bytes"] = size_of(ctx.relin_keys_);
+    }
+    out["galois_key_count"] = static_cast<std::int64_t>(ctx.galois_keys_.size());
+    out["compr"] = compr;
+    out["seeded"] = seeded;
+    out["public_context_bytes"] = static_cast<std::int64_t>(
+        public_context_bytes(ctx, compr, seeded).cast<std::string>().size());
+    return out;
 }
 
 std::shared_ptr<SealCtx> load_public_context(py::bytes blob)
@@ -789,9 +989,9 @@ std::shared_ptr<SealCtxt> pack_vectors(
 // Build the tap-major im2col layout and encrypt it in one shot.  Mirrors
 // TenSEAL's `im2col_encoding` slot order: the tap rows are padded up to the
 // next power of two and every tap row stores all windows.
-std::pair<std::shared_ptr<SealCtxt>, std::size_t> im2col_encrypt(
-    SealCtx &ctx, const DArr &image, int kernel_rows, int kernel_cols, int stride,
-    int stride_cols)
+std::pair<std::vector<double>, std::size_t> im2col_layout(
+    const SealCtx &ctx, const DArr &image, int kernel_rows, int kernel_cols,
+    int stride, int stride_cols)
 {
     auto buf = image.request();
     if (buf.ndim != 2)
@@ -842,18 +1042,227 @@ std::pair<std::shared_ptr<SealCtxt>, std::size_t> im2col_encrypt(
             }
         }
     }
-    return {ctx.encrypt_values(flat), windows};
+    return {std::move(flat), windows};
+}
+
+std::pair<std::shared_ptr<SealCtxt>, std::size_t> im2col_encrypt(
+    SealCtx &ctx, const DArr &image, int kernel_rows, int kernel_cols, int stride,
+    int stride_cols)
+{
+    auto layout = im2col_layout(ctx, image, kernel_rows, kernel_cols, stride,
+                                stride_cols);
+    return {ctx.encrypt_values(layout.first), layout.second};
+}
+
+std::pair<py::array_t<double>, std::size_t> im2col_flat(
+    SealCtx &ctx, const DArr &image, int kernel_rows, int kernel_cols, int stride,
+    int stride_cols)
+{
+    auto layout = im2col_layout(ctx, image, kernel_rows, kernel_cols, stride,
+                                stride_cols);
+    return {to_array(layout.first), layout.second};
+}
+
+// ------------------------------------------------- multi-channel conv (E1 deep)
+//
+// Row-blocked matrix product for convolutions whose input the client
+// re-encodes in im2col form after every hybrid layer (deep networks).
+// Layout: a ciphertext holds R = slots / windows rows of `windows` slots,
+// row t = im2col tap t (input channel, kernel offset) over all windows.  The
+// input is a list of such blocks (taps beyond the last block are zero).  The
+// output has the same layout with one row per output channel, i.e. the
+// (channel, oh, ow) order of a PyTorch flatten, split over ceil(O / R)
+// ciphertexts.
+//
+// For each (output block c, input block b) the R x R sub-matrix is applied
+// with the diagonal method, multiply-before-rotate:
+//     out_c += sum_d rot_{d*W}( x_b * rot_{-d*W}(diag_d) )
+// Rotations happen on the products, at the squared scale: on this profile a
+// rotation at the global scale 2^21 costs 0.06-0.3 absolute error (40-bit
+// special prime), at 2^42 it is negligible.  One rescale at the end, so the
+// whole convolution costs one level, like conv2d_im2col + pack_vectors.
+std::vector<std::shared_ptr<SealCtxt>> matmul_rows(
+    const SealCtx &ctx, const std::vector<std::shared_ptr<SealCtxt>> &blocks,
+    const py::array_t<double, py::array::c_style | py::array::forcecast> &matrix,
+    std::size_t windows)
+{
+    auto buf = matrix.request();
+    if (buf.ndim != 2)
+    {
+        throw std::invalid_argument("matmul_rows expects a 2-D matrix");
+    }
+    const std::size_t slots = ctx.slot_capacity();
+    if (windows == 0 || slots % windows != 0)
+    {
+        throw std::invalid_argument("windows must divide the slot count");
+    }
+    const std::size_t rows = slots / windows;
+    const std::size_t out_rows = static_cast<std::size_t>(buf.shape[0]);
+    const std::size_t in_rows = static_cast<std::size_t>(buf.shape[1]);
+    if (blocks.empty() || in_rows > blocks.size() * rows)
+    {
+        throw std::invalid_argument("matrix has more input rows than the blocks");
+    }
+    const double *m = static_cast<const double *>(buf.ptr);
+    const std::size_t out_blocks = (out_rows + rows - 1) / rows;
+    std::vector<std::shared_ptr<SealCtxt>> outs;
+    py::gil_scoped_release release;
+    for (std::size_t c = 0; c < out_blocks; ++c)
+    {
+        Ciphertext acc;
+        bool first = true;
+        for (std::size_t b = 0; b < blocks.size(); ++b)
+        {
+            const Ciphertext &x = blocks[b]->ct_;
+            for (std::size_t d = 0; d < rows; ++d)
+            {
+                // p[s] = diag_d[s - d*W]: row i of diag_d is M[cR+i, bR+(i+d)%R]
+                std::vector<double> p(slots, 0.0);
+                bool any = false;
+                for (std::size_t i = 0; i < rows; ++i)
+                {
+                    const std::size_t orow = c * rows + i;
+                    const std::size_t irow = b * rows + (i + d) % rows;
+                    if (orow >= out_rows || irow >= in_rows)
+                    {
+                        continue;
+                    }
+                    const double w = m[orow * in_rows + irow];
+                    if (w == 0.0)
+                    {
+                        continue;
+                    }
+                    any = true;
+                    const std::size_t dst = ((i + d) % rows) * windows;
+                    std::fill(p.begin() + dst, p.begin() + dst + windows, w);
+                }
+                if (!any)
+                {
+                    continue;
+                }
+                Plaintext plain;
+                ctx.encoder_->encode(p, x.parms_id(), x.scale(), plain);
+                Ciphertext prod;
+                ctx.evaluator_->multiply_plain(x, plain, prod);
+                if (d != 0)
+                {
+                    prod = ctx.shift_left(prod, static_cast<int>(d * windows));
+                }
+                if (first)
+                {
+                    acc = std::move(prod);
+                    first = false;
+                }
+                else
+                {
+                    ctx.evaluator_->add_inplace(acc, prod);
+                }
+            }
+        }
+        if (first)
+        {
+            throw std::invalid_argument("matmul_rows: an output block is all zero");
+        }
+        ctx.evaluator_->rescale_to_next_inplace(acc);
+        const std::size_t live = std::min(rows, out_rows - c * rows);
+        outs.push_back(std::make_shared<SealCtxt>(std::move(acc), live * windows));
+    }
+    return outs;
 }
 
 // -------------------------------------------------------------- wire format
 
-py::bytes serialize(const SealCtxt &ctxt)
+py::bytes serialize(const SealCtxt &ctxt, const std::string &compr = "none")
 {
     std::ostringstream out(std::ios::binary);
     const std::uint64_t logical = ctxt.logical_;
     out.write(reinterpret_cast<const char *>(&logical), sizeof(logical));
-    ctxt.ct_.save(out);
+    save_obj(ctxt.ct_, out, parse_compr(compr));
     return py::bytes(out.str());
+}
+
+// Encrypt and serialise in one step, optionally under the secret key in
+// SEAL's seeded form.  chain_index < 0 means the top data level.
+py::bytes encrypt_wire(const SealCtx &ctx, const DArr &values, double scale,
+                       int chain_index, bool symmetric, const std::string &compr)
+{
+    const auto vec = to_vector(values);
+    if (vec.empty())
+    {
+        throw std::invalid_argument("cannot encrypt an empty vector");
+    }
+    if (symmetric && !ctx.has_secret_)
+    {
+        throw std::runtime_error("symmetric encryption needs the secret key");
+    }
+    const auto mode = parse_compr(compr);
+    const auto pid = chain_index < 0 ? ctx.context_->first_parms_id()
+                                     : ctx.parms_id_at(chain_index);
+    Plaintext plain;
+    ctx.encoder_->encode(vec, pid, scale > 0.0 ? scale : ctx.global_scale_, plain);
+    std::ostringstream out(std::ios::binary);
+    const std::uint64_t logical = vec.size();
+    out.write(reinterpret_cast<const char *>(&logical), sizeof(logical));
+    if (symmetric)
+    {
+#if LITEPI_HAS_WIRE
+        ctx.sym_encryptor_->encrypt_symmetric(plain).save(out, mode);
+#else
+        throw std::runtime_error("symmetric encryption needs SEAL >= 3.5");
+#endif
+    }
+    else
+    {
+        Ciphertext ct;
+        ctx.encryptor_->encrypt(plain, ct);
+        save_obj(ct, out, mode);
+    }
+    return py::bytes(out.str());
+}
+
+// Public-key encryption at a given chain index (short-chain ②_k / tests).
+std::shared_ptr<SealCtxt> encrypt_at(const SealCtx &ctx, const DArr &values,
+                                     int chain_index, double scale)
+{
+    const auto vec = to_vector(values);
+    Plaintext plain;
+    ctx.encoder_->encode(vec, ctx.parms_id_at(chain_index),
+                         scale > 0.0 ? scale : ctx.global_scale_, plain);
+    Ciphertext ct;
+    ctx.encryptor_->encrypt(plain, ct);
+    return std::make_shared<SealCtxt>(std::move(ct), vec.size());
+}
+
+// Drop data primes while the remaining modulus keeps >= needed_bits.  Plain
+// modulus switching (no rescale) leaves message and scale unchanged, so the
+// receiver decrypts the same values from a smaller ciphertext.
+std::shared_ptr<SealCtxt> mod_switch_to_bits(const SealCtx &ctx,
+                                             const SealCtxt &ctxt,
+                                             int needed_bits)
+{
+    auto out = ctxt.clone();
+    while (true)
+    {
+        auto data = ctx.context_->get_context_data(out->ct_.parms_id());
+        auto next = data->next_context_data();
+        if (!next || ctx.modulus_bits(next->parms_id()) < needed_bits)
+        {
+            break;
+        }
+        ctx.evaluator_->mod_switch_to_next_inplace(out->ct_);
+    }
+    return out;
+}
+
+std::vector<int> chain_prime_bits(const SealCtx &ctx)
+{
+    // Data primes from the bottom (chain index 0 keeps only the first).
+    std::vector<int> bits;
+    for (const auto &mod : ctx.context_->first_context_data()->parms().coeff_modulus())
+    {
+        bits.push_back(util::get_significant_bit_count(mod.value()));
+    }
+    return bits;
 }
 
 std::shared_ptr<SealCtxt> deserialize(const SealCtx &ctx, py::bytes blob)
@@ -877,7 +1286,9 @@ PYBIND11_MODULE(litepi_seal, m)
         .def_property_readonly("size", [](const SealCtxt &c) {
             return c.logical_;
         })
-        .def("serialize", [](const SealCtxt &c) { return serialize(c); });
+        .def("serialize", [](const SealCtxt &c, const std::string &compr) {
+            return serialize(c, compr);
+        }, py::arg("compr") = "none");
 
     py::class_<SealCtx, std::shared_ptr<SealCtx>>(m, "SealContext")
         .def_property_readonly("has_secret", [](const SealCtx &c) {
@@ -907,16 +1318,48 @@ PYBIND11_MODULE(litepi_seal, m)
         .def("mm", &mm)
         .def("conv2d_im2col", &conv2d_im2col)
         .def("pack_vectors", &pack_vectors)
+        .def("matmul_rows", &matmul_rows, py::arg("blocks"), py::arg("matrix"),
+             py::arg("windows"))
         .def("im2col_encrypt", &im2col_encrypt,
              py::arg("image"), py::arg("kernel_rows"),
              py::arg("kernel_cols"), py::arg("stride"), py::arg("stride_cols") = 0)
-        .def("deserialize", &deserialize);
+        .def("deserialize", &deserialize)
+        .def("im2col_flat", &im2col_flat,
+             py::arg("image"), py::arg("kernel_rows"),
+             py::arg("kernel_cols"), py::arg("stride"), py::arg("stride_cols") = 0)
+        .def("encrypt_wire", &encrypt_wire, py::arg("values"),
+             py::arg("scale") = 0.0, py::arg("chain_index") = -1,
+             py::arg("symmetric") = false, py::arg("compr") = "none")
+        .def("encrypt_at", &encrypt_at, py::arg("values"),
+             py::arg("chain_index"), py::arg("scale") = 0.0)
+        .def("mod_switch_to_bits", &mod_switch_to_bits, py::arg("ctxt"),
+             py::arg("needed_bits"))
+        .def("modulus_bits", [](const SealCtx &c, const SealCtxt &x) {
+            return c.modulus_bits(x.ct_.parms_id());
+        })
+        .def("top_chain_index", &SealCtx::top_chain_index)
+        .def("chain_prime_bits", &chain_prime_bits)
+        .def("chain_primes", [](const SealCtx &c) {
+            std::vector<std::uint64_t> out;
+            for (const auto &mod :
+                 c.context_->first_context_data()->parms().coeff_modulus())
+            {
+                out.push_back(mod.value());
+            }
+            return out;
+        });
 
     m.def("new_context", &new_context, py::arg("poly_modulus_degree"),
           py::arg("coeff_mod_bit_sizes"), py::arg("scale_bits"),
           py::arg("max_rot_pow") = -1);
-    m.def("public_context_bytes", &public_context_bytes);
+    m.def("public_context_bytes",
+          py::overload_cast<const SealCtx &, const std::string &, bool>(
+              &public_context_bytes),
+          py::arg("ctx"), py::arg("compr") = "none", py::arg("seeded") = false);
     m.def("key_sizes", &key_sizes);
+    m.def("key_sizes_wire", &key_sizes_wire, py::arg("ctx"),
+          py::arg("compr") = "none", py::arg("seeded") = false);
+    m.def("compr_modes", &compr_modes);
     m.def("load_public_context", &load_public_context);
     m.def("slot_count", [](const SealCtxt &x) { return x.logical_; });
 }

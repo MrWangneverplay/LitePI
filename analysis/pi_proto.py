@@ -624,6 +624,21 @@ class SealBackend:
     def scale_of(self, ct) -> float:
         return float(self.ctx.scale(ct))
 
+    def supports_exact_masks(self) -> bool:
+        return hasattr(self.seal.SealContext, "encrypt_like_dd")
+
+    def encrypt_like_exact(self, ctx, mask_ints, like):
+        """Enc(r) for r = k / 2^F, encoded in double-double (M2 v3, step 1)."""
+        scale = float(1 << F)
+        hi = [float(k) for k in mask_ints]
+        lo = [float(k - int(h)) for k, h in zip(mask_ints, hi)]
+        return ctx.encrypt_like_dd(np.array(hi) / scale, np.array(lo) / scale, like)
+
+    def decrypt_ring(self, ct, f: int, bits: int) -> np.ndarray:
+        """round(slot * 2^f) mod 2^bits, decoded in double-double (M2 v3, step 2)."""
+        return np.asarray(self.ctx.decrypt_ring(ct, int(f), int(bits)),
+                          dtype=np.uint64)
+
     def supports_switch_to_bits(self) -> bool:
         return hasattr(self.seal.SealContext, "mod_switch_to_bits")
 

@@ -5,12 +5,14 @@ import math
 from mask_session import (
     RULE_V1,
     RULE_V2,
+    RULE_V3,
     MaskDomain,
     MaskSession,
     MaskSessionError,
     assert_mask_session_safe,
     mask_security_report,
     power_of_two_bound,
+    widen_domains,
 )
 from params_pi import F, MASK_MAX_BITS, MASK_SIGMA_TARGET
 
@@ -92,6 +94,35 @@ def main() -> int:
     assert rep["q_max"]["20"] == math.floor(2.0 ** -20 / expected)
     print(f"PASS  SD/query = 2^{rep['log2_sd_per_query']:.1f}, "
           f"Q_max(2^-20) = {rep['q_max']['20']}")
+
+    # Rule v3 (double-double codec): wider, and drawn as integers --------------
+    wide = MaskDomain.widened(16.0)
+    assert wide.rule == RULE_V3 and wide.sigma == 70
+    assert wide.log2_half_width == 74
+    capped = MaskDomain.widened(2.0 ** 30)
+    assert capped.log2_half_width == 90, "v3 cap not applied"
+    session = MaskSession(seed=b"s" * 32, domains={0: wide})
+    assert session.covers([0]), "v3 domains count as M2-aligned"
+    session.begin_query(0)
+    ints = session.draw_ints(0, 0, 2000)
+    bound = 1 << (74 + F)
+    assert all(-bound <= k < bound for k in ints)
+    assert max(abs(k) for k in ints) > bound // 2, "mask does not fill the domain"
+    assert len(set(ints)) == len(ints), "v3 masks repeat"
+    # Low bits matter: the ring share is k mod 2^44, not a rounded double.
+    assert len({k & 0xFF for k in ints}) > 200, "low bits are not random"
+    assert ints != session.draw_ints(0, 1, 2000), "layers share a mask"
+    session.end_query(0)
+    session.begin_query(1)
+    assert ints != session.draw_ints(1, 0, 2000), "queries share a mask"
+    session.end_query(1)
+    widened = widen_domains({0: d16, 2: d16}, keep=(2,))
+    assert widened[0].rule == RULE_V3 and widened[2].rule == RULE_V2
+    rep = mask_security_report({0: MaskDomain.widened(16.0),
+                                1: MaskDomain.widened(64.0)}, {0: 256, 1: 64})
+    assert math.isclose(rep["sd_per_query"], 320 * 2.0 ** -71)
+    print(f"PASS  M2 v3: sigma=70, integer draws, SD/query = "
+          f"2^{rep['log2_sd_per_query']:.1f}, Q_max(2^-40) = {rep['q_max']['40']}")
 
     try:
         aligned.begin_query(5)

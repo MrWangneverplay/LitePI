@@ -52,12 +52,15 @@ from secure_relu_net import run_party_batch
 from secure_argmax import run_party_argmax
 from mask_session import (
     DEFAULT_DOMAIN,
+    DEFAULT_EXACT_BOUND,
+    RULE_V3,
     MaskDomain,
     MaskSession,
     _grid_draw,
     load_mask_domains,
+    widen_domains,
 )
-from sci_relu import SCI_AVAILABLE, SciReLUSession
+from sci_relu import SCI_AVAILABLE, SciReLUSession, ring_to_float, sci_bytes
 
 P2_A0 = 0.0625
 P2_A1 = 0.5
@@ -284,7 +287,9 @@ def fit_mask_domain(be, ct, domain: MaskDomain) -> MaskDomain:
         return domain
     # A + B <= 2^(max_bits+1) with max_bits = have - guard - log2(scale) - 1
     max_bits = math.floor(have - WIRE_GUARD_BITS - math.log2(scale)) - 1
-    return MaskDomain.for_bound(domain.activation_bound, max_bits=max_bits,
+    return MaskDomain.for_bound(domain.activation_bound,
+                                sigma_target=domain.sigma, max_bits=max_bits,
+                                rule=domain.rule,
                                 fitted_to_modulus_bits=have)
 
 
@@ -300,25 +305,42 @@ def hybrid_relu_server(be, ctx, ct, wire: Wire, mpc_ctx, timings: dict,
     # first costs nothing; under obfuscation it fixes the size of ①_k.
     ct = _obf_align(be, wire, ct, f"nl{layer_index}")
 
+    exact = False
     if mask_session is None:
         r = draw_mask(n)
     else:
         domain = fit_mask_domain(be, ct, mask_session.domain(layer_index))
         if domain is not mask_session.domain(layer_index):
             getattr(wire, "fitted_domains", {})[str(layer_index)] = domain.to_dict()
-        r = np.asarray(
-            mask_session.draw(query_index, layer_index, n, domain=domain),
-            dtype=np.float64,
-        )
+        exact = domain.rule == RULE_V3
+        if exact:
+            k = mask_session.draw_ints(query_index, layer_index, n, domain=domain)
+        else:
+            r = np.asarray(
+                mask_session.draw(query_index, layer_index, n, domain=domain),
+                dtype=np.float64,
+            )
     # Protocol step 1: ct_{z+r} = ct_z + Enc_pk(r).  The server has only the
     # public context and therefore encrypts the mask with pk, never with sk.
-    ct_zr = be.add_cipher(ct, be.encrypt_like(ctx, r, ct))
+    if exact:
+        ct_zr = be.add_cipher(ct, be.encrypt_like_exact(ctx, k, ct))
+    else:
+        ct_zr = be.add_cipher(ct, be.encrypt_like(ctx, r, ct))
     ct_zr = _shrink(be, wire, ct_zr, f"hyb{layer_index}")
     wire.send(b"CTXT", b"\x00" + be.serialize(ct_zr))
     timings["hybrid_wire_sends"] += 1
 
     # Step 3: server's input share is -r; it never learns the client's share.
-    s_server = -r
+    if exact:
+        # A v3 mask does not fit a double: reduce -r to the ring exactly and
+        # hand the MPC the centred value (F fractional + K_RING - F integer
+        # bits, exact in a double).
+        mod = 1 << K_RING
+        s_server = ring_to_float(
+            np.array([(-v) % mod for v in k], dtype=np.uint64), F, K_RING)
+        r = -s_server
+    else:
+        s_server = -r
     _dbg("mask r (first 4)", r)
     _dbg("s_server=-r", s_server)
     t0 = time.perf_counter()
@@ -502,6 +524,8 @@ def protocol_trace(model, schedule=None) -> list[tuple]:
     Levels follow litepi_seal's policy (one rescale per conv+pack, mm and
     one-level P2; the general quadratic poly2_eval of HybridMLP costs two).
     """
+    if hasattr(model, "protocol_ops"):
+        return model.protocol_ops(schedule)
     schedule = list(model.schedule if schedule is None else schedule)
     ops: list[tuple] = [("fresh", "M1")]
     if (isinstance(model, CanonicalCNN)
@@ -651,7 +675,8 @@ def serve_connection(conn: socket.socket, be, model,
                      reference_input=None, timeout: float = 600.0,
                      mask_domains=None,
                      obfuscate_schedule: bool = False,
-                     wire_profile: WireProfile | None = None) -> dict:
+                     wire_profile: WireProfile | None = None,
+                     mask_exact: bool = False) -> dict:
     conn.settimeout(timeout)
     wire = Wire(conn, party=0)
     if wire_profile is not None:
@@ -662,7 +687,19 @@ def serve_connection(conn: socket.socket, be, model,
         raise ProtocolError("short_chain cannot be combined with schedule "
                             "obfuscation; use the 'zstd'/'seeded'/'modswitch' "
                             "wire profiles instead")
-    mask_session = MaskSession(domains=mask_domains or {})
+    default_domain = None
+    if mask_exact:
+        # M2 v3: same A_k = 2^sigma * B_k rule, wider, through the double-double
+        # codec.  All hybrid legs use it (dummy legs too, so §7.2 stays uniform);
+        # the output layer of mode B keeps its double-precision domain.
+        if not getattr(be, "supports_exact_masks", lambda: False)():
+            raise ProtocolError("--mask-exact needs the SEAL backend with the "
+                                "double-double codec (rebuild litepi_seal)")
+        mask_domains = widen_domains(mask_domains or {},
+                                     keep=(output_layer_id(model),))
+        default_domain = MaskDomain.widened(DEFAULT_EXACT_BOUND)
+    mask_session = MaskSession(domains=mask_domains or {},
+                               default_domain=default_domain or DEFAULT_DOMAIN)
     wire.plan = (None if be.wire.is_baseline
                  else wire_plan(model, mask_session, be.wire))
     hybrid_ids = [
@@ -691,6 +728,8 @@ def serve_connection(conn: socket.socket, be, model,
             # The client already knows s; this tells it that every nonlinear
             # layer gets one ①/② leg (dummy legs included), in layer order.
             "schedule_obfuscated": bool(obfuscate_schedule),
+            # Client decodes ①_k with the double-double codec.
+            "mask_exact": bool(mask_exact),
         })
         sci_port = None
         if SCI_AVAILABLE:
@@ -703,6 +742,7 @@ def serve_connection(conn: socket.socket, be, model,
         sci_session = None
         if sci_port is not None:
             sci_session = SciReLUSession(1, sci_port)
+        sci_setup = sci_bytes(sci_session)     # base OTs, one-time like M0
         ctx = None
         pending_init = None
         query_index = 0
@@ -738,6 +778,7 @@ def serve_connection(conn: socket.socket, be, model,
             query_started = time.perf_counter()
             bytes_sent_start = wire.cc.sent
             bytes_received_start = wire.cc.recvd
+            sci_start = sci_bytes(sci_session)
 
             if reused_context:
                 if ctx is None:
@@ -758,14 +799,19 @@ def serve_connection(conn: socket.socket, be, model,
                     raise ProtocolError(f"expected M0, got {tag!r}")
                 wire.send(b"REDY")
 
-            _, blob = wire.recv(b"CTXT")
-            ct = be.deserialize(ctx, blob)
-            expected_slots = int(getattr(model, "input_slots", model.dims[0]))
-            if be.slot_count(ct) != expected_slots:
-                raise ProtocolError(
-                    f"input ciphertext has {be.slot_count(ct)} slots; "
-                    f"expected {expected_slots}"
-                )
+            if hasattr(model, "input_blocks"):
+                # Deep networks: M1 is one ciphertext per im2col block.
+                ct = [be.deserialize(ctx, wire.recv(b"CTXT")[1])
+                      for _ in range(model.input_blocks)]
+            else:
+                _, blob = wire.recv(b"CTXT")
+                ct = be.deserialize(ctx, blob)
+                expected_slots = int(getattr(model, "input_slots", model.dims[0]))
+                if be.slot_count(ct) != expected_slots:
+                    raise ProtocolError(
+                        f"input ciphertext has {be.slot_count(ct)} slots; "
+                        f"expected {expected_slots}"
+                    )
 
             timings = {
                 "linear_s": 0.0,
@@ -773,9 +819,9 @@ def serve_connection(conn: socket.socket, be, model,
                 "mpc_s": 0.0,
                 "mpc_elements": 0,
                 "base_ots": 0,
-                # §4 r_h witness: one ①_k send and one ②_k receive per hybrid
-                # layer.  The MPC (SCI silent-OT extension) runs between them,
-                # so the OT response shares the same round as Enc_pk(c_c).
+                # Control-plane count: one ①_k send and one ②_k receive per
+                # hybrid layer.  The SCI ReLU (IKNP/KKOT) runs between them on
+                # its own channels and adds its own rounds.
                 "hybrid_wire_sends": 0,
                 "hybrid_wire_recvs": 0,
             }
@@ -862,6 +908,9 @@ def serve_connection(conn: socket.socket, be, model,
                 "timings": {k: round(v, 6) for k, v in timings.items()},
                 "bytes_sent": wire.cc.sent - bytes_sent_start,
                 "bytes_received": wire.cc.recvd - bytes_received_start,
+                # SCI runs on its own sockets, so wire.cc never sees it.
+                "sci_bytes_sent": sci_bytes(sci_session) - sci_start,
+                "sci_setup_bytes_sent": sci_setup,
             }
             if reference_input is not None:
                 ref, _ = model.plain_forward(reference_input)
@@ -887,7 +936,8 @@ def serve_connection(conn: socket.socket, be, model,
 
 def serve(host: str, port: int, model, backend: str,
           once: bool = True, mask_domains=None,
-          obfuscate_schedule: bool = False, wire: str = "baseline") -> None:
+          obfuscate_schedule: bool = False, wire: str = "baseline",
+          mask_exact: bool = False) -> None:
     be = make_backend(backend, wire)
     with socket.create_server((host, port), reuse_port=False) as srv:
         print(
@@ -903,6 +953,7 @@ def serve(host: str, port: int, model, backend: str,
                     stats = serve_connection(
                         conn, be, model, mask_domains=mask_domains,
                         obfuscate_schedule=obfuscate_schedule,
+                        mask_exact=mask_exact,
                     )
                     print("[server] " + json.dumps(stats, ensure_ascii=False))
                 except Exception as exc:
@@ -938,6 +989,13 @@ def main() -> int:
                     help="M2 JSON exported by analysis/export_mask_domains.py")
     ap.add_argument("--obfuscate-schedule", action="store_true",
                     help="§7.2 dummy ciphertext pairs on every nonlinear layer")
+    ap.add_argument("--mask-exact", action="store_true",
+                    help="M2 v3: wide masks (sigma up to 70) through the "
+                         "double-double CKKS codec")
+    ap.add_argument("--deep-weights", type=Path, default=None,
+                    help="deep model .npz + .json from train_deep_conv.py --arch mid")
+    ap.add_argument("--threads", type=int, default=None,
+                    help="server threads for linear_sparse (deep models)")
     ap.add_argument("--wire", choices=sorted(WIRE_PROFILES), default="baseline",
                     help="E4 wire profile (baseline reproduces the recorded "
                          "bytes; compact = zstd + seeded + modswitch + "
@@ -945,13 +1003,27 @@ def main() -> int:
     args = ap.parse_args()
 
     mask_domains = None
+    if args.deep_weights:
+        if args.schedule is None:
+            raise SystemExit("--deep-weights needs --schedule")
     if args.plan:
         plan = json.loads(args.plan.read_text(encoding="utf-8"))
         planned = _as_schedule(",".join(str(v) for v in plan.get("s", [])))
         if args.schedule is not None and planned != args.schedule:
             raise SystemExit("--plan and --schedule disagree")
         args.schedule = planned
-    if args.dataset:
+    if args.deep_weights:
+        from deep_net import from_npz
+        model = from_npz(args.deep_weights, args.schedule, threads=args.threads)
+        if args.mask_domains:
+            mask_domains = load_mask_domains(
+                args.mask_domains, output_layer_id=model.output_layer_id(),
+                expected_schedule=args.schedule,
+                expected_dims=model.nonlinear_dims(),
+            )
+        print(f"[server] deep model {args.deep_weights} schedule={args.schedule} "
+              f"threads={model.threads}")
+    elif args.dataset:
         schedule = args.schedule or (1, 1)
         model = load_canonical_model(
             args.root, args.dataset, schedule, args.seed, args.weights,
@@ -1013,6 +1085,7 @@ def main() -> int:
         args.host, args.port, model, args.backend,
         once=not args.serve, mask_domains=mask_domains,
         obfuscate_schedule=args.obfuscate_schedule, wire=args.wire,
+        mask_exact=args.mask_exact,
     )
     return 0
 

@@ -30,12 +30,16 @@ must not be reported as paper-profile numbers.
 
 from __future__ import annotations
 
+import os
+
 PROFILE_NAME = "paper-profile-B"
 PAPER_PROFILE = True
 
 # MPC / fixed point.
 K_COMPARE = 14
-F = 8
+# LITEPI_F exists for the E7 precision sweep only (gen_e7_fixed_point.py); both
+# parties must run with the same value, the wire does not carry it.
+F = int(os.environ.get("LITEPI_F", "8"))
 SIGMA = 30
 K_RING = K_COMPARE + SIGMA
 
@@ -74,6 +78,14 @@ MASK_SIGMA_TARGET = 40   # wanted per-element slack; achieved = min(target, MAX 
 MASK_MAX_BITS = 42       # hard cap: log2 A_k <= 42
 MASK_MIN_SIGMA = 20      # refuse domains that cannot reach this slack
 MASK_BOUND_MARGIN = 1.25  # B_k = next power of two >= 1.25 * max|z_k| (train split)
+
+# M2 v3 (--mask-exact): the same rule with the double-precision cap removed.
+# litepi_seal encodes r and decodes z + r in double-double, so A_k is limited
+# only by the ciphertext's remaining modulus (pi_server.fit_mask_domain).
+# check_mask_exact.py: share error stays at 2 LSB up to A = 2^80 on a 103-bit
+# modulus.  sigma = 70 gives 2^-(71)/element, about 2^-62/query.
+MASK_SIGMA_EXACT = 70
+MASK_EXACT_MAX_BITS = 90  # hard cap of the v3 domain; below the 106-bit codec
 
 
 def describe() -> str:

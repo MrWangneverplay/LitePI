@@ -69,7 +69,7 @@ from pi_proto import WIRE_PROFILES, ProtocolError, Wire, make_backend
 from pi_client import adopt_wire, ciphertext_loop, send_input, upload_context
 from pi_server import serve_connection
 from secure_relu_net import run_party_batch
-from sci_relu import SCI_AVAILABLE, SciReLUSession
+from sci_relu import SCI_AVAILABLE, SciReLUSession, sci_bytes
 
 FLUSH_EVERY = 25
 
@@ -135,13 +135,16 @@ def _query(be, ctx, wire: Wire, prepared: np.ndarray, model,
 
 def session_eval(be, model, test, dataset: str, rows: list[dict], n: int,
                  timeout: float, domains, state: dict, flush_cb,
-                 wire: str = "baseline") -> None:
+                 wire: str = "baseline", mask_exact: bool = False) -> None:
     """Run one persistent server session over samples [len(rows), n).
 
     `state` is updated in place (mpc_runtime / keygen / context upload) so the
     partial-flush callback can see the real runtime string and setup cost.
     """
     be_server = make_backend(be.name)
+    # Resolved here: `wire` is rebound to the client's Wire below, and the
+    # server thread must not read it after that.
+    profile = WIRE_PROFILES[wire]
     srv = socket.create_server(("127.0.0.1", 0))
     port = int(srv.getsockname()[1])
     holder: dict = {}
@@ -153,7 +156,8 @@ def session_eval(be, model, test, dataset: str, rows: list[dict], n: int,
                 holder["stats"] = serve_connection(
                     conn, be_server, model, reference_input=None,
                     timeout=timeout, mask_domains=domains,
-                    wire_profile=WIRE_PROFILES[wire],
+                    wire_profile=profile,
+                    mask_exact=mask_exact,
                 )
         except BaseException as exc:  # surface it in the caller
             holder["error"] = exc
@@ -176,6 +180,8 @@ def session_eval(be, model, test, dataset: str, rows: list[dict], n: int,
                     "for this interpreter"
                 )
             sci_session = SciReLUSession(2, int(spec["sci_port"]), "127.0.0.1")
+        state["sci_setup_up_bytes"] = (int(state.get("sci_setup_up_bytes", 0) or 0)
+                                       + sci_bytes(sci_session))
         if not any(model.schedule):
             runtime = "none"
         else:
@@ -229,12 +235,21 @@ def session_eval(be, model, test, dataset: str, rows: list[dict], n: int,
             q = _empty_query_timings()
             sent_before = wire.cc.sent
             recv_before = wire.cc.recvd
+            sci_before = sci_bytes(sci_session)
             t_q = time.perf_counter()
             got = _query(be, ctx, wire, prepared, model, sci_session, q, spec)
             wire.send(b"BYE.")
             stats = wire.recv_json(b"STAT")
             wall_s = time.perf_counter() - t_q
             query_t.append(wall_s)
+            up_wire = int(wire.cc.sent - sent_before)
+            down_wire = int(wire.cc.recvd - recv_before)
+            up_sci = sci_bytes(sci_session) - sci_before
+            down_sci = int(stats.get("sci_bytes_sent", 0))
+            if index == start:
+                state["sci_setup_down_bytes"] = (
+                    int(state.get("sci_setup_down_bytes", 0) or 0)
+                    + int(stats.get("sci_setup_bytes_sent", 0)))
 
             if got.size < model.spec.classes:
                 raise ProtocolError(
@@ -257,8 +272,12 @@ def session_eval(be, model, test, dataset: str, rows: list[dict], n: int,
                 "encrypt_s": round(q["encrypt_input_s"], 6),
                 "decrypt_s": round(q["decrypt_s"], 6),
                 "reencrypt_s": round(q["reencrypt_s"], 6),
-                "up_bytes": int(wire.cc.sent - sent_before),
-                "down_bytes": int(wire.cc.recvd - recv_before),
+                "up_bytes": up_wire + up_sci,
+                "down_bytes": down_wire + down_sci,
+                "up_wire_bytes": up_wire,
+                "down_wire_bytes": down_wire,
+                "up_sci_bytes": up_sci,
+                "down_sci_bytes": down_sci,
                 "hybrid_roundtrips": int(stats.get("hybrid_roundtrips", 0)),
                 "mpc_runtime": runtime,
             }
@@ -276,6 +295,12 @@ def session_eval(be, model, test, dataset: str, rows: list[dict], n: int,
         # DONE closes the persistent session; the server's last STAT was
         # already consumed after the final BYE.
         wire.send(b"DONE")
+    except ConnectionError:
+        # The client only sees a closed socket; the cause is on the server side.
+        thread.join(timeout=5)
+        if "error" in holder:
+            raise holder["error"]
+        raise
     finally:
         conn.close()
         srv.close()
@@ -298,8 +323,10 @@ def build_payload(args, rows: list[dict], n: int, model, test_size: int,
     encs = [r["encrypt_s"] for r in rows]
     decs = [r["decrypt_s"] for r in rows]
     reencs = [r["reencrypt_s"] for r in rows]
-    ups = [r["up_bytes"] for r in rows if r.get("up_bytes")]
-    downs = [r["down_bytes"] for r in rows if r.get("down_bytes")]
+    # Rows from before the SCI accounting (--resume) have ciphertext bytes only.
+    counted = [r for r in rows if "up_sci_bytes" in r]
+    ups = [r["up_bytes"] for r in counted]
+    downs = [r["down_bytes"] for r in counted]
     done = len(rows)
     keygen = float(state.get("keygen_s", 0.0) or 0.0)
     ctx_up = float(state.get("context_upload_s", 0.0) or 0.0)
@@ -349,9 +376,15 @@ def build_payload(args, rows: list[dict], n: int, model, test_size: int,
         "communication": {
             "S_up_bytes_mean": float(np.mean(ups)) if ups else None,
             "S_down_bytes_mean": float(np.mean(downs)) if downs else None,
+            **{f"S_{d}_{layer}_bytes_mean":
+               float(np.mean([r[f"{d}_{layer}_bytes"] for r in counted])) if counted else None
+               for d in ("up", "down") for layer in ("wire", "sci")},
             "bytes_rows": len(ups),
             "context_up_bytes": state.get("context_up_bytes"),
-            "note": "S_up/S_down 为单次查询的客户端上下行字节（不含一次性上下文上传）",
+            "sci_setup_up_bytes": state.get("sci_setup_up_bytes"),
+            "sci_setup_down_bytes": state.get("sci_setup_down_bytes"),
+            "note": "S_up/S_down 为单次查询的客户端上下行字节，含密文（wire）和 SCI，"
+                    "不含一次性上下文上传和 SCI 基础 OT（sci_setup）",
         },
         "session": {
             "reuse_context": True,
@@ -393,6 +426,8 @@ def main() -> int:
     ap.add_argument("--checkpoint", default=None)
     ap.add_argument("--backend", default="seal",
                     choices=["seal", "tenseal", "stub"])
+    ap.add_argument("--mask-exact", action="store_true",
+                    help="M2 v3 masks; results go to a _maskv3 directory")
     ap.add_argument("--wire", choices=sorted(WIRE_PROFILES), default="baseline",
                     help="E4 线格式；非 baseline 时结果目录自动加 _wire<名字> 后缀")
     ap.add_argument("--out-tag", default=None,
@@ -423,6 +458,8 @@ def main() -> int:
     suffix = args.out_tag if args.out_tag is not None else f"_{args.backend}"
     if args.out_tag is None and args.wire != "baseline":
         suffix += f"_wire{args.wire}"
+    if args.out_tag is None and args.mask_exact:
+        suffix += "_maskv3"
     out_path = (root / "results" / "raw_results" / "E1" / args.dataset
                 / f"hybrid_s{tag}_acc{suffix}" / f"seed{args.seed}.json")
 
@@ -467,7 +504,8 @@ def main() -> int:
     if len(rows) < n:
         be = make_backend(args.backend)
         session_eval(be, model, test, args.dataset, rows, n,
-                     args.timeout, domains, state, flush, wire=args.wire)
+                     args.timeout, domains, state, flush, wire=args.wire,
+                     mask_exact=args.mask_exact)
 
     payload = build_payload(args, rows, n, model, len(test), state, False)
     payload["setup"] = {k: state.get(k) for k in (
@@ -475,6 +513,7 @@ def main() -> int:
         "queries", "sessions",
     )}
     payload["wire"] = WIRE_PROFILES[args.wire].to_dict()
+    payload["mask_exact"] = bool(args.mask_exact)
     payload["mask_domains"] = (
         {str(k): v.to_dict() for k, v in sorted(domains.items())}
         if domains else None

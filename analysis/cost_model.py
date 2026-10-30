@@ -12,12 +12,17 @@ constant is fitted from a result file and carries its provenance:
                  (same code, same messages).  Pi5 MPC time is the desktop fit
                  times that ratio, flagged "scaled-from-desktop" until E2 has
                  hybrid runs on the Pi.
-  server         E1 forward_s per schedule (desktop).
-  bytes          E4 wire_bytes (per message, per wire profile).
+  server         forward_s per (arch, schedule), measured on ciphertext.  A
+                 schedule without a run has no server time: it is unknown, not
+                 extrapolated from another network.
+  bytes          E4 wire_bytes (per message, per wire profile) times the number
+                 of ciphertexts each message really carries, plus SCI bytes per
+                 element from the E1 / model B records.
   r_h            results/rounds/r_h_sci_*.json with its scope; the files from
                  2026-10-29 count the main-wire control plane only (SCI's own
                  socket is not instrumented), so scope = "control-plane".
-  memory         E2 M_client_peak_mb (HE-only); hybrid increment unmeasured.
+  memory         measure_client_memory.py streamed rows (client process only),
+                 else E2 M_client_peak_mb (whole stack, HE-only).
 
     python analysis/cost_model.py                      # print + write JSON
     python analysis/cost_model.py --device pi5 --wire compact
@@ -72,42 +77,35 @@ class CostModel:
     t_server_table_ms: dict = field(default_factory=dict)
 
     # ------------------------------------------------------------- helpers
-    def client_ms(self, hybrid_layers: int, elements: int) -> float:
-        return (self.t_enc_input_ms + self.t_dec_ms
-                + hybrid_layers * (self.t_dec_ms + self.t_reenc_ms
-                                   + self.t_mpc_fixed_ms)
+    # Deep nets send several ciphertexts per message: input_blocks for M1,
+    # down_blocks over all ①_k, up_blocks over all ②_k.  The defaults are the
+    # canonical one-ciphertext messages.
+    def client_ms(self, hybrid_layers: int, elements: int, input_blocks: int = 1,
+                  down_blocks: int | None = None, up_blocks: int | None = None) -> float:
+        down = hybrid_layers if down_blocks is None else down_blocks
+        up = hybrid_layers if up_blocks is None else up_blocks
+        return (input_blocks * self.t_enc_input_ms + self.t_dec_ms
+                + down * self.t_dec_ms + up * self.t_reenc_ms
+                + hybrid_layers * self.t_mpc_fixed_ms
                 + elements * self.t_mpc_per_elem_ms)
 
-    def server_ms(self, hybrid_layers: int, arch: str | None = None,
-                  bits=None) -> float:
-        """Measured (arch, schedule) entry when present, else the fallback.
-
-        Fallback order: a per-arch linear fit in K_h, then the pooled fit
-        (the only option for fast/VGG, which have no ciphertext runs; their
-        server cost is a model value).
-        """
+    def server_ms(self, arch: str | None, bits) -> float | None:
+        """Measured forward time of this schedule, None when it never ran."""
         table = (self.t_server_table_ms or {}).get(arch) if arch else None
-        if table:
-            if bits is not None:
-                key = "".join(str(int(b)) for b in bits)
-                if key in table:
-                    return float(table[key])
-            fit = table.get("_linear")
-            if fit:
-                return fit[0] + hybrid_layers * fit[1]
-        return self.t_server_base_ms + hybrid_layers * self.t_server_per_hybrid_ms
+        value = (table or {}).get("".join(str(int(b)) for b in bits))
+        return None if value is None else float(value)
 
-    def server_source(self, arch: str | None, bits=None) -> str:
-        table = (self.t_server_table_ms or {}).get(arch) if arch else None
-        if table and bits is not None and "".join(str(int(b)) for b in bits) in table:
-            return "measured (E1 forward_s)"
-        return "per-arch linear fit" if table else "pooled linear model"
-
-    def online_bytes(self, hybrid_layers: int, elements: int) -> int:
-        ot = 0 if self.bytes_per_elem_ot is None else self.bytes_per_elem_ot * elements
-        return int(self.bytes_m1 + self.bytes_m3
-                   + hybrid_layers * (self.bytes_down_hybrid + self.bytes_up_hybrid)
-                   + ot)
+    def online_bytes(self, hybrid_layers: int, elements: int, input_blocks: int = 1,
+                     down_blocks: int | None = None,
+                     up_blocks: int | None = None) -> int | None:
+        """None while SCI bytes are unmeasured and the schedule has ReLU elements."""
+        if elements and self.bytes_per_elem_ot is None:
+            return None
+        down = hybrid_layers if down_blocks is None else down_blocks
+        up = hybrid_layers if up_blocks is None else up_blocks
+        return int(input_blocks * self.bytes_m1 + self.bytes_m3
+                   + down * self.bytes_down_hybrid + up * self.bytes_up_hybrid
+                   + (self.bytes_per_elem_ot or 0.0) * elements)
 
     def rounds(self, hybrid_layers: int, output_mode: str = "logits") -> float:
         return 2 + hybrid_layers * self.r_h + int(output_mode == "index")
@@ -116,17 +114,6 @@ class CostModel:
         if self.mem_per_hybrid_mb is None:
             return self.mem_base_mb if hybrid_layers == 0 else None
         return self.mem_base_mb + hybrid_layers * self.mem_per_hybrid_mb
-
-    def latency_ms(self, hybrid_layers: int, elements: int, rtt_ms: float,
-                   bandwidth_mbps: float | None = None,
-                   output_mode: str = "logits", arch: str | None = None,
-                   bits=None) -> float:
-        t = (self.client_ms(hybrid_layers, elements)
-             + self.server_ms(hybrid_layers, arch, bits)
-             + self.rounds(hybrid_layers, output_mode) * rtt_ms)
-        if bandwidth_mbps:
-            t += self.online_bytes(hybrid_layers, elements) * 8 / (bandwidth_mbps * 1e3)
-        return t
 
     def to_dict(self) -> dict:
         return asdict(self)
@@ -152,6 +139,54 @@ def _e1_rows(root: Path) -> list[dict]:
             rows.append({"dataset": d["dataset"], "schedule": d["schedule"],
                          "k_h": k_h, "elements": elems, **s})
     return rows
+
+
+def _mid_rows(root: Path) -> list[dict]:
+    """Per-query records of model B from eval_deep_accuracy.py."""
+    rows = []
+    for f in glob.glob(str(root / "results/raw_results/E1/cifar10/mid/s*_cipher*/seed*.json")):
+        d = json.loads(Path(f).read_text(encoding="utf-8"))
+        rows += [{"schedule": str(d["schedule"]), **r} for r in d["rows"]]
+    return rows
+
+
+def _ot_bytes_per_element(root: Path, mid_rows: list[dict]) -> tuple[float | None, str]:
+    """SCI bytes (both directions) per ReLU element, from records that carry them."""
+    bytes_total, elements = 0.0, 0
+    for r in mid_rows:
+        if r.get("up_sci_bytes"):
+            bytes_total += r["up_sci_bytes"] + r["down_sci_bytes"]
+            elements += r["timings"]["mpc_elements"]
+    for f in glob.glob(str(root / "results/raw_results/E1/*/hybrid_s*_acc_seal*/seed*.json")):
+        d = json.loads(Path(f).read_text(encoding="utf-8"))
+        comm = d.get("communication", {})
+        if not comm.get("S_up_sci_bytes_mean"):
+            continue
+        bits = [int(b) for b in str(d["schedule"])]
+        n = sum(k for k, b in zip(NONLINEAR_DIMS[d["dataset"]], bits) if b)
+        bytes_total += comm["S_up_sci_bytes_mean"] + comm["S_down_sci_bytes_mean"]
+        elements += n
+    if not elements:
+        return None, "unmeasured: no record carries SCI bytes yet"
+    return bytes_total / elements, f"SCI bytes over {elements} ReLU elements"
+
+
+def _client_only_memory(root: Path, device: str) -> tuple[float | None, float | None, str]:
+    """(base MB, MB per hybrid layer) of the streamed client process."""
+    by_k: dict[int, list[float]] = {}
+    pattern = f"results/raw_results/E2/client_only/{device}/seed*/summary.json"
+    for f in glob.glob(str(root / pattern)):
+        for r in json.loads(Path(f).read_text(encoding="utf-8"))["rows"]:
+            if r.get("mode") == "streamed":
+                by_k.setdefault(str(r["schedule"]).count("1"), []).append(r["client_peak_rss_mb"])
+    if not by_k:
+        return None, None, "none"
+    ks = sorted(by_k)
+    means = [st.mean(by_k[k]) for k in ks]
+    if len(ks) == 1:
+        return means[0], None, f"E2/client_only/{device}: K_h={ks} only"
+    slope, base = np.polyfit(ks, means, 1)
+    return float(base), float(slope), f"E2/client_only/{device}: fit over K_h={ks}"
 
 
 def _e2_client(root: Path, folder: str) -> dict | None:
@@ -255,10 +290,8 @@ def fit(root: Path = ROOT, device: str = "desktop", wire: str = "baseline") -> C
     A = np.array([[r["k_h"], r["elements"]] for r in hyb], dtype=float)
     y = np.array([r["mpc_s"] * 1e3 for r in hyb])
     (mpc_fixed, mpc_elem), *_ = np.linalg.lstsq(A, y, rcond=None)
-    # Server: pooled linear fit kept only as the fallback for archs without
-    # ciphertext runs; the canonical nets use their own (dataset, schedule)
-    # means.  Mixing datasets made t_server_base the MNIST/CIFAR/UCI average
-    # (~12 s) for every network, and a K_h-only model cannot tell s01 from s10.
+    # Server time is looked up per (dataset, schedule): a K_h-only model cannot
+    # tell s01 from s10.  The pooled fit stays in the JSON for reference only.
     srv = {}
     for r in rows:
         srv.setdefault(r["k_h"], []).append(r["forward_s"] * 1e3)
@@ -271,13 +304,14 @@ def fit(root: Path = ROOT, device: str = "desktop", wire: str = "baseline") -> C
             str(r["schedule"]), []).append(r["forward_s"] * 1e3)
     server_table: dict[str, dict] = {}
     for ds, scheds in by_ds.items():
-        tab = {s: float(st.mean(v)) for s, v in sorted(scheds.items())}
-        kh = [s.count("1") for s in tab]
-        if len(set(kh)) > 1:
-            b1, b0 = np.polyfit(kh, list(tab.values()), 1)
-            tab["_linear"] = [float(b0), float(b1)]
-        tab["_n"] = {s: len(v) for s, v in sorted(scheds.items())}
-        server_table[ds] = tab
+        server_table[ds] = {s: float(st.mean(v)) for s, v in sorted(scheds.items())}
+    mid_rows = _mid_rows(root)
+    mid: dict[str, list[float]] = {}
+    for r in mid_rows:
+        if (r.get("server") or {}).get("forward_s") is not None:
+            mid.setdefault(r["schedule"], []).append(r["server"]["forward_s"] * 1e3)
+    if mid:
+        server_table["conv3"] = {s: float(st.mean(v)) for s, v in sorted(mid.items())}
 
     desk = _e2_client(root, "E2")
     prov = {
@@ -285,13 +319,15 @@ def fit(root: Path = ROOT, device: str = "desktop", wire: str = "baseline") -> C
         "mpc_fit": f"mpc_ms = {mpc_fixed:.3f}*K_h + {mpc_elem:.5f}*elements "
                    f"(lstsq over {len(hyb)} hybrid samples)",
         "server": "E1 forward_s mean per (dataset, schedule) (desktop: MNIST on "
-                  "host 99, CIFAR/UCI on container 101); pooled linear-in-K_h "
-                  "fallback for fast/VGG is a model value.  forward_s includes "
-                  "the server's wait for the client inside each hybrid layer",
+                  "host 99, CIFAR/UCI on container 101); schedules without a "
+                  "run have no server time.  forward_s includes the server's "
+                  "wait for the client inside each hybrid layer",
     }
     scale = 1.0
     mem_folder = "E2" if device == "desktop" else f"E2_{device}"
-    mem_base, mem_hyb, mem_src = _e2_memory_by_kh(root, mem_folder)
+    mem_base, mem_hyb, mem_src = _client_only_memory(root, device)
+    if mem_base is None:
+        mem_base, mem_hyb, mem_src = _e2_memory_by_kh(root, mem_folder)
     mem = mem_base if mem_base is not None else (desk["M_peak"] if desk else None)
     if device != "desktop":
         dev = _e2_client(root, f"E2_{device}")
@@ -310,7 +346,7 @@ def fit(root: Path = ROOT, device: str = "desktop", wire: str = "baseline") -> C
     if wb is None:
         raise SystemExit("run analysis/measure_wire_bytes.py first (E4 wire bytes)")
     prov["bytes"] = f"E4 wire_bytes, profile {wire}"
-    prov["ot_bytes"] = "unmeasured: SCI bytes_sent() not recorded in E1/E2 yet"
+    ot_per_elem, prov["ot_bytes"] = _ot_bytes_per_element(root, mid_rows)
     prov["memory"] = (f"{mem_src}" + ("" if mem_hyb is not None
                                       else "; hybrid increment unmeasured"))
     return CostModel(
@@ -319,7 +355,7 @@ def fit(root: Path = ROOT, device: str = "desktop", wire: str = "baseline") -> C
         t_mpc_fixed_ms=float(max(mpc_fixed, 0.0)),
         t_mpc_per_elem_ms=float(max(mpc_elem, 0.0)),
         t_server_base_ms=float(base), t_server_per_hybrid_ms=float(slope),
-        **wb, bytes_per_elem_ot=None,
+        **wb, bytes_per_elem_ot=ot_per_elem,
         r_h=r_h, r_h_scope=scope,
         mem_base_mb=float(mem or 0.0), mem_per_hybrid_mb=mem_hyb,
         provenance=prov, t_server_table_ms=server_table,

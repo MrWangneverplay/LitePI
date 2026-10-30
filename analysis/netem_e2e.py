@@ -63,8 +63,11 @@ E9_RTT = (20, 100)
 
 def tc(iface: str, rtt_ms: float, bw_mbps: float | None, loss_pct: float,
        jitter_ms: float, dry: bool) -> None:
+    # netem queues the delayed packets; the default limit of 1000 drops packets
+    # by itself once the bandwidth-delay product exceeds it (200 ms x 100 Mbit).
+    bdp = (bw_mbps or 1000.0) * 1e6 / 8 * (rtt_ms + jitter_ms) / 1e3 / 1448
     cmd = ["tc", "qdisc", "replace", "dev", iface, "root", "netem",
-           "delay", f"{rtt_ms}ms"]
+           "limit", str(max(1000, int(4 * bdp))), "delay", f"{rtt_ms}ms"]
     if jitter_ms:
         # netem's default jitter is uniform in [-J, +J]: the same law as the
         # E9 model's (2J)^2/12 variance, so measured and modelled p95 compare.
@@ -104,6 +107,8 @@ def run_point(args, x, rtt, bw, loss, jitter) -> dict:
         "client_timings": [q["timings"] for q in qs],
         "bytes_sent": [q["bytes_sent"] for q in qs],
         "bytes_received": [q["bytes_received"] for q in qs],
+        "online_up_bytes": [q["online_up_bytes"] for q in qs],
+        "online_down_bytes": [q["online_down_bytes"] for q in qs],
         "server_wall_s": [q["server"].get("wall_s") for q in qs],
         "hybrid_roundtrips": qs[-1]["server"].get("hybrid_roundtrips"),
         "schedule": res.get("schedule"),
@@ -260,8 +265,9 @@ def main() -> int:
         return 0 if fit_r_h(args.root, args.device, args.dataset) else 1
 
     from canonical_net import CANONICAL_SPECS
-    x = np.random.default_rng(0).uniform(0.0, 1.0,
-                                         CANONICAL_SPECS[args.dataset].input_dim)
+    # conv3 is model B: start the server with pi_server.py --deep-weights.
+    dim = 3072 if args.dataset == "conv3" else CANONICAL_SPECS[args.dataset].input_dim
+    x = np.random.default_rng(0).uniform(0.0, 1.0, dim)
     if args.mode == "e3":
         rtts = [float(v) for v in (args.rtts.split(",") if args.rtts else E3_RTT)]
         bws = [float(v) for v in (args.bws.split(",") if args.bws else E3_BW)]

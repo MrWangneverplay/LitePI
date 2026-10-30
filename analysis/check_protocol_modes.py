@@ -14,10 +14,16 @@ def main() -> int:
         assert result["loopback"]["passed"], (dims, schedule, result)
         assert result["hybrid_layers"] == expected_hybrid
         assert result["server"]["protocol_online_rounds"] == expected_rounds
-        # §4 r_h=1 witness: exactly one ①_k -> ②_k exchange per hybrid layer.
+        # Control plane: one ①_k -> ②_k exchange per hybrid layer (the SCI
+        # rounds run between them; measure_rounds.py counts those).
         assert result["server"]["hybrid_roundtrips"] == expected_hybrid
         if expected_hybrid:
             assert abs(result["server"]["hybrid_r_h"] - 1.0) < 1e-9
+        # SCI traffic is outside the wire counter and must be added to it.
+        if result["mpc_runtime"] == "litepi_sci":
+            assert (result["sci_bytes_sent"] > 0) == bool(expected_hybrid)
+            assert (result["sci_bytes_received"] > 0) == bool(expected_hybrid)
+            assert result["online_up_bytes"] - result["sci_bytes_sent"] > 0
         print(
             f"PASS  schedule={schedule} hybrid={expected_hybrid} "
             f"online_rounds={expected_rounds}"

@@ -68,7 +68,7 @@ def run_pair(dataset: str, schedule: str, mode: str, args, out_dir: Path) -> dic
     srv_cmd = [sys.executable, "-u", str(HERE / "pi_server.py"), "--dataset", dataset,
                "--schedule", ",".join(schedule), "--seed", str(args.seed),
                "--port", str(port), "--backend", "seal", "--wire", args.wire,
-               "--serve"]
+               "--serve"] + (["--mask-exact"] if args.mask_exact else [])
     out = out_dir / f"{dataset}_s{schedule}_{mode}.json"
     cli_cmd = [sys.executable, str(HERE / "pi_client.py"), "--host", host,
                "--port", str(port), "--backend", "seal",
@@ -123,6 +123,8 @@ def main() -> int:
     ap.add_argument("--repeat", type=int, default=3,
                     help="queries per session (peak covers Setup + all queries)")
     ap.add_argument("--wire", default="baseline")
+    ap.add_argument("--mask-exact", action="store_true",
+                    help="local server only; a remote server sets it itself")
     ap.add_argument("--timeout", type=float, default=1800.0)
     ap.add_argument("--device", default="desktop", help="label for the results path")
     ap.add_argument("--server", default=None,

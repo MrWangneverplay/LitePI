@@ -9,12 +9,12 @@
   adaptive     Constrained/Adaptive：满足 acc_min（与内存约束）下目标最小
 
 评价维度（实验方案 E5 六维）：Acc, T_client, R_online, M_client, E_client, L_e2e。
-  * 成本全部来自 cost_model.py 拟合的实测常数（E1 SEAL+SCI、E2、E4、r_h 文件），
-    不再使用 Python P-256 OT 的 12.9 ms / 3996 B / 41 轮旧常数；
-  * E_client 需要功率计（E6），此处记 null；M_client 只有 HE-only 实测，
-    含 hybrid 的调度记 null；
-  * 深层网络（fast / VGG）没有密文实现：精度来自明文组合惩罚模型，服务器时间
-    是浅网拟合外推，均在 JSON 的 basis 字段注明，论文中只能作为模型结果。
+  * 成本全部来自 cost_model.py 拟合的实测常数（E1 SEAL+SCI、模型 B 密文运行、
+    E2、E4、r_h 文件）；
+  * 精度是每个调度单独重训的实测值，没有训练过的调度精度未知，不进入搜索；
+  * 深网用模型 B（conv3）：必须先跑 train_mid.py 和 eval_deep_accuracy.py，
+    服务器时间不从浅网外推。fast / VGG 没有密文运行，不再参与；
+  * E_client 需要功率计（E6），此处记 null。
 
 Pareto 前沿在 (Acc↑, T_client↓, R_online↓, L_e2e↓) 上计算；
 另输出 measure_list：前沿上每个 canonical 调度的实测命令（eval_hybrid_accuracy.py），
@@ -35,34 +35,25 @@ from pathlib import Path
 import planner as P
 from cost_model import CostModel, fit
 
-ARCHS = ["mnist", "cifar10", "uci_har", "fast", "vgg"]
-DEFAULT_ACC_MIN = {"mnist": 0.975, "cifar10": 0.59, "uci_har": 0.89,
-                   "fast": 0.84, "vgg": 0.84}
-
-
-def layers_and_acc(arch: str):
-    if arch in P.CANONICAL_MODELS:
-        c = P.CANONICAL_MODELS[arch]
-        return c["layers"], c["accuracies"], c["slots"], c["accuracies"][-1]
-    layers = P.FAST_LAYERS if arch == "fast" else P.VGG_LAYERS
-    return layers, None, None, (0.8509 if arch == "fast" else 0.8855)
+ARCHS = ["mnist", "cifar10", "uci_har", "conv3"]
+DEFAULT_ACC_MIN = {"mnist": 0.975, "cifar10": 0.59, "uci_har": 0.89, "conv3": 0.82}
 
 
 def row(s: P.Schedule, layers) -> dict:
     return {
         "schedule": "".join(str(b) for b in s.bits),
         "naming": s.describe(layers),
-        "accuracy": round(s.acc, 6),
+        "accuracy": None if s.acc is None else round(s.acc, 6),
         "mpc_elements": s.mpc_elements,
         "hybrid_layers": s.hybrid_layers,
-        "R_online": s.rtts,
-        "T_client_ms": None if s.client_ms is None else round(s.client_ms, 3),
+        "R_online": s.rounds,
+        "T_client_ms": round(s.client_ms, 3),
         "T_server_ms": None if s.server_ms is None else round(s.server_ms, 1),
         "L_e2e_ms": None if s.latency_ms is None else round(s.latency_ms, 1),
         "S_online_bytes": s.bytes,
         "M_client_mb": None if s.memory_mb is None else round(s.memory_mb, 1),
         "E_client_mJ": None,
-        "objective_ms": round(s.time_ms, 3),
+        "objective_ms": None if s.time_ms is None else round(s.time_ms, 3),
         "depth_ok": s.depth_ok,
     }
 
@@ -70,6 +61,8 @@ def row(s: P.Schedule, layers) -> dict:
 def dominates(a: dict, b: dict) -> bool:
     keys_max = ("accuracy",)
     keys_min = ("T_client_ms", "R_online", "L_e2e_ms")
+    if any(r[k] is None for r in (a, b) for k in keys_max + keys_min):
+        return False
     ge = all(a[k] >= b[k] for k in keys_max) and all(a[k] <= b[k] for k in keys_min)
     gt = any(a[k] > b[k] for k in keys_max) or any(a[k] < b[k] for k in keys_min)
     return ge and gt
@@ -101,35 +94,33 @@ def main() -> int:
                "bandwidth_mbps": args.bandwidth_mbps, "archs": {}}
 
     for arch in ARCHS:
-        layers, sched_acc, slots, base_acc = layers_and_acc(arch)
+        layers, accuracies, input_blocks = P.arch_spec(arch)
+        if not accuracies:
+            summary["archs"][arch] = {"pending": "run train_mid.py and eval_deep_accuracy.py"}
+            print(f"[{arch}] pending: no trained schedules")
+            continue
         acc_min = args.acc_min if args.acc_min is not None else DEFAULT_ACC_MIN[arch]
-        profile = P.Profile(rtt_ms=args.rtt_ms, base_acc=base_acc,
-                            schedule_accuracies=sched_acc,
-                            encoded_input_slots=slots, cost=cost,
+        profile = P.Profile(cost=cost, accuracies=accuracies, rtt_ms=args.rtt_ms,
                             bandwidth_mbps=args.bandwidth_mbps,
-                            objective="client", arch=arch)
+                            input_blocks=input_blocks, objective="client", arch=arch)
         n = len(layers)
         t0 = time.perf_counter()
         adaptive = P.constrained(layers, profile, acc_min)
         solve_ms = (time.perf_counter() - t0) * 1e3
 
-        # Same search restricted to what the ciphertext code can run today
-        # (P2 before a conv is not implemented, planner.Layer.next_is_conv).
-        exec_profile = P.Profile(**{**profile.__dict__, "executable_only": True})
-        adaptive_exec = P.constrained(layers, exec_profile, acc_min)
         picks = {
             "all_p2": P.evaluate([0] * n, layers, profile),
             "all_relu": P.evaluate([1] * n, layers, profile),
-            "rule": P.evaluate(P.rule_based(layers, profile, acc_min), layers, profile),
+            "rule": (P.evaluate(P.rule_based(layers, profile, acc_min), layers, profile)
+                     if P.layer_sensitivity(layers, profile) else None),
             "greedy": P.evaluate(P.greedy(layers, profile, acc_min), layers, profile),
             "adaptive": adaptive,
-            "adaptive_executable": (None if adaptive_exec is None else
-                                    P.evaluate(adaptive_exec.bits, layers, profile)),
         }
-        rand = P.random_schedules(layers, profile, acc_min, args.random_draws, args.seed)
+        rand = P.random_schedules(layers, profile, args.random_draws, args.seed)
         all_rows = [row(P.evaluate(bits, layers, profile), layers)
                     for bits in P.itertools.product((0, 1), repeat=n)]
-        all_rows = [r for r in all_rows if r["depth_ok"]]
+        all_rows = [r for r in all_rows
+                    if r["depth_ok"] and r["accuracy"] is not None and r["L_e2e_ms"] is not None]
         front = pareto(all_rows)
         front_ids = {r["schedule"] for r in front}
 
@@ -139,7 +130,7 @@ def main() -> int:
                 strategies[name] = None
                 continue
             r = row(sch, layers)
-            r["meets_acc_min"] = sch.acc >= acc_min
+            r["meets_acc_min"] = sch.acc is not None and sch.acc >= acc_min
             r["on_pareto_front"] = r["schedule"] in front_ids
             r["dominated_by_adaptive"] = (
                 adaptive is not None and dominates(row(adaptive, layers), r))
@@ -150,7 +141,8 @@ def main() -> int:
                 for k in ("accuracy", "T_client_ms", "R_online", "L_e2e_ms",
                           "S_online_bytes", "mpc_elements")}
         mean["draws"] = [r["schedule"] for r in rr]
-        mean["meets_acc_min"] = sum(r["accuracy"] >= acc_min for r in rr)
+        mean["meets_acc_min"] = sum(
+            r["accuracy"] is not None and r["accuracy"] >= acc_min for r in rr)
         mean["dominated_by_adaptive"] = sum(
             adaptive is not None and dominates(row(adaptive, layers), r) for r in rr)
         strategies["random_x5"] = mean
@@ -161,27 +153,21 @@ def main() -> int:
             "bandwidth_mbps": args.bandwidth_mbps,
             "cost_device": cost.device, "wire": cost.wire,
             "r_h": cost.r_h, "r_h_scope": cost.r_h_scope,
+            "schedules_trained": sorted(accuracies),
             "basis": {
-                "accuracy": ("measured E1 canonical schedule means" if canonical
-                             else "plaintext combination penalty 0.0025*k*(k-1) (model)"),
+                "accuracy": "one retrained model per schedule (mean test accuracy)",
                 "client_cost": "cost_model (E1 SEAL+SCI fit)" + (
                     "" if cost.device == "desktop" else ", device-scaled"),
-                "server_cost": ("E1 forward_s mean per (dataset, schedule)" if canonical
-                                else "pooled canonical fit extrapolated - NOT a deep-net measurement"),
-                "adaptive_executable": ("same as adaptive (no conv after a nonlinear layer)"
-                                        if canonical else
-                                        "constrained search over schedules the ciphertext "
-                                        "code can run: every nonlinear layer before a conv "
-                                        "must be hybrid (deep_hybrid.py has no P2->conv)"),
+                "server_cost": "measured forward_s per (arch, schedule); untried = unknown",
                 "E_client": "unmeasured (E6)",
-                "M_client": "E2 HE-only peak; hybrid increment unmeasured",
+                "M_client": cost.provenance.get("memory"),
             },
             "strategies": strategies,
             "pareto_front": front,
             "schedule_space": 2 ** n,
             "planner_cost": {"solve_ms": round(solve_ms, 4),
                              "evaluations": 2 ** n,
-                             "layer_sensitivity_evals": (0 if canonical else n)},
+                             "retrained_models": len(accuracies)},
             "measure_list": [
                 {"schedule": r["schedule"],
                  "cmd": (f"python analysis/eval_hybrid_accuracy.py --dataset {arch} "
@@ -213,13 +199,14 @@ def main() -> int:
             if r is None:
                 print(f"   {name:10s} INFEASIBLE")
             elif name == "random_x5":
-                print(f"   {name:10s} acc={r['accuracy']:.4f} T_c={r['T_client_ms']:.1f}ms "
-                      f"R={r['R_online']} L={r['L_e2e_ms']/1e3:.2f}s  "
-                      f"met={r['meets_acc_min']}/5  dominated={r['dominated_by_adaptive']}/5")
+                print(f"   {name:10s} acc={r['accuracy']} T_c={r['T_client_ms']}ms "
+                      f"R={r['R_online']} L={r['L_e2e_ms']}ms  "
+                      f"met={r['meets_acc_min']}/{args.random_draws}  "
+                      f"dominated={r['dominated_by_adaptive']}/{args.random_draws}")
             else:
-                print(f"   {name:10s} {r['schedule']} acc={r['accuracy']:.4f} "
-                      f"T_c={r['T_client_ms']:.1f}ms R={r['R_online']} "
-                      f"L={r['L_e2e_ms']/1e3:.2f}s front={r['on_pareto_front']}")
+                print(f"   {name:10s} {r['schedule']} acc={r['accuracy']} "
+                      f"T_c={r['T_client_ms']}ms R={r['R_online']} "
+                      f"L={r['L_e2e_ms']}ms front={r['on_pareto_front']}")
 
     (args.out / "e5_summary.json").write_text(
         json.dumps(summary, indent=2, ensure_ascii=False), encoding="utf-8")

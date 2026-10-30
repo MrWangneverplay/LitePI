@@ -4,8 +4,10 @@ Replaces the pure-Python P-256 OT ReLU (secure_relu_net.run_party_batch) with
 the CrypTFlow2 constant-round ReLU.  The interface mirrors run_party_batch:
 float additive shares in, float additive shares out.
 
-The SCI ReLU runs offline base-OT + IKNP OT-extension at construction time
-(one-time setup); the online ReLU comparison is constant-round.
+Only the base OTs run at construction time (one-time setup).  Everything else
+runs inside each relu() call: the Millionaire comparison (1-of-16 KKOT leaves,
+bit triples generated on the spot) and the two IKNP correlated OTs of the
+multiplexer.  There is no silent OT and no offline triple store.
 """
 
 from __future__ import annotations
@@ -51,6 +53,11 @@ def ring_to_float(shares: np.ndarray, f: int, k: int) -> np.ndarray:
         v = v - (1 << k) if v >= half else v
         out.append(v / scale)
     return np.asarray(out, dtype=np.float64)
+
+
+def sci_bytes(session) -> int:
+    """Bytes this party has sent on its SCI channels (0 when SCI is not in use)."""
+    return int(session.bytes_sent()) if session is not None else 0
 
 
 class SciReLUSession:

@@ -199,7 +199,8 @@ class FakeCanonical:
 
 
 def run_one(schedule, profile: str, seed: int = 0,
-            obfuscate: bool = False, stream_keys: bool = False) -> dict:
+            obfuscate: bool = False, stream_keys: bool = False,
+            mask_exact: bool = False) -> dict:
     model = FakeCanonical(schedule, seed)
     rng = np.random.default_rng(seed + 1)
     x = rng.uniform(0.0, 1.0, model.input_dim)
@@ -223,7 +224,8 @@ def run_one(schedule, profile: str, seed: int = 0,
                 holder["stats"] = pi_server.serve_connection(
                     conn, be_srv, model, timeout=300, mask_domains=domains,
                     obfuscate_schedule=obfuscate,
-                    wire_profile=WIRE_PROFILES[profile])
+                    wire_profile=WIRE_PROFILES[profile],
+                    mask_exact=mask_exact)
         except BaseException as exc:
             holder["error"] = exc
 
@@ -249,6 +251,7 @@ def run_one(schedule, profile: str, seed: int = 0,
             "up": res["bytes_sent"], "down": res["bytes_received"],
             "wall_s": round(time.perf_counter() - t0, 1),
             "fitted": holder["stats"].get("mask_domains_fitted"),
+            "domains": holder["stats"].get("mask_domains"),
             "trace": list(_TAP), "sci_calls": dict(FakeSci.calls),
             "level_aligned": holder["stats"].get("obfuscation_level_aligned")}
 
@@ -273,6 +276,8 @@ def main() -> int:
     ap.add_argument("--profiles", default="baseline,compact")
     ap.add_argument("--schedules", default="00,01,10,11")
     ap.add_argument("--tol", type=float, default=5e-2)
+    ap.add_argument("--mask-exact", action="store_true",
+                    help="M2 v3: wide masks through the double-double codec")
     ap.add_argument("--stream-keys", action="store_true",
                     help="client streams M0 one evaluation key per frame (plan A)")
     ap.add_argument("--obfuscate", action="store_true",
@@ -290,7 +295,13 @@ def main() -> int:
         rows = []
         for sch in args.schedules.split(","):
             r = run_one(tuple(int(b) for b in sch), prof, obfuscate=args.obfuscate,
-                        stream_keys=args.stream_keys)
+                        stream_keys=args.stream_keys,
+                        mask_exact=args.mask_exact)
+            if args.mask_exact:
+                layers = {**(r["domains"] or {}), **(r["fitted"] or {})}
+                sigmas = {k: round(v["sigma"]) for k, v in layers.items()
+                          if v.get("sigma") is not None}
+                print(f"{'':>10} s{r['schedule']}  M2 v3 sigma by layer: {sigmas}")
             rows.append(r)
             passed = r["max_abs_err"] <= args.tol and r["argmax_ok"]
             ok &= passed

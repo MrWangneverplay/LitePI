@@ -15,8 +15,8 @@
   rebound_T_client = T_client(wo_client_aware) / T_client(full)
   rebound_R_online = R_online(wo_client_aware) - R_online(full)
 扫描 RTT 与设备档位，因为两个目标是否冲突取决于网络与设备。
-注意：fast / VGG 的精度与服务器成本是模型值（见 gen_e5_data.py 的 basis 说明）；
-精度下限不可达的配置记为 infeasible，不做替代。
+精度与服务器时间都是实测：模型 B 未训练或未跑密文时该网络记为 pending；
+精度下限不可达的配置记为 infeasible，不做替代。汇总表见 gen_e7_table8.py。
 
     python analysis/gen_e7_ablations.py
     python analysis/gen_e7_ablations.py --devices desktop,pi5 --rtts 1,20,100,200
@@ -30,7 +30,7 @@ from pathlib import Path
 
 import planner as P
 from cost_model import fit
-from gen_e5_data import ARCHS, DEFAULT_ACC_MIN, layers_and_acc, row
+from gen_e5_data import ARCHS, DEFAULT_ACC_MIN, row
 
 
 def solve(layers, profile, acc_min, objective):
@@ -57,12 +57,13 @@ def main() -> int:
         cost = fit(device=device, wire=args.wire)
         for rtt in (float(v) for v in args.rtts.split(",")):
             for arch in ARCHS:
-                layers, sched_acc, slots, base_acc = layers_and_acc(arch)
+                layers, accuracies, input_blocks = P.arch_spec(arch)
+                if not accuracies:
+                    continue
                 acc_min = DEFAULT_ACC_MIN[arch]
-                profile = P.Profile(rtt_ms=rtt, base_acc=base_acc,
-                                    schedule_accuracies=sched_acc,
-                                    encoded_input_slots=slots, cost=cost,
+                profile = P.Profile(cost=cost, accuracies=accuracies, rtt_ms=rtt,
                                     bandwidth_mbps=args.bandwidth_mbps,
+                                    input_blocks=input_blocks,
                                     objective="client", arch=arch)
                 full = solve(layers, profile, acc_min, "client")
                 wo_cl = solve(layers, profile, acc_min, "server")
@@ -76,15 +77,16 @@ def main() -> int:
                         rec[name] = None
                         continue
                     r = row(sch, layers)
-                    r["meets_acc_min"] = sch.acc >= acc_min
+                    r["meets_acc_min"] = sch.acc is not None and sch.acc >= acc_min
                     rec[name] = r
                 if full and wo_cl:
                     rec["rebound_T_client"] = round(
                         wo_cl.client_ms / full.client_ms, 3)
-                    rec["rebound_R_online"] = wo_cl.rtts - full.rtts
-                if full:
+                    rec["rebound_R_online"] = wo_cl.rounds - full.rounds
+                if full and wo_pl.acc is not None:
                     rec["wo_planner_acc_loss"] = round(full.acc - wo_pl.acc, 6)
                     rec["wo_planner_meets_acc_min"] = wo_pl.acc >= acc_min
+                    rec["wo_planner_deployable"] = wo_pl.depth_ok
                 records.append(rec)
 
     (args.out / "e7_planner_ablations.json").write_text(

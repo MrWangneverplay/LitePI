@@ -64,6 +64,9 @@
 #include <pybind11/numpy.h>
 
 #include "seal/seal.h"
+#include "seal/util/ntt.h"
+#include "seal/util/rns.h"
+#include "seal/util/uintarith.h"
 #include "seal/util/uintcore.h"
 
 // SEAL >= 3.5 has the codec-aware save(), Serializable<> seeded objects and
@@ -76,13 +79,17 @@
 #endif
 
 #include <algorithm>
+#include <atomic>
 #include <cmath>
 #include <cstdint>
 #include <cstring>
+#include <map>
 #include <memory>
+#include <mutex>
 #include <sstream>
 #include <stdexcept>
 #include <string>
+#include <thread>
 #include <utility>
 #include <vector>
 
@@ -1375,6 +1382,193 @@ std::vector<std::shared_ptr<SealCtxt>> matmul_rows(
     return outs;
 }
 
+// Generic linear layer on ciphertext blocks: y[out_idx] += values * x[in_idx].
+//
+// x and y are flat vectors split across blocks of slot_capacity() slots.  This
+// is the P2 -> linear path of deep networks: after a polynomial activation the
+// activation exists only as ciphertext, in (C, H, W) flatten order, so a
+// following conv / pool + conv / pool + FC cannot be re-laid out by the client
+// (hybrid layers do that, see deep_net.py).  Any such map is a sparse matrix,
+// and the entries are grouped by generalised diagonal (in_block, out_block,
+// rotation d = (in_slot - out_slot) mod slots).
+//
+// As in mm, each diagonal is multiplied *before* it is rotated, so the
+// key-switch noise is measured against the Delta^2 product scale; rotating the
+// input at 2^21 would add 0.06-0.3 per slot on this parameter set.  The whole
+// layer costs one rescale.
+std::vector<std::shared_ptr<SealCtxt>> linear_sparse(
+    const SealCtx &ctx, const std::vector<std::shared_ptr<SealCtxt>> &blocks,
+    const py::array_t<std::int64_t, py::array::c_style | py::array::forcecast> &in_idx,
+    const py::array_t<std::int64_t, py::array::c_style | py::array::forcecast> &out_idx,
+    const DArr &values, std::size_t out_len, int threads)
+{
+    const std::size_t count = static_cast<std::size_t>(in_idx.size());
+    if (count != static_cast<std::size_t>(out_idx.size()) ||
+        count != static_cast<std::size_t>(values.size()) || count == 0)
+    {
+        throw std::invalid_argument("linear_sparse: bad COO arrays");
+    }
+    const std::size_t slots = ctx.slot_capacity();
+    const std::size_t out_blocks = (out_len + slots - 1) / slots;
+    const std::int64_t *in_ptr = in_idx.data();
+    const std::int64_t *out_ptr = out_idx.data();
+    const double *val_ptr = values.data();
+    if (blocks.empty() || out_blocks == 0)
+    {
+        throw std::invalid_argument("linear_sparse: no blocks");
+    }
+
+    py::gil_scoped_release release;
+    struct Term
+    {
+        std::uint64_t key;      // in_block | out_block | d
+        std::uint32_t slot;
+        double value;
+    };
+    std::vector<Term> terms;
+    terms.reserve(count);
+    for (std::size_t i = 0; i < count; ++i)
+    {
+        if (val_ptr[i] == 0.0)
+        {
+            continue;
+        }
+        const std::uint64_t in = static_cast<std::uint64_t>(in_ptr[i]);
+        const std::uint64_t out = static_cast<std::uint64_t>(out_ptr[i]);
+        const std::uint64_t ib = in / slots, ob = out / slots;
+        const std::uint64_t is = in % slots, os = out % slots;
+        if (ib >= blocks.size() || ob >= out_blocks)
+        {
+            throw std::invalid_argument("linear_sparse: index out of range");
+        }
+        const std::uint64_t d = (is + slots - os) % slots;
+        terms.push_back({(ib << 40) | (ob << 20) | d,
+                         static_cast<std::uint32_t>(is), val_ptr[i]});
+    }
+    std::sort(terms.begin(), terms.end(),
+              [](const Term &a, const Term &b) { return a.key < b.key; });
+    std::vector<std::size_t> starts;
+    for (std::size_t i = 0; i < terms.size(); ++i)
+    {
+        if (i == 0 || terms[i].key != terms[i - 1].key)
+        {
+            starts.push_back(i);
+        }
+    }
+    starts.push_back(terms.size());
+
+    const std::size_t workers = static_cast<std::size_t>(std::max(threads, 1));
+    std::vector<std::vector<Ciphertext>> acc(
+        workers, std::vector<Ciphertext>(out_blocks));
+    std::vector<std::vector<char>> used(workers,
+                                        std::vector<char>(out_blocks, 0));
+    std::atomic<std::size_t> next{0};
+    std::vector<std::exception_ptr> errors(workers);
+    auto work = [&](std::size_t me) {
+        try
+        {
+            std::vector<double> diagonal(slots);
+            for (;;)
+            {
+                const std::size_t g = next.fetch_add(1);
+                if (g + 1 >= starts.size())
+                {
+                    return;
+                }
+                std::fill(diagonal.begin(), diagonal.end(), 0.0);
+                const std::uint64_t key = terms[starts[g]].key;
+                for (std::size_t t = starts[g]; t < starts[g + 1]; ++t)
+                {
+                    diagonal[terms[t].slot] += terms[t].value;
+                }
+                const std::size_t ib = static_cast<std::size_t>(key >> 40);
+                const std::size_t ob =
+                    static_cast<std::size_t>((key >> 20) & 0xFFFFF);
+                const int d = static_cast<int>(key & 0xFFFFF);
+                const Ciphertext &x = blocks[ib]->ct_;
+                Plaintext plain;
+                ctx.encoder_->encode(diagonal, x.parms_id(), x.scale(), plain);
+                if (plain.is_zero())
+                {
+                    continue;   // below the encoding resolution of this level
+                }
+                Ciphertext prod;
+                ctx.evaluator_->multiply_plain(x, plain, prod);
+                if (d != 0)
+                {
+                    prod = ctx.shift_left(prod, d);
+                }
+                if (used[me][ob])
+                {
+                    ctx.evaluator_->add_inplace(acc[me][ob], prod);
+                }
+                else
+                {
+                    acc[me][ob] = std::move(prod);
+                    used[me][ob] = 1;
+                }
+            }
+        }
+        catch (...)
+        {
+            errors[me] = std::current_exception();
+        }
+    };
+    if (workers == 1)
+    {
+        work(0);
+    }
+    else
+    {
+        std::vector<std::thread> pool;
+        for (std::size_t w = 0; w < workers; ++w)
+        {
+            pool.emplace_back(work, w);
+        }
+        for (auto &t : pool)
+        {
+            t.join();
+        }
+    }
+    for (const auto &err : errors)
+    {
+        if (err)
+        {
+            std::rethrow_exception(err);
+        }
+    }
+    std::vector<std::shared_ptr<SealCtxt>> outs;
+    for (std::size_t ob = 0; ob < out_blocks; ++ob)
+    {
+        Ciphertext sum;
+        bool any = false;
+        for (std::size_t w = 0; w < workers; ++w)
+        {
+            if (!used[w][ob])
+            {
+                continue;
+            }
+            if (any)
+            {
+                ctx.evaluator_->add_inplace(sum, acc[w][ob]);
+            }
+            else
+            {
+                sum = std::move(acc[w][ob]);
+                any = true;
+            }
+        }
+        if (!any)
+        {
+            throw std::invalid_argument("linear_sparse: an output block is all zero");
+        }
+        ctx.evaluator_->rescale_to_next_inplace(sum);
+        const std::size_t live = std::min(slots, out_len - ob * slots);
+        outs.push_back(std::make_shared<SealCtxt>(std::move(sum), live));
+    }
+    return outs;
+}
+
 // -------------------------------------------------------------- wire format
 
 py::bytes serialize(const SealCtxt &ctxt, const std::string &compr = "none")
@@ -1470,6 +1664,457 @@ std::vector<int> chain_prime_bits(const SealCtx &ctx)
     return bits;
 }
 
+// ---------------------------------------- double-double CKKS codec (M2 v3)
+//
+// SEAL's CKKSEncoder works in double (53-bit mantissa), which caps the M2 mask
+// at about 2^42: above that the decoded z + r loses the 2^-8 fixed-point grid
+// (check_mask_domain.py).  The cap is numerical, not cryptographic: the
+// ciphertext modulus at a hybrid layer holds 100+ bits.  These two routines
+// replace SEAL's codec on the two messages that carry a wide mask:
+//
+//   encrypt_like_dd   server, step 1: Enc(r) with r encoded exactly
+//   decrypt_ring      client, step 2: z + r as a fixed-point ring element
+//
+// Arithmetic is double-double (about 106 bits; the mask needs at most 90).
+// Slot i of a real vector is the evaluation of m(X) at zeta^(3^i) and, by
+// conjugation, at zeta^(-3^i), zeta = exp(i*pi/N).  With a_t the value at
+// zeta^(2t+1):
+//     encode:  c_k = Re( IDFT_N(a)[k] * zeta^(-k) ) * scale, rounded
+//     decode:  a_t = DFT_N( c_k * zeta^k )[t] / scale
+// (the Harvey-style in-place FFT of SEAL computes the same transform in a
+// different index order; check_mask_exact.py compares the two codecs).
+
+struct DD
+{
+    double hi = 0.0, lo = 0.0;
+};
+
+inline DD quick_two_sum(double a, double b)
+{
+    const double s = a + b;
+    return {s, b - (s - a)};
+}
+
+inline DD two_sum(double a, double b)
+{
+    const double s = a + b;
+    const double bb = s - a;
+    return {s, (a - (s - bb)) + (b - bb)};
+}
+
+inline DD two_prod(double a, double b)
+{
+    const double p = a * b;
+    return {p, std::fma(a, b, -p)};
+}
+
+inline DD dd_add(DD a, DD b)
+{
+    DD s = two_sum(a.hi, b.hi);
+    const DD t = two_sum(a.lo, b.lo);
+    s.lo += t.hi;
+    s = quick_two_sum(s.hi, s.lo);
+    s.lo += t.lo;
+    return quick_two_sum(s.hi, s.lo);
+}
+
+inline DD dd_neg(DD a) { return {-a.hi, -a.lo}; }
+inline DD dd_sub(DD a, DD b) { return dd_add(a, dd_neg(b)); }
+
+inline DD dd_mul(DD a, DD b)
+{
+    DD p = two_prod(a.hi, b.hi);
+    p.lo += a.hi * b.lo + a.lo * b.hi;
+    return quick_two_sum(p.hi, p.lo);
+}
+
+inline DD dd_mul_d(DD a, double b)
+{
+    DD p = two_prod(a.hi, b);
+    p.lo += a.lo * b;
+    return quick_two_sum(p.hi, p.lo);
+}
+
+DD dd_div(DD a, DD b)
+{
+    const double q1 = a.hi / b.hi;
+    DD r = dd_sub(a, dd_mul_d(b, q1));
+    const double q2 = r.hi / b.hi;
+    r = dd_sub(r, dd_mul_d(b, q2));
+    const double q3 = r.hi / b.hi;
+    const DD q = quick_two_sum(q1, q2);
+    return dd_add(q, DD{q3, 0.0});
+}
+
+DD dd_sqrt(DD a)
+{
+    if (a.hi <= 0.0)
+    {
+        return DD{};
+    }
+    const double x = 1.0 / std::sqrt(a.hi);
+    const double ax = a.hi * x;
+    const DD err = dd_sub(a, two_prod(ax, ax));
+    return dd_add(DD{ax, 0.0}, DD{err.hi * (x * 0.5), 0.0});
+}
+
+struct CDD
+{
+    DD re, im;
+};
+
+inline CDD cdd_mul(const CDD &a, const CDD &b)
+{
+    return {dd_sub(dd_mul(a.re, b.re), dd_mul(a.im, b.im)),
+            dd_add(dd_mul(a.re, b.im), dd_mul(a.im, b.re))};
+}
+
+// zeta^k for k in [0, 2N).
+std::shared_ptr<const std::vector<CDD>> zeta_table(std::size_t n)
+{
+    static std::mutex lock;
+    static std::map<std::size_t, std::shared_ptr<const std::vector<CDD>>> cache;
+    std::lock_guard<std::mutex> guard(lock);
+    auto found = cache.find(n);
+    if (found != cache.end())
+    {
+        return found->second;
+    }
+    // exp(i*pi/2^m) by the half-angle formula, from exp(i*pi/2) = i.
+    int log2n = 0;
+    while ((std::size_t(1) << log2n) < n)
+    {
+        ++log2n;
+    }
+    std::vector<CDD> angle(log2n + 2);
+    angle[1] = {DD{0.0, 0.0}, DD{1.0, 0.0}};
+    for (int m = 2; m <= log2n; ++m)
+    {
+        const DD half = dd_mul_d(dd_add(DD{1.0, 0.0}, angle[m - 1].re), 0.5);
+        const DD c = dd_sqrt(half);
+        angle[m] = {c, dd_div(angle[m - 1].im, dd_mul_d(c, 2.0))};
+    }
+    // base[j] = zeta^(2^j) = exp(i*pi*2^j/N) = exp(i*pi/2^(log2n-j))
+    auto table = std::make_shared<std::vector<CDD>>(2 * n);
+    (*table)[0] = {DD{1.0, 0.0}, DD{0.0, 0.0}};
+    for (std::size_t k = 1; k < 2 * n; ++k)
+    {
+        int j = 0;
+        while (!((k >> j) & 1))
+        {
+            ++j;
+        }
+        const std::size_t rest = k & (k - 1);
+        CDD base;
+        if (j == log2n)
+        {
+            base = {DD{-1.0, 0.0}, DD{0.0, 0.0}};          // zeta^N = -1
+        }
+        else
+        {
+            base = angle[log2n - j];
+        }
+        (*table)[k] = rest == 0 ? base : cdd_mul((*table)[rest], base);
+    }
+    std::shared_ptr<const std::vector<CDD>> out = table;
+    cache[n] = out;
+    return out;
+}
+
+// a[t] <- sum_k a[k] * omega^(+-tk), omega = zeta^2; no 1/N factor.
+void dd_fft(std::vector<CDD> &a, const std::vector<CDD> &zeta, bool inverse)
+{
+    const std::size_t n = a.size();
+    for (std::size_t i = 1, j = 0; i < n; ++i)
+    {
+        std::size_t bit = n >> 1;
+        for (; j & bit; bit >>= 1)
+        {
+            j ^= bit;
+        }
+        j ^= bit;
+        if (i < j)
+        {
+            std::swap(a[i], a[j]);
+        }
+    }
+    for (std::size_t len = 2; len <= n; len <<= 1)
+    {
+        const std::size_t half = len >> 1;
+        const std::size_t step = 2 * n / len;           // zeta exponent per j
+        for (std::size_t i = 0; i < n; i += len)
+        {
+            for (std::size_t j = 0; j < half; ++j)
+            {
+                CDD w = zeta[j * step];
+                if (inverse)
+                {
+                    w.im = dd_neg(w.im);
+                }
+                const CDD v = cdd_mul(a[i + j + half], w);
+                const CDD u = a[i + j];
+                a[i + j] = {dd_add(u.re, v.re), dd_add(u.im, v.im)};
+                a[i + j + half] = {dd_sub(u.re, v.re), dd_sub(u.im, v.im)};
+            }
+        }
+    }
+}
+
+// Index t of zeta^(2t+1) for slot i (real vectors: the conjugate slot carries
+// the same value).
+std::vector<std::size_t> slot_index(std::size_t n)
+{
+    std::vector<std::size_t> t(n / 2);
+    std::uint64_t g = 1;
+    for (std::size_t i = 0; i < n / 2; ++i)
+    {
+        t[i] = static_cast<std::size_t>((g - 1) / 2);
+        g = (g * 3) % (2 * n);
+    }
+    return t;
+}
+
+// x (an integer-valued double) mod q.
+std::uint64_t double_mod(double x, std::uint64_t q)
+{
+    if (x == 0.0)
+    {
+        return 0;
+    }
+    int e = 0;
+    const double m = std::frexp(std::fabs(x), &e);      // |x| = m * 2^e
+    const std::uint64_t mant = static_cast<std::uint64_t>(std::ldexp(m, 53));
+    int shift = e - 53;
+    unsigned __int128 r = mant % q;
+    if (shift < 0)
+    {
+        r = (mant >> -shift) % q;                       // |x| < 2^53: exact
+        shift = 0;
+    }
+    for (; shift > 0; --shift)
+    {
+        r = (r << 1) % q;
+    }
+    const std::uint64_t out = static_cast<std::uint64_t>(r);
+    return (x < 0.0 && out != 0) ? q - out : out;
+}
+
+// x (an integer-valued double) mod 2^64, two's complement.
+std::uint64_t double_wrap64(double x)
+{
+    if (x == 0.0)
+    {
+        return 0;
+    }
+    int e = 0;
+    const double m = std::frexp(std::fabs(x), &e);
+    const std::uint64_t mant = static_cast<std::uint64_t>(std::ldexp(m, 53));
+    const int shift = e - 53;
+    std::uint64_t out = 0;
+    if (shift >= 64)
+    {
+        out = 0;
+    }
+    else if (shift >= 0)
+    {
+        out = mant << shift;
+    }
+    else
+    {
+        out = mant >> -shift;
+    }
+    return x < 0.0 ? ~out + 1 : out;
+}
+
+// Fresh encryption of (hi + lo) at the level and scale of ``like``.
+std::shared_ptr<SealCtxt> encrypt_like_dd(const SealCtx &ctx, const DArr &hi,
+                                          const DArr &lo, const SealCtxt &like)
+{
+    const auto vhi = to_vector(hi);
+    const auto vlo = to_vector(lo);
+    if (vhi.empty() || vhi.size() != vlo.size())
+    {
+        throw std::invalid_argument("encrypt_like_dd: hi/lo size mismatch");
+    }
+    if (!ctx.encryptor_)
+    {
+        throw std::runtime_error("encrypt_like_dd needs the public key");
+    }
+    const auto data = ctx.context_->get_context_data(like.ct_.parms_id());
+    const auto &parms = data->parms();
+    const std::size_t n = parms.poly_modulus_degree();
+    const auto &modulus = parms.coeff_modulus();
+    const std::size_t primes = modulus.size();
+    if (vhi.size() > n / 2)
+    {
+        throw std::invalid_argument("encrypt_like_dd: too many slots");
+    }
+    const double scale = like.ct_.scale();
+    py::gil_scoped_release release;
+
+    const auto zeta_ptr = zeta_table(n);
+    const auto &zeta = *zeta_ptr;
+    const auto index = slot_index(n);
+    std::vector<CDD> a(n);
+    for (std::size_t i = 0; i < vhi.size(); ++i)
+    {
+        const DD v = quick_two_sum(vhi[i], vlo[i]);
+        const std::size_t t = index[i];
+        a[t].re = v;
+        a[n - 1 - t].re = v;                            // conjugate slot
+    }
+    dd_fft(a, zeta, true);
+
+    const double inv_n = 1.0 / static_cast<double>(n);  // exact: n = 2^m
+    Plaintext plain;
+    plain.parms_id() = parms_id_zero;
+    plain.resize(util::mul_safe(n, primes));
+    for (std::size_t k = 0; k < n; ++k)
+    {
+        // Re(a[k] * zeta^(-k)) = re*cos + im*sin
+        const CDD &z = zeta[k];
+        DD c = dd_add(dd_mul(a[k].re, z.re), dd_mul(a[k].im, z.im));
+        c = dd_mul_d(dd_mul_d(c, inv_n), scale);
+        const double rhi = std::round(c.hi);
+        const double rlo = std::round((c.hi - rhi) + c.lo);
+        for (std::size_t j = 0; j < primes; ++j)
+        {
+            const std::uint64_t q = modulus[j].value();
+            unsigned __int128 v = double_mod(rhi, q);
+            v += double_mod(rlo, q);
+            plain.data()[j * n + k] = static_cast<std::uint64_t>(v % q);
+        }
+    }
+    const auto *tables = data->small_ntt_tables();
+    for (std::size_t j = 0; j < primes; ++j)
+    {
+        util::ntt_negacyclic_harvey(plain.data() + j * n, tables[j]);
+    }
+    plain.parms_id() = like.ct_.parms_id();
+    plain.scale() = scale;
+    Ciphertext ct;
+    ctx.encryptor_->encrypt(plain, ct);
+    return std::make_shared<SealCtxt>(std::move(ct), vhi.size());
+}
+
+// Decrypt + decode in double-double; returns the first logical_ slots.
+std::vector<DD> decrypt_slots_dd(const SealCtx &ctx, const SealCtxt &ctxt)
+{
+    if (!ctx.has_secret_)
+    {
+        throw std::runtime_error("this context has no secret key");
+    }
+    Plaintext plain;
+    ctx.decryptor_->decrypt(ctxt.ct_, plain);
+    const auto data = ctx.context_->get_context_data(plain.parms_id());
+    const auto &parms = data->parms();
+    const std::size_t n = parms.poly_modulus_degree();
+    const std::size_t primes = parms.coeff_modulus().size();
+    const double scale = ctxt.ct_.scale();
+
+    std::vector<std::uint64_t> coeffs(plain.data(), plain.data() + n * primes);
+    const auto *tables = data->small_ntt_tables();
+    for (std::size_t j = 0; j < primes; ++j)
+    {
+        util::inverse_ntt_negacyclic_harvey(coeffs.data() + j * n, tables[j]);
+    }
+    data->rns_tool()->base_q()->compose_array(coeffs.data(), n,
+                                              MemoryManager::GetPool());
+    const std::uint64_t *modulus = data->total_coeff_modulus();
+    const std::uint64_t *upper = data->upper_half_threshold();
+
+    const auto zeta_ptr = zeta_table(n);
+    const auto &zeta = *zeta_ptr;
+    const double two32 = 4294967296.0;
+    std::vector<std::uint64_t> mag(primes);
+    std::vector<CDD> a(n);
+    const DD inv_scale = dd_div(DD{1.0, 0.0}, DD{scale, 0.0});
+    for (std::size_t k = 0; k < n; ++k)
+    {
+        const std::uint64_t *limbs = coeffs.data() + k * primes;
+        const bool negative =
+            util::is_greater_than_or_equal_uint(limbs, upper, primes);
+        if (negative)
+        {
+            util::sub_uint(modulus, limbs, primes, mag.data());
+        }
+        else
+        {
+            std::copy(limbs, limbs + primes, mag.begin());
+        }
+        DD c{0.0, 0.0};
+        for (std::size_t w = primes; w-- > 0;)
+        {
+            c = dd_mul_d(dd_mul_d(c, two32), two32);
+            c = dd_add(c, DD{static_cast<double>(mag[w] >> 32) * two32, 0.0});
+            c = dd_add(c, DD{static_cast<double>(mag[w] & 0xFFFFFFFFULL), 0.0});
+        }
+        if (negative)
+        {
+            c = dd_neg(c);
+        }
+        c = dd_mul(c, inv_scale);
+        a[k] = {dd_mul(c, zeta[k].re), dd_mul(c, zeta[k].im)};
+    }
+    dd_fft(a, zeta, false);
+
+    const auto index = slot_index(n);
+    const std::size_t count = std::min(ctxt.logical_, n / 2);
+    std::vector<DD> out(count);
+    for (std::size_t i = 0; i < count; ++i)
+    {
+        out[i] = a[index[i]].re;
+    }
+    return out;
+}
+
+py::tuple decrypt_dd(const SealCtx &ctx, const SealCtxt &ctxt)
+{
+    std::vector<DD> slots;
+    {
+        py::gil_scoped_release release;
+        slots = decrypt_slots_dd(ctx, ctxt);
+    }
+    std::vector<double> hi(slots.size()), lo(slots.size());
+    for (std::size_t i = 0; i < slots.size(); ++i)
+    {
+        hi[i] = slots[i].hi;
+        lo[i] = slots[i].lo;
+    }
+    return py::make_tuple(to_array(hi), to_array(lo));
+}
+
+// Client step 2: round(slot * 2^f) mod 2^bits.  Only the low bits survive the
+// reduction, which is why the slot value needs full integer precision.
+py::array_t<std::uint64_t> decrypt_ring(const SealCtx &ctx, const SealCtxt &ctxt,
+                                        int f, int bits)
+{
+    if (bits <= 0 || bits > 64 || f < 0)
+    {
+        throw std::invalid_argument("decrypt_ring: bad fixed-point parameters");
+    }
+    std::vector<std::uint64_t> ring;
+    {
+        py::gil_scoped_release release;
+        const auto slots = decrypt_slots_dd(ctx, ctxt);
+        const double two_f = std::ldexp(1.0, f);
+        const std::uint64_t mask = bits == 64 ? ~std::uint64_t(0)
+                                              : (std::uint64_t(1) << bits) - 1;
+        ring.resize(slots.size());
+        for (std::size_t i = 0; i < slots.size(); ++i)
+        {
+            const DD v = dd_mul_d(slots[i], two_f);
+            const double rhi = std::round(v.hi);
+            const double rlo = std::round((v.hi - rhi) + v.lo);
+            ring[i] = (double_wrap64(rhi) + double_wrap64(rlo)) & mask;
+        }
+    }
+    py::array_t<std::uint64_t> out(ring.size());
+    std::memcpy(out.mutable_data(), ring.data(),
+                ring.size() * sizeof(std::uint64_t));
+    return out;
+}
+
 std::shared_ptr<SealCtxt> deserialize(const SealCtx &ctx, py::bytes blob)
 {
     std::string raw = blob;
@@ -1525,6 +2170,9 @@ PYBIND11_MODULE(litepi_seal, m)
         .def("pack_vectors", &pack_vectors)
         .def("matmul_rows", &matmul_rows, py::arg("blocks"), py::arg("matrix"),
              py::arg("windows"))
+        .def("linear_sparse", &linear_sparse, py::arg("blocks"), py::arg("in_idx"),
+             py::arg("out_idx"), py::arg("values"), py::arg("out_len"),
+             py::arg("threads") = 1)
         .def("im2col_encrypt", &im2col_encrypt,
              py::arg("image"), py::arg("kernel_rows"),
              py::arg("kernel_cols"), py::arg("stride"), py::arg("stride_cols") = 0)
@@ -1537,6 +2185,11 @@ PYBIND11_MODULE(litepi_seal, m)
              py::arg("symmetric") = false, py::arg("compr") = "none")
         .def("encrypt_at", &encrypt_at, py::arg("values"),
              py::arg("chain_index"), py::arg("scale") = 0.0)
+        .def("encrypt_like_dd", &encrypt_like_dd, py::arg("hi"), py::arg("lo"),
+             py::arg("like"))
+        .def("decrypt_dd", &decrypt_dd)
+        .def("decrypt_ring", &decrypt_ring, py::arg("ctxt"), py::arg("f"),
+             py::arg("bits"))
         .def("mod_switch_to_bits", &mod_switch_to_bits, py::arg("ctxt"),
              py::arg("needed_bits"))
         .def("modulus_bits", [](const SealCtx &c, const SealCtxt &x) {

@@ -34,14 +34,18 @@ from pathlib import Path
 from params_pi import (
     F,
     MASK_BOUND_MARGIN,
+    MASK_EXACT_MAX_BITS,
     MASK_MAX_BITS,
     MASK_MIN_SIGMA,
+    MASK_SIGMA_EXACT,
     MASK_SIGMA_TARGET,
 )
 
 _DOMAIN = b"litepi-mask-prg-v2\x00"
 RULE_V1 = "M2-v1-observed-range"
 RULE_V2 = "M2-v2-statdist"
+RULE_V3 = "M2-v3-exact"         # same rule, double-double codec, wider masks
+BOUNDED_RULES = (RULE_V2, RULE_V3)
 
 
 class MaskSessionError(RuntimeError):
@@ -77,9 +81,10 @@ class MaskDomain:
             raise ValueError("mask-domain bounds must be finite")
         if not (self.lo < self.hi):
             raise ValueError(f"invalid mask domain [{self.lo}, {self.hi})")
-        if max(abs(self.lo), abs(self.hi)) > 2.0 ** MASK_MAX_BITS:
+        cap = MASK_EXACT_MAX_BITS if self.rule == RULE_V3 else MASK_MAX_BITS
+        if max(abs(self.lo), abs(self.hi)) > 2.0 ** cap:
             raise ValueError(
-                f"mask domain [{self.lo}, {self.hi}) exceeds 2^{MASK_MAX_BITS}; "
+                f"mask domain [{self.lo}, {self.hi}) exceeds 2^{cap}; "
                 "the CKKS decode of z+r would lose fixed-point precision"
             )
 
@@ -89,6 +94,7 @@ class MaskDomain:
                   sigma_target: float = MASK_SIGMA_TARGET,
                   max_bits: int = MASK_MAX_BITS,
                   min_sigma: float = MASK_MIN_SIGMA,
+                  rule: str = RULE_V2,
                   **meta) -> "MaskDomain":
         """Rule v2: A = 2^sigma * B with sigma = min(target, max_bits - log2 B)."""
         bound = float(activation_bound)
@@ -104,7 +110,13 @@ class MaskDomain:
             )
         half = 2.0 ** (log_b + sigma)
         return cls(-half, half, activation_bound=bound, sigma=sigma,
-                   rule=RULE_V2, meta=dict(meta))
+                   rule=rule, meta=dict(meta))
+
+    @classmethod
+    def widened(cls, bound: float, **meta) -> "MaskDomain":
+        """Rule v3: A = 2^sigma * B without the double-precision cap."""
+        return cls.for_bound(bound, sigma_target=MASK_SIGMA_EXACT,
+                             max_bits=MASK_EXACT_MAX_BITS, rule=RULE_V3, **meta)
 
     @classmethod
     def from_observed(cls, lo_obs: float, hi_obs: float, **kw) -> "MaskDomain":
@@ -171,6 +183,33 @@ class MaskDomain:
 
 DEFAULT_DOMAIN = MaskDomain(-(2.0 ** MASK_MAX_BITS), 2.0 ** MASK_MAX_BITS,
                             rule="default-max-width")
+# Layers without an exported bound under --mask-exact (dummy legs of a schedule
+# whose export has no entry for them): B = 2^8 covers every activation observed
+# on the canonical nets (max |z| ~ 55).
+DEFAULT_EXACT_BOUND = 2.0 ** 8
+
+
+def widen_domains(domains: dict[int, "MaskDomain"],
+                  keep: tuple[int, ...] = ()) -> dict[int, "MaskDomain"]:
+    """Rule v3 for every layer with a bound; ``keep`` stays as loaded (the
+    output layer of mode B goes through the double-precision argmax path)."""
+    return {k: (d if k in keep or d.activation_bound is None
+                else MaskDomain.widened(d.activation_bound))
+            for k, d in domains.items()}
+
+
+def _grid_ints(stream: bytes, size: int, domain: MaskDomain) -> list[int]:
+    """Uniform fixed-point integers k with k / 2^F in [lo, hi), 32 PRG bytes each.
+
+    Python integers: a v3 mask has up to 90 + F bits.  ``u mod span`` over a
+    256-bit u has bias < span / 2^256 <= 2^-157, far below the per-element
+    statistical distance 2^-(sigma+1).
+    """
+    scale = 1 << F
+    lo_int = math.floor(domain.lo * scale)
+    span = math.ceil(domain.hi * scale) - lo_int
+    return [lo_int + int.from_bytes(stream[32 * i:32 * i + 32], "big") % span
+            for i in range(size)]
 
 
 def _grid_draw(stream: bytes, size: int, domain: MaskDomain) -> list[float]:
@@ -221,7 +260,7 @@ class MaskSession:
         """True iff every layer has a rule-v2 (statistically bounded) domain."""
         return all(
             int(layer_id) in self._domains
-            and self._domains[int(layer_id)].rule == RULE_V2
+            and self._domains[int(layer_id)].rule in BOUNDED_RULES
             for layer_id in layer_ids
         )
 
@@ -263,6 +302,22 @@ class MaskSession:
         )
         stream = hashlib.shake_256(material).digest(16 * size)
         return _grid_draw(stream, size, domain)
+
+    def draw_ints(self, query_id: int, layer_id: int, size: int,
+                  domain: MaskDomain | None = None) -> list[int]:
+        """v3 draw: the mask as fixed-point integers (r = k / 2^F)."""
+        if size <= 0:
+            raise ValueError("mask size must be positive")
+        if self._active_query != query_id:
+            raise MaskSessionError("mask requested outside its active query")
+        domain = domain or self.domain(layer_id)
+        material = (
+            _DOMAIN + b"v3" + self._seed
+            + int(query_id).to_bytes(8, "big")
+            + int(layer_id).to_bytes(8, "big")
+        )
+        return _grid_ints(hashlib.shake_256(material).digest(32 * size),
+                          size, domain)
 
     def abort(self) -> None:
         self._closed = True
@@ -404,6 +459,8 @@ def main() -> int:
                     help="also report the bound after this many queries")
     ap.add_argument("--schedule", default=None,
                     help="hybrid bits to account for (default: file schedule)")
+    ap.add_argument("--exact", action="store_true",
+                    help="report rule v3 (double-double codec, wider masks)")
     ap.add_argument("--upgrade", action="store_true",
                     help="rewrite a v1 file in place as rule v2 (keeps the "
                          "observed statistics; no retraining or torch needed)")
@@ -428,6 +485,8 @@ def main() -> int:
                                encoding="utf-8")
         print(f"upgraded {args.report} -> {RULE_V2}")
     domains = load_mask_domains(args.report, output_layer_id=None)
+    if args.exact:
+        domains = widen_domains(domains)
     bits = [int(b) for b in (args.schedule or "".join(
         str(b) for b in obj.get("schedule", [1] * len(domains))))]
     dims_all = obj.get("nonlinear_dims") or [None] * len(bits)

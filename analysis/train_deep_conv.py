@@ -9,9 +9,9 @@ Architecture (32x32; grayscale by default, RGB with --rgb):
     -> Flatten -> Linear(hidden) -> act -> Linear(10)
 
 Multiplicative depth (HE-only / all-P2 route):
-    each conv = 1, each P2 activation = 1, final FC = 1
-    => 1 + N(conv) + (N+1)(P2) = 2N + 2
-    N=2 -> 6 (fits budget 6), N=3 -> 8, N=4 -> 10, N=6 -> 14 (all exceed)
+    each linear layer = 1, each P2 activation = 1
+    => (N + 2)(N convs + 2 FC) + (N + 1)(P2) = 2N + 3
+    N=2 -> 7, N=3 -> 9, N=4 -> 11, N=6 -> 15 (all exceed the budget of 6)
 BN folds into the conv and adds no depth.
 This is the quantitative argument that deeper CONV nets force the Hybrid route.
 
@@ -39,6 +39,11 @@ DEFAULT_ROOT = str(Path(__file__).resolve().parent.parent)
 
 A0, A1, A2 = 0.0625, 0.5, 0.5
 BUDGET = 6  # multiplicative-depth budget of the current CKKS parameters
+
+
+def mult_depth(conv_depth: int) -> int:
+    """All-P2 multiplicative depth of a conv_depth net with the two-FC head."""
+    return 2 * conv_depth + 3
 
 
 def act_relu(x):
@@ -336,7 +341,8 @@ def shape_check(channels: int, hidden: int, rgb: bool, use_bn: bool, arch: str =
             out = net(torch.randn(1, in_ch, 32, 32))
         elems = count_relu_elements("fast", 4, channels, hidden)
         print(f"arch=fast  in_ch={in_ch}  bn={use_bn}  relu_elements={elems:,}  "
-              f"mult_depth=10 (EXCEEDS)  out={tuple(out.shape)}  params={n_params:,}")
+              f"mult_depth={mult_depth(4)} (EXCEEDS)  out={tuple(out.shape)}  "
+              f"params={n_params:,}")
         return
     for n in (2, 3, 4, 6):
         net = DeepConvNet(conv_depth=n, channels=channels, hidden=hidden,
@@ -345,7 +351,7 @@ def shape_check(channels: int, hidden: int, rgb: bool, use_bn: bool, arch: str =
         n_params = sum(p.numel() for p in net.parameters())
         with torch.no_grad():
             out = net(torch.randn(1, in_ch, 32, 32))
-        mdepth = 2 * n + 2
+        mdepth = mult_depth(n)
         print(f"conv_depth={n}  in_ch={in_ch}  bn={use_bn}  "
               f"spatial={net.spatial}x{net.spatial}  "
               f"mult_depth={mdepth} ({'OK' if mdepth <= BUDGET else 'EXCEEDS'})  "
@@ -444,8 +450,8 @@ def main() -> None:
                     "test_acc": acc,
                     "relu_elements": count_relu_elements(args.arch, n, args.channels,
                                                          args.hidden),
-                    "mult_depth": 2 * n + 2,
-                    "fits_budget": (2 * n + 2) <= BUDGET,
+                    "mult_depth": mult_depth(n),
+                    "fits_budget": mult_depth(n) <= BUDGET,
                     "timestamp_utc": datetime.now(timezone.utc).isoformat(timespec="seconds"),
                 }
                 tag = (f"{act}_conv{n}"
@@ -455,14 +461,14 @@ def main() -> None:
             mean = sum(accs) / len(accs)
             var = sum((a - mean) ** 2 for a in accs) / max(len(accs) - 1, 1)
             std = var ** 0.5
-            mdepth = 2 * n + 2
+            mdepth = mult_depth(n)
             fits = "OK" if mdepth <= BUDGET else "EXCEEDS"
             name = (f"{act} x conv{n}"
                     + ("+rgb" if args.rgb else "")
                     + ("+bn" if args.bn else ""))
             print(f"{name:<26}{mdepth:>11}{fits:>9}{mean*100:>9.2f}%{std*100:>8.2f}")
     print("=" * 86)
-    print(f"multiplicative depth = 2*N + 2; current CKKS budget = {BUDGET}")
+    print(f"multiplicative depth = 2*N + 3; current CKKS budget = {BUDGET}")
 
 
 if __name__ == "__main__":

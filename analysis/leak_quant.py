@@ -226,13 +226,29 @@ def e10a_domain(Z: np.ndarray, rule: str):
                A = 2^sigma * B, B = pow2 >= 1.25*max|z|.
     rule="v1": the earlier export (observed min/max + 5 %), kept as the
                weak-hiding control the first E10a run measured.
+    rule="v3": rule v2 without the double-precision cap (sigma = 70, the
+               protocol's --mask-exact path).
     """
-    from mask_session import MaskDomain
+    from mask_session import MaskDomain, power_of_two_bound
     lo, hi = float(np.min(Z)), float(np.max(Z))
     if rule == "v1":
         margin = max((hi - lo) * 0.05, 1e-6)
         return MaskDomain(lo - margin, hi + margin)
+    if rule == "v3":
+        return MaskDomain.widened(power_of_two_bound(max(abs(lo), abs(hi))))
     return MaskDomain.from_observed(lo, hi)
+
+
+def _big_uniform(rng: np.random.Generator, half: int, shape) -> np.ndarray:
+    """Uniform Python integers in [-half, half), for masks wider than int64."""
+    span = 2 * half
+    words = (span.bit_length() + 127) // 63
+    raw = rng.integers(0, 1 << 63, size=(int(np.prod(shape)), words), dtype=np.int64)
+    vals = [sum(int(w) << (63 * i) for i, w in enumerate(row)) % span - half
+            for row in raw]
+    out = np.empty(len(vals), dtype=object)
+    out[:] = vals
+    return out.reshape(shape)
 
 
 def _grid_uniform(rng: np.random.Generator, dom, shape) -> np.ndarray:
@@ -255,13 +271,24 @@ def e10a(Z: np.ndarray, rng: np.random.Generator, reuse: bool,
     """
     Q, n = Z.shape
     dom = e10a_domain(Z, rule)
-    if reuse:
-        r = _grid_uniform(rng, dom, (1, n))
-        S = Z + r
+    if rule == "v3":
+        # A v3 mask does not fit a float64, so the replay works on fixed-point
+        # integers, exactly as the ring shares do.
+        from params_pi import F
+        scale = 1 << F
+        Zi = np.rint(Z * scale).astype(np.int64).astype(object)
+        half = int(dom.half_width) * scale
+        Si = Zi + _big_uniform(rng, half, (1, n) if reuse else (Q, n))
+        D_hat = ((Si[:-1] - Si[1:]) / scale).astype(np.float64)
+        S = (Si / scale).astype(np.float64)
     else:
-        S = Z + _grid_uniform(rng, dom, (Q, n))
+        if reuse:
+            r = _grid_uniform(rng, dom, (1, n))
+            S = Z + r
+        else:
+            S = Z + _grid_uniform(rng, dom, (Q, n))
+        D_hat = S[:-1] - S[1:]
     D_true = Z[:-1] - Z[1:]
-    D_hat = S[:-1] - S[1:]
     err = D_hat - D_true
     mse = float(np.mean(err ** 2))
     energy = float(np.mean(D_true ** 2))
@@ -272,7 +299,7 @@ def e10a(Z: np.ndarray, rng: np.random.Generator, reuse: bool,
     max_abs = float(np.max(np.abs(Z)))
     return {
         "Q": Q, "dim": int(n),
-        "mask_rule": dom.rule if rule == "v2" else "M2-v1-observed-range",
+        "mask_rule": dom.rule if rule != "v1" else "M2-v1-observed-range",
         "mask_policy": "reused" if reuse else "fresh",
         "mask_domain_R": dom.half_width,
         "log2_mask_half_width": dom.log2_half_width,
@@ -416,7 +443,10 @@ def main() -> None:
             fresh = e10a(Z, np.random.default_rng(args.seed), reuse=False, rule="v2")
             narrow = e10a(Z, np.random.default_rng(args.seed), reuse=False, rule="v1")
             reused = e10a(Z, np.random.default_rng(args.seed), reuse=True, rule="v2")
-            e10a_rows[layer_name] = {"fresh": fresh, "fresh_v1": narrow, "reuse": reused}
+            fresh_v3 = e10a(Z, np.random.default_rng(args.seed), reuse=False, rule="v3")
+            reused_v3 = e10a(Z, np.random.default_rng(args.seed), reuse=True, rule="v3")
+            e10a_rows[layer_name] = {"fresh": fresh, "fresh_v1": narrow, "reuse": reused,
+                                     "fresh_v3": fresh_v3, "reuse_v3": reused_v3}
             print(f"  [E10a] {layer_name}: 复用 相对误差={reused['relative_error']:.3e} | "
                   f"新鲜+旧窄域 单查询corr={narrow['single_query_correlation']:+.3f} "
                   f"符号命中={narrow['single_query_sign_accuracy']:.3f} | "
@@ -432,6 +462,12 @@ def main() -> None:
                              "mask_policy": "fresh", "mask_rule": "v1-narrow-control"})
                 save_record(root, "E10", ds, f"mask_reuse_{layer_name}", args.seed,
                             {"leakage": reused, "layer": layer_name, "mask_policy": "reused"})
+                save_record(root, "E10", ds, f"mask_fresh_v3_{layer_name}", args.seed,
+                            {"leakage": fresh_v3, "layer": layer_name,
+                             "mask_policy": "fresh", "mask_rule": "v3"})
+                save_record(root, "E10", ds, f"mask_reuse_v3_{layer_name}", args.seed,
+                            {"leakage": reused_v3, "layer": layer_name,
+                             "mask_policy": "reused", "mask_rule": "v3"})
 
         # ---- E10b ----
         # 成员（训练集）/非成员（测试集）各取 n 条，按真标签分层随机抽样且两组类别计数相同。

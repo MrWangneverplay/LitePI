@@ -44,7 +44,7 @@ from pi_proto import (
 )
 from secure_relu_net import run_party_batch
 from secure_argmax import combine_index_share, run_party_argmax
-from sci_relu import SCI_AVAILABLE, SciReLUSession
+from sci_relu import SCI_AVAILABLE, SciReLUSession, ring_to_float, sci_bytes
 
 
 def load_input(path: Path | None, dim: int | None, seed: int = 0) -> np.ndarray:
@@ -232,7 +232,12 @@ def ciphertext_loop(be, ctx, wire: Wire, spec: dict, timings: dict,
         ct = be.deserialize(ctx, blob)
 
         t0 = time.perf_counter()
-        share = np.asarray(be.decrypt(ct), dtype=np.float64)
+        if kind == 0 and spec.get("mask_exact"):
+            # M2 v3: z + r does not fit a double; decode it in double-double
+            # and keep the ring element.  The centred value is exact.
+            share = ring_to_float(be.decrypt_ring(ct, F, K_RING), F, K_RING)
+        else:
+            share = np.asarray(be.decrypt(ct), dtype=np.float64)
         timings["decrypt_s"] += time.perf_counter() - t0
 
         if kind == 1:
@@ -304,6 +309,11 @@ def _query_once(be, ctx, wire: Wire, x: np.ndarray, spec: dict,
                 timings: dict, output_mode: str = "logits",
                 sci_session=None):
     """Run one already-authenticated private query over the open session."""
+    if spec.get("deep"):
+        from deep_net import client_query
+        return client_query(be, ctx, wire, spec, x, timings, sci_session,
+                            _encrypt_blob, _plan_chain_index,
+                            _prepare_model_input, output_mode)
     if spec.get("encoding") != "im2col":
         send_input(be, ctx, wire, x, spec, timings, output_mode=output_mode)
     else:
@@ -367,6 +377,9 @@ def run_client(host: str, port: int, x: np.ndarray, backend_name: str,
 
         # One-time key generation + upload: the client's largest fixed cost.
         ctx, m0_streamed = setup_keys(be, wire, timings, stream_keys)
+        sent_before = wire.cc.sent
+        recv_before = wire.cc.recvd
+        sci_before = sci_bytes(sci_session)
 
         output_kind, output_value = _query_once(
             be, ctx, wire, x, spec, timings, output_mode, sci_session,
@@ -374,6 +387,8 @@ def run_client(host: str, port: int, x: np.ndarray, backend_name: str,
 
         wire.send(b"BYE.")
         server_stats = wire.recv_json(b"STAT")
+        traffic = _traffic(wire.cc.sent - sent_before, wire.cc.recvd - recv_before,
+                           sci_bytes(sci_session) - sci_before, server_stats)
 
     if output_kind != output_mode:
         raise ProtocolError(
@@ -399,6 +414,9 @@ def run_client(host: str, port: int, x: np.ndarray, backend_name: str,
         },
         "bytes_sent": wire.cc.sent,
         "bytes_received": wire.cc.recvd,
+        **traffic,
+        "sci_setup_bytes_sent": sci_before,
+        "sci_setup_bytes_received": int(server_stats.get("sci_setup_bytes_sent", 0)),
         "server": server_stats,
         "mpc_runtime": "litepi_sci" if sci_session is not None else "python-ot",
     }
@@ -414,6 +432,17 @@ def run_client(host: str, port: int, x: np.ndarray, backend_name: str,
     else:
         result["output_leakage"] = "class_index_only"
     return result
+
+
+def _traffic(wire_up: int, wire_down: int, sci_up: int, server_stats: dict) -> dict:
+    """One query's bytes on both layers; the server reports what it sent over SCI."""
+    sci_down = int(server_stats.get("sci_bytes_sent", 0))
+    return {
+        "online_up_bytes": wire_up + sci_up,
+        "online_down_bytes": wire_down + sci_down,
+        "sci_bytes_sent": sci_up,
+        "sci_bytes_received": sci_down,
+    }
 
 
 def run_reuse_session(host: str, port: int, x: np.ndarray, backend_name: str,
@@ -481,6 +510,7 @@ def run_reuse_session(host: str, port: int, x: np.ndarray, backend_name: str,
             query_started = time.perf_counter()
             sent_before = wire.cc.sent
             recv_before = wire.cc.recvd
+            sci_before = sci_bytes(sci_session)
             t_before = dict(timings)
             output_kind, output_value = _query_once(
                 be, ctx, wire, x, spec, timings, output_mode, sci_session,
@@ -503,6 +533,8 @@ def run_reuse_session(host: str, port: int, x: np.ndarray, backend_name: str,
                 "base_ots": int(timings["base_ots"] - t_before["base_ots"]),
                 "bytes_sent": wire.cc.sent - sent_before,
                 "bytes_received": wire.cc.recvd - recv_before,
+                **_traffic(wire.cc.sent - sent_before, wire.cc.recvd - recv_before,
+                           sci_bytes(sci_session) - sci_before, server_stats),
                 "server": server_stats,
             })
 
@@ -560,7 +592,8 @@ def loopback_once(backend_name: str, dims: list[int], seed: int = 7,
                   mask_domains=None,
                   output_mode: str = "logits",
                   obfuscate_schedule: bool = False,
-                  wire: str = "baseline") -> dict:
+                  wire: str = "baseline",
+                  mask_exact: bool = False) -> dict:
     """Run server and client over a real localhost socket in one process.
 
     Loopback is a test harness: it lets the driver compare the final logits with
@@ -602,6 +635,7 @@ def loopback_once(backend_name: str, dims: list[int], seed: int = 7,
                     mask_domains=mask_domains,
                     obfuscate_schedule=obfuscate_schedule,
                     wire_profile=WIRE_PROFILES[wire],
+                    mask_exact=mask_exact,
                 )
         except BaseException as exc:  # surface it in the caller
             holder["error"] = exc
@@ -682,6 +716,11 @@ def _print_summary(result: dict, verbose: bool) -> None:
     print(f"  wall              {result['wall_s']:8.3f} s")
     print(f"  traffic           up {result['bytes_sent'] / 1e6:.3f} MB  "
           f"down {result['bytes_received'] / 1e6:.3f} MB")
+    if "online_up_bytes" in result:
+        print(f"  online + SCI      up {result['online_up_bytes'] / 1e6:.3f} MB  "
+              f"down {result['online_down_bytes'] / 1e6:.3f} MB  "
+              f"(SCI up {result['sci_bytes_sent'] / 1e6:.3f}  "
+              f"down {result['sci_bytes_received'] / 1e6:.3f})")
     if result.get("reuse_context"):
         print("  queries:")
         for q in result["queries"]:
@@ -733,6 +772,8 @@ def main() -> int:
                     help="reuse one CKKS context across --repeat queries")
     ap.add_argument("--output-mode", choices=["logits", "index"], default="logits",
                     help="index mode requires a secure MPC argmax backend")
+    ap.add_argument("--mask-exact", action="store_true",
+                    help="loopback only: M2 v3 masks (remote: pi_server --mask-exact)")
     ap.add_argument("--stream-keys", action="store_true",
                     help="E2 plan A: generate and send evaluation keys one "
                          "frame at a time and never keep them (client memory)")
@@ -780,6 +821,7 @@ def main() -> int:
             output_mode=args.output_mode,
             obfuscate_schedule=args.obfuscate_schedule,
             wire=args.wire,
+            mask_exact=args.mask_exact,
         )
     else:
         # A real client learns the input dimension from the server's SPEC

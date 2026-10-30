@@ -7,7 +7,9 @@
       "ram_mb": 15360,
       "memory_budget_mb": 7680,
       "cpu_score": null,
-      "e2_folder": "E2"
+      "e2_folder": "E2",
+      "rtt_ms": 5.0,
+      "bandwidth_mbps": 1000.0
     },
     {
       "name": "pi5",
@@ -15,7 +17,9 @@
       "ram_mb": 8192,
       "memory_budget_mb": 4096,
       "cpu_score": null,
-      "e2_folder": "E2_pi5"
+      "e2_folder": "E2_pi5",
+      "rtt_ms": 20.0,
+      "bandwidth_mbps": 35.0
     },
     {
       "name": "pi4",
@@ -23,7 +27,10 @@
       "ram_mb": 4096,
       "memory_budget_mb": 1024,
       "cpu_score": null,
-      "e2_folder": "E2_pi4"
+      "e2_folder": "E2_pi4",
+      "rtt_ms": 50.0,
+      "bandwidth_mbps": 20.0
     }
-  ]
+  ],
+  "_link_note": "rtt_ms / bandwidth_mbps 是各设备的接入链路：pi5 为实测 Wi-Fi 上行约 4.41 MB/s，desktop 为有线千兆，pi4 为弱链路假设值，不是实测"
 }

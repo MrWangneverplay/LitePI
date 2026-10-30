@@ -219,7 +219,7 @@ def evaluate(bits, layers, profile: Profile) -> Schedule:
     down = sum(layer.down_blocks for layer in used)
     up = sum(layer.up_blocks for layer in used)
     rounds = cm.rounds(k_h, profile.output_mode)
-    nbytes = cm.online_bytes(k_h, mpc, profile.input_blocks, down, up)
+    nbytes = cm.online_bytes(k_h, mpc, profile.input_blocks, down, up, profile.arch, bits)
     client_ms = cm.client_ms(k_h, mpc, profile.input_blocks, down, up)
     server_ms = cm.server_ms(profile.arch, bits)
     net_ms = None

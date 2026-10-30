@@ -75,6 +75,10 @@ class CostModel:
     # just K_h: a hybrid layer resets the level, so the following FC runs on a
     # longer modulus (MNIST s10 is 1.27x s01 although both have K_h = 1).
     t_server_table_ms: dict = field(default_factory=dict)
+    # Measured ciphertext bytes of one query per (arch, schedule): the size of
+    # M3 and of each ①_k depends on the schedule, so one per-message constant
+    # overstates HE-only (1.70 MB instead of the measured 1.18 MB).
+    wire_bytes_table: dict = field(default_factory=dict)
 
     # ------------------------------------------------------------- helpers
     # Deep nets send several ciphertexts per message: input_blocks for M1,
@@ -96,16 +100,25 @@ class CostModel:
         return None if value is None else float(value)
 
     def online_bytes(self, hybrid_layers: int, elements: int, input_blocks: int = 1,
-                     down_blocks: int | None = None,
-                     up_blocks: int | None = None) -> int | None:
-        """None while SCI bytes are unmeasured and the schedule has ReLU elements."""
+                     down_blocks: int | None = None, up_blocks: int | None = None,
+                     arch: str | None = None, bits=None) -> int | None:
+        """Ciphertext plus SCI bytes of one query.
+
+        The measured (arch, schedule) entry when there is one, else the message
+        constants times the ciphertext counts.  None while SCI bytes are
+        unmeasured and the schedule has ReLU elements.
+        """
         if elements and self.bytes_per_elem_ot is None:
             return None
+        ot = (self.bytes_per_elem_ot or 0.0) * elements
+        table = (self.wire_bytes_table or {}).get(arch) or {}
+        key = None if bits is None else "".join(str(int(b)) for b in bits)
+        if key in table:
+            return int(table[key] + ot)
         down = hybrid_layers if down_blocks is None else down_blocks
         up = hybrid_layers if up_blocks is None else up_blocks
         return int(input_blocks * self.bytes_m1 + self.bytes_m3
-                   + down * self.bytes_down_hybrid + up * self.bytes_up_hybrid
-                   + (self.bytes_per_elem_ot or 0.0) * elements)
+                   + down * self.bytes_down_hybrid + up * self.bytes_up_hybrid + ot)
 
     def rounds(self, hybrid_layers: int, output_mode: str = "logits") -> float:
         return 2 + hybrid_layers * self.r_h + int(output_mode == "index")
@@ -266,6 +279,10 @@ def _wire_bytes(root: Path, wire: str) -> dict | None:
             if r["wire"]["name"] == wire]
     if not rows:
         return None
+    table: dict[str, dict[str, int]] = {}
+    for r in rows:
+        table.setdefault(r["dataset"], {})[r["schedule"]] = int(r["online_total_bytes"])
+
     def pick(sched, msg):
         vals = [m["bytes"] for r in rows if r["schedule"] == sched
                 for m in r["messages"] if m["msg"] == msg]
@@ -276,6 +293,7 @@ def _wire_bytes(root: Path, wire: str) -> dict | None:
         "bytes_down_hybrid": max(pick("10", "①_1"), pick("11", "①_2")),
         "bytes_up_hybrid": max(pick("10", "②_1"), pick("11", "②_2")),
         "bytes_keys": int(max(r["M0_key_bytes"] for r in rows)),
+        "wire_bytes_table": table,
     }
 
 
@@ -346,6 +364,14 @@ def fit(root: Path = ROOT, device: str = "desktop", wire: str = "baseline") -> C
     if wb is None:
         raise SystemExit("run analysis/measure_wire_bytes.py first (E4 wire bytes)")
     prov["bytes"] = f"E4 wire_bytes, profile {wire}"
+    if wire == "baseline" and mid_rows:     # eval_deep_accuracy runs the baseline wire
+        by_sched: dict[str, list[float]] = {}
+        for r in mid_rows:
+            if "up_sci_bytes" in r:
+                by_sched.setdefault(r["schedule"], []).append(
+                    r["up_bytes"] + r["down_bytes"] - r["up_sci_bytes"] - r["down_sci_bytes"])
+        if by_sched:
+            wb["wire_bytes_table"]["conv3"] = {s: st.mean(v) for s, v in by_sched.items()}
     ot_per_elem, prov["ot_bytes"] = _ot_bytes_per_element(root, mid_rows)
     prov["memory"] = (f"{mem_src}" + ("" if mem_hyb is not None
                                       else "; hybrid increment unmeasured"))

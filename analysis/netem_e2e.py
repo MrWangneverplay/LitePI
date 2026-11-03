@@ -53,6 +53,8 @@ from pathlib import Path
 
 import numpy as np
 
+from data_manifest import git_sha
+
 ROOT = Path(__file__).resolve().parent.parent
 E3_RTT = (1, 5, 20, 50, 100, 200)
 E3_BW = (10, 50, 100)
@@ -292,6 +294,7 @@ def main() -> int:
     od.mkdir(parents=True, exist_ok=True)
     (od / "run.json").write_text(json.dumps({
         "exp_id": "E3" if args.mode == "e3" else "E9",
+        "git_sha": git_sha(args.root),
         "timestamp_utc": datetime.now(timezone.utc).isoformat(timespec="seconds"),
         "device": args.device, "dataset": args.dataset, "schedule": args.schedule,
         "topology": "client egress netem (delay = full RTT), wired",

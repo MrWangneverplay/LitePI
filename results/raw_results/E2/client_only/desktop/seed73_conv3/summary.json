@@ -1,0 +1,72 @@
+{
+  "experiment": "E2",
+  "metric": "M_client (client process only)",
+  "git_sha": "a8c5db6d05ff940abd624949d7acc51202558149-dirty",
+  "measured_at": "2026-11-03T08:51:41+00:00",
+  "device": "desktop",
+  "wire": "baseline",
+  "seed": 73,
+  "method": "pi_server and pi_client as separate processes; client ru_maxrss over Setup + queries",
+  "rows": [
+    {
+      "dataset": "conv3",
+      "schedule": "0100",
+      "mode": "oneshot",
+      "m0_streamed": false,
+      "client_peak_rss_mb": 773.98,
+      "keygen_s": 0.70916,
+      "context_upload_s": 2.981887,
+      "queries": 3,
+      "bytes_sent": 214917271,
+      "bytes_received": 2366867,
+      "wire": "baseline",
+      "mpc_runtime": "litepi_sci",
+      "raw": "results/raw_results/E2/client_only/desktop/seed73_conv3/conv3_s0100_oneshot.json"
+    },
+    {
+      "dataset": "conv3",
+      "schedule": "0100",
+      "mode": "streamed",
+      "m0_streamed": true,
+      "client_peak_rss_mb": 122.16,
+      "keygen_s": 0.035784,
+      "context_upload_s": 0.777884,
+      "queries": 3,
+      "bytes_sent": 216426091,
+      "bytes_received": 2366869,
+      "wire": "baseline",
+      "mpc_runtime": "litepi_sci",
+      "raw": "results/raw_results/E2/client_only/desktop/seed73_conv3/conv3_s0100_streamed.json"
+    },
+    {
+      "dataset": "conv3",
+      "schedule": "1111",
+      "mode": "oneshot",
+      "m0_streamed": false,
+      "client_peak_rss_mb": 773.9,
+      "keygen_s": 0.605154,
+      "context_upload_s": 3.170584,
+      "queries": 3,
+      "bytes_sent": 234187585,
+      "bytes_received": 14166925,
+      "wire": "baseline",
+      "mpc_runtime": "litepi_sci",
+      "raw": "results/raw_results/E2/client_only/desktop/seed73_conv3/conv3_s1111_oneshot.json"
+    },
+    {
+      "dataset": "conv3",
+      "schedule": "1111",
+      "mode": "streamed",
+      "m0_streamed": true,
+      "client_peak_rss_mb": 120.97,
+      "keygen_s": 0.034305,
+      "context_upload_s": 0.708385,
+      "queries": 3,
+      "bytes_sent": 235696405,
+      "bytes_received": 14166924,
+      "wire": "baseline",
+      "mpc_runtime": "litepi_sci",
+      "raw": "results/raw_results/E2/client_only/desktop/seed73_conv3/conv3_s1111_streamed.json"
+    }
+  ]
+}

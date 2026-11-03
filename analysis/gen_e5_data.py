@@ -34,6 +34,7 @@ from pathlib import Path
 
 import planner as P
 from cost_model import CostModel, fit
+from data_manifest import git_sha
 
 ARCHS = ["mnist", "cifar10", "uci_har", "conv3"]
 DEFAULT_ACC_MIN = {"mnist": 0.975, "cifar10": 0.59, "uci_har": 0.89, "conv3": 0.82}
@@ -149,7 +150,7 @@ def main() -> int:
 
         canonical = arch in P.CANONICAL_MODELS
         record = {
-            "arch": arch, "acc_min": acc_min, "rtt_ms": args.rtt_ms,
+            "git_sha": git_sha(), "arch": arch, "acc_min": acc_min, "rtt_ms": args.rtt_ms,
             "bandwidth_mbps": args.bandwidth_mbps,
             "cost_device": cost.device, "wire": cost.wire,
             "r_h": cost.r_h, "r_h_scope": cost.r_h_scope,

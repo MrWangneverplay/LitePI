@@ -29,9 +29,12 @@ import time
 from datetime import datetime, timezone
 from pathlib import Path
 
+from data_manifest import git_sha
+
 ROOT = Path(__file__).resolve().parent.parent
 HERE = Path(__file__).resolve().parent
-DATASETS = ("mnist", "cifar10", "uci_har")
+DATASETS = ("mnist", "cifar10", "uci_har", "conv3")
+CANONICAL = ("mnist", "cifar10", "uci_har")
 
 
 def _free_port() -> int:
@@ -65,14 +68,26 @@ def run_pair(dataset: str, schedule: str, mode: str, args, out_dir: Path) -> dic
         #   python pi_server.py --dataset <ds> --schedule <s> --serve --port <p>
         host, _, p = args.server.rpartition(":")
         port = int(p)
-    srv_cmd = [sys.executable, "-u", str(HERE / "pi_server.py"), "--dataset", dataset,
-               "--schedule", ",".join(schedule), "--seed", str(args.seed),
-               "--port", str(port), "--backend", "seal", "--wire", args.wire,
-               "--serve"] + (["--mask-exact"] if args.mask_exact else [])
+    dim = 3072 if dataset == "conv3" else CANONICAL_SPECS[dataset].input_dim
+    if dataset == "conv3":
+        # model B lives in the deep path: pi_server takes the exported npz
+        # and its mask domains instead of a canonical checkpoint
+        tag = f"mid_s{schedule}_seed{args.seed}"
+        srv_cmd = [sys.executable, "-u", str(HERE / "pi_server.py"),
+                   "--deep-weights", str(args.root / "datas" / "weights" / f"{tag}.npz"),
+                   "--schedule", ",".join(schedule),
+                   "--mask-domains", str(args.root / "datas" / "mask_domains" / f"{tag}.json"),
+                   "--port", str(port), "--backend", "seal", "--wire", args.wire,
+                   "--serve"] + (["--mask-exact"] if args.mask_exact else [])
+    else:
+        srv_cmd = [sys.executable, "-u", str(HERE / "pi_server.py"), "--dataset", dataset,
+                   "--schedule", ",".join(schedule), "--seed", str(args.seed),
+                   "--port", str(port), "--backend", "seal", "--wire", args.wire,
+                   "--serve"] + (["--mask-exact"] if args.mask_exact else [])
     out = out_dir / f"{dataset}_s{schedule}_{mode}.json"
     cli_cmd = [sys.executable, str(HERE / "pi_client.py"), "--host", host,
                "--port", str(port), "--backend", "seal",
-               "--dim", str(CANONICAL_SPECS[dataset].input_dim),
+               "--dim", str(dim),
                "--repeat", str(args.repeat), "--reuse-context",
                "--timeout", str(args.timeout), "--out", str(out)]
     if mode == "streamed":
@@ -138,7 +153,7 @@ def main() -> int:
                            / "client_only" / args.device / f"seed{args.seed}")
     out_dir.mkdir(parents=True, exist_ok=True)
     rows = []
-    for ds in (DATASETS if args.all else (args.dataset,)):
+    for ds in (CANONICAL if args.all else (args.dataset,)):
         for sch in args.schedules.split(","):
             for mode in args.modes.split(","):
                 r = run_pair(ds, sch, mode, args, out_dir)
@@ -148,6 +163,7 @@ def main() -> int:
                       f"M0 {r['context_upload_s']:.2f} s  streamed={r['m0_streamed']}")
     (out_dir / "summary.json").write_text(json.dumps({
         "experiment": "E2", "metric": "M_client (client process only)",
+        "git_sha": git_sha(args.root),
         "measured_at": datetime.now(timezone.utc).isoformat(timespec="seconds"),
         "device": args.device, "wire": args.wire, "seed": args.seed,
         "method": "pi_server and pi_client as separate processes; "

@@ -1,0 +1,270 @@
+{
+  "exp_id": "E7",
+  "git_sha": "a8c5db6d05ff940abd624949d7acc51202558149-dirty",
+  "acc_floor": 0.82,
+  "rtt_ms": 50.0,
+  "bandwidth_mbps": 50.0,
+  "r_h": 6.025,
+  "timestamp_utc": "2026-11-03T08:17:54+00:00",
+  "schedules": {
+    "0100": {
+      "accuracy": 0.8306666666666667,
+      "agreement": 0.9947916666666666,
+      "K_h": 1,
+      "rounds": 8.025,
+      "client_s": 0.061462036458333334,
+      "server_s": 21.167616083333332,
+      "bytes": 14024060.416666666,
+      "sci_bytes": 3141632.0,
+      "elements": 4096
+    },
+    "0110": {
+      "accuracy": 0.8358666666666666,
+      "agreement": 1.0,
+      "K_h": 2,
+      "rounds": 14.05,
+      "client_s": 0.08892890104166667,
+      "server_s": 33.74653676041667,
+      "bytes": 19132382.739583332,
+      "sci_bytes": 6283264.0,
+      "elements": 8192
+    },
+    "1110": {
+      "accuracy": 0.8406000000000001,
+      "agreement": 1.0,
+      "K_h": 3,
+      "rounds": 20.075000000000003,
+      "client_s": 0.15434548958333333,
+      "server_s": 26.48137038541667,
+      "bytes": 31839129.526041668,
+      "sci_bytes": 12566528.0,
+      "elements": 16384
+    },
+    "1111": {
+      "accuracy": 0.8314,
+      "agreement": 1.0,
+      "K_h": 4,
+      "rounds": 26.1,
+      "client_s": 0.16200777083333334,
+      "server_s": 29.048540848958336,
+      "bytes": 33993826.354166664,
+      "sci_bytes": 12754688.0,
+      "elements": 16640
+    }
+  },
+  "rows": [
+    {
+      "ablation": "wo_client_aware",
+      "status": "measured",
+      "full": {
+        "schedule": "0100",
+        "accuracy": 0.8306666666666667,
+        "agreement": 0.9947916666666666,
+        "K_h": 1,
+        "rounds": 8.025,
+        "client_s": 0.061462036458333334,
+        "server_s": 21.167616083333332,
+        "bytes": 14024060.416666666,
+        "sci_bytes": 3141632.0,
+        "elements": 4096
+      },
+      "ablated": {
+        "schedule": "0100",
+        "accuracy": 0.8306666666666667,
+        "agreement": 0.9947916666666666,
+        "K_h": 1,
+        "rounds": 8.025,
+        "client_s": 0.061462036458333334,
+        "server_s": 21.167616083333332,
+        "bytes": 14024060.416666666,
+        "sci_bytes": 3141632.0,
+        "elements": 4096
+      },
+      "effect": {
+        "client_s_x": 1.0,
+        "bytes_x": 1.0,
+        "rounds_delta": 0.0,
+        "server_s_x": 1.0
+      },
+      "source": "real ciphertext runs of model B"
+    },
+    {
+      "ablation": "wo_planner",
+      "status": "measured",
+      "full": {
+        "schedule": "0100",
+        "accuracy": 0.8306666666666667,
+        "agreement": 0.9947916666666666,
+        "K_h": 1,
+        "rounds": 8.025,
+        "client_s": 0.061462036458333334,
+        "server_s": 21.167616083333332,
+        "bytes": 14024060.416666666,
+        "sci_bytes": 3141632.0,
+        "elements": 4096
+      },
+      "ablated": {
+        "all_p2": "0000 is not deployable: depth 9",
+        "all_hybrid": {
+          "schedule": "1111",
+          "accuracy": 0.8314,
+          "agreement": 1.0,
+          "K_h": 4,
+          "rounds": 26.1,
+          "client_s": 0.16200777083333334,
+          "server_s": 29.048540848958336,
+          "bytes": 33993826.354166664,
+          "sci_bytes": 12754688.0,
+          "elements": 16640
+        }
+      },
+      "effect": {
+        "accuracy_delta": 0.0007333333333333636,
+        "bytes_x": 2.4239646253782006,
+        "rounds_delta": 18.075000000000003
+      },
+      "source": "real ciphertext runs of model B"
+    },
+    {
+      "ablation": "wo_stream_keys",
+      "status": "measured",
+      "full": {
+        "client_peak_mb": 121.05166666666666
+      },
+      "ablated": {
+        "client_peak_mb": 773.9233333333333
+      },
+      "effect": {
+        "memory_x": 6.393330671476367
+      },
+      "source": "measure_client_memory.py, client process only"
+    },
+    {
+      "ablation": "wo_share_decrypt",
+      "status": "derived",
+      "full": {
+        "per_layer_extra": 0
+      },
+      "ablated": {
+        "per_layer_extra_bytes": 917625,
+        "per_layer_extra_rounds": 1,
+        "per_layer_extra_encryptions": 1
+      },
+      "effect": null,
+      "source": "protocol count times the measured fresh ciphertext"
+    },
+    {
+      "ablation": "wo_fusion",
+      "status": "derived",
+      "full": {
+        "deployable_schedules": 13,
+        "depth_s0100": 5
+      },
+      "ablated": {
+        "deployable_schedules": 8,
+        "depth_s0100": 7
+      },
+      "effect": {
+        "budget_measured": 6,
+        "of_schedules": 16
+      },
+      "source": "depth count against the measured SEAL chain"
+    },
+    {
+      "ablation": "wo_packing",
+      "status": "derived",
+      "full": {
+        "ciphertexts": 2,
+        "bytes": 1835250
+      },
+      "ablated": {
+        "ciphertexts": 6912,
+        "bytes": 6342624000
+      },
+      "effect": {
+        "bytes_x": 3456.0
+      },
+      "source": "measured M1 size times the ciphertext count"
+    },
+    {
+      "ablation": "gc_route",
+      "status": "baseline",
+      "full": {
+        "bytes_per_relu": 766.876923076923
+      },
+      "ablated": {
+        "bytes_per_relu_offline": 18923.11775147929,
+        "bytes_per_relu_online": 1147.996449704142,
+        "client_cpu_s_all_relu": 1.77,
+        "client_cpu_s_all_poly": 3.2
+      },
+      "effect": {
+        "total_bytes_x": 26.17253642299282,
+        "online_bytes_x": 1.4969761315780132
+      },
+      "source": "Delphi reproduction (L0 minus L7) against real SCI bytes"
+    },
+    {
+      "ablation": "mask_reuse",
+      "status": "measured",
+      "full": {
+        "mnist": {
+          "mean": 0.4999765625,
+          "std": 0.0038504164037066768,
+          "values": [
+            0.496640625,
+            0.5012890625,
+            0.4993359375,
+            0.50591796875,
+            0.49669921875
+          ]
+        },
+        "cifar10": {
+          "mean": 0.49988083333333333,
+          "std": 0.0006802560281900451,
+          "values": [
+            0.5003458333333334,
+            0.5006583333333333,
+            0.49900833333333333,
+            0.49937916666666665,
+            0.5000125
+          ]
+        },
+        "uci_har": {
+          "mean": 0.5000648148148148,
+          "std": 0.001671923137745262,
+          "values": [
+            0.500813492063492,
+            0.5020304232804232,
+            0.49828703703703703,
+            0.5008531746031746,
+            0.4983399470899471
+          ]
+        }
+      },
+      "ablated": {
+        "mnist": 4.6533306837385985e-09,
+        "cifar10": 2.2157829457753242e-08,
+        "uci_har": 2.5689800576373028e-08
+      },
+      "effect": null,
+      "source": "E10a: fresh sign recovery against the reuse residual"
+    },
+    {
+      "ablation": "wo_offline",
+      "status": "n/a",
+      "full": null,
+      "ablated": null,
+      "effect": null,
+      "source": "LinearEval encodes the weights online; the encoding cache is not built"
+    },
+    {
+      "ablation": "wo_rand_trunc",
+      "status": "n/a",
+      "full": null,
+      "ablated": null,
+      "effect": null,
+      "source": "SCI ReLU and the fallback only compare and select; no truncation exists"
+    }
+  ]
+}

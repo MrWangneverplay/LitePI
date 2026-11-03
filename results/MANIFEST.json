@@ -1,0 +1,538 @@
+{
+  "_rule": "论文里的数字只能来自这里 status=valid 或 partial 的条目（partial 按 reason 限定范围）。工具：analysis/data_manifest.py",
+  "entries": [
+    {
+      "id": "T7-4",
+      "name": "canonical 四调度明文精度",
+      "status": "valid",
+      "freeze_exempt": true,
+      "min_files": 60,
+      "sources": [
+        "results/raw_results/E1/*/hybrid_s[01][01]/seed*.json"
+      ],
+      "producer": "analysis/train_hybrid.py"
+    },
+    {
+      "id": "T7-5",
+      "name": "canonical 密文一致率（M2 v2）",
+      "status": "partial",
+      "min_files": 121,
+      "sources": [
+        "results/raw_results/E1/*/hybrid_s[01][01]_acc_seal/seed*.json",
+        "results/agreement/E1/*/hybrid_s[01][01]_acc_seal/*.json",
+        "results/agreement/*.*"
+      ],
+      "producer": "analysis/eval_hybrid_accuracy.py",
+      "reason": "一致率和 logit 误差可用；字节列不含 SCI，不要引用"
+    },
+    {
+      "id": "T7-5-v3",
+      "name": "E1 抽查（M2 v3）",
+      "status": "pending",
+      "min_files": 3,
+      "sources": [
+        "results/raw_results/E1/*/hybrid_s11_acc_seal_maskv3/seed*.json"
+      ],
+      "producer": "analysis/eval_hybrid_accuracy.py --mask-exact",
+      "reason": "3 数据集 × s11 × 64 样本"
+    },
+    {
+      "id": "T7-5-he",
+      "name": "HE-only 大样本密文精度",
+      "status": "partial",
+      "min_files": 15,
+      "sources": [
+        "results/raw_results/E1/*/he_only_ciphertext_seal/seed*.json"
+      ],
+      "producer": "analysis/eval_encrypted.py",
+      "reason": "CIFAR、UCI 按顺序取前 200 个样本，要换成随机抽样 ≥200"
+    },
+    {
+      "id": "T7-6",
+      "name": "加深网络 ReLU 与 P2 明文对比",
+      "status": "partial",
+      "freeze_exempt": true,
+      "min_files": 49,
+      "sources": [
+        "results/raw_results/E1/cifar10/deep/*_conv[234]_rgb_bn/seed*.json",
+        "results/raw_results/E1/cifar10/deep/*_depth[234]/seed*.json",
+        "results/raw_results/E1/cifar10/deep/summary_rgb_bn.json"
+      ],
+      "producer": "analysis/train_deep_conv.py, analysis/train_deep.py",
+      "reason": "精度可用；卷积行记录的深度是错的（真实为 2N+3），78.59% 不是可部署基线"
+    },
+    {
+      "id": "T7-7",
+      "name": "HE-only 客户端在线时间",
+      "status": "valid",
+      "freeze_exempt": true,
+      "min_files": 31,
+      "sources": [
+        "results/raw_results/E2/*/litepi_seal/seed*.json",
+        "results/raw_results/E2_pi5/*/litepi_seal/seed*.json",
+        "results/raw_results/E2_pi5/summary_pi5.json"
+      ],
+      "producer": "analysis/eval_client_overhead.py",
+      "reason": "桌面机 CIFAR、UCI 的 seed73 是并发测的，计时要剔除"
+    },
+    {
+      "id": "T7-8",
+      "name": "Hybrid 层客户端边际开销",
+      "status": "partial",
+      "min_files": 60,
+      "sources": [
+        "results/raw_results/E1/*/hybrid_s[01][01]_acc_seal/seed*.json"
+      ],
+      "producer": "analysis/cost_model.py",
+      "reason": "桌面机 v2 可用；v3 解码和 Pi 5 待测"
+    },
+    {
+      "id": "T7-9",
+      "name": "客户端峰值内存",
+      "status": "partial",
+      "min_files": 1,
+      "sources": [
+        "results/raw_results/E2/client_only/desktop/seed*/summary.json"
+      ],
+      "producer": "analysis/measure_client_memory.py",
+      "reason": "桌面机 streamed 单次会话；oneshot 对照、多次重复和 Pi 5 待测"
+    },
+    {
+      "id": "T7-9-pi5",
+      "name": "Pi 5 客户端内存与 hybrid 开销",
+      "status": "pending",
+      "min_files": 1,
+      "sources": [
+        "results/raw_results/E2/client_only/pi5/seed*/summary.json"
+      ],
+      "producer": "analysis/measure_client_memory.py --device pi5 --server <host>:<port>"
+    },
+    {
+      "id": "T7-10",
+      "name": "密文与密钥字节阶梯",
+      "status": "valid",
+      "freeze_exempt": true,
+      "min_files": 5,
+      "sources": [
+        "results/raw_results/E4/all/comm_bytes/*.json"
+      ],
+      "producer": "analysis/comm_bytes.py"
+    },
+    {
+      "id": "T7-11",
+      "name": "每查询字节与线格式",
+      "status": "partial",
+      "min_files": 6,
+      "sources": [
+        "results/raw_results/E4/all/wire_bytes/seed73.json",
+        "results/raw_results/E4/all/key_compression/seed*.json"
+      ],
+      "producer": "analysis/measure_wire_bytes.py",
+      "reason": "只有密文字节；要加 SCI，并用 M2 v3 和 zstd 版 SEAL 重测"
+    },
+    {
+      "id": "E1-SCI",
+      "name": "SCI 每 ReLU 字节",
+      "status": "valid",
+      "freeze_exempt": true,
+      "min_files": 3,
+      "sources": [
+        "results/raw_results/E1/*/hybrid_s11_acc_seal_sci/seed*.json"
+      ],
+      "producer": "analysis/eval_hybrid_accuracy.py --out-tag _seal_sci",
+      "reason": "只用于 SCI 字节，4 个样本，不是精度数据"
+    },
+    {
+      "id": "T7-12",
+      "name": "每 hybrid 层往返数 r_h",
+      "status": "valid",
+      "freeze_exempt": true,
+      "min_files": 3,
+      "sources": [
+        "results/rounds/r_h_netem_*.json"
+      ],
+      "producer": "analysis/netem_e2e.py --fit-only"
+    },
+    {
+      "id": "T7-13",
+      "name": "netem 端到端延迟",
+      "status": "partial",
+      "min_files": 12,
+      "sources": [
+        "results/raw_results/E3/desktop/netem_*/run.json"
+      ],
+      "producer": "analysis/netem_e2e.py --mode e3",
+      "reason": "桌面机回环、不限速；全网格和两机实测待做"
+    },
+    {
+      "id": "T7-14",
+      "name": "每层边际网络代价",
+      "status": "stale",
+      "min_files": 1,
+      "sources": [
+        "results/raw_results/E3/all/rtt_scan/*.json"
+      ],
+      "producer": "analysis/rtt_sensitivity.py",
+      "reason": "每层 1410 KB 只算了 2 KB OT，要换成真实 SCI 字节"
+    },
+    {
+      "id": "T7-15",
+      "name": "丢包与抖动（旧解析模型）",
+      "status": "stale",
+      "min_files": 1,
+      "sources": [
+        "results/E9/e9_summary.json",
+        "results/E9/e9_robustness.csv",
+        "results/E9/e9_adaptive.csv"
+      ],
+      "producer": "旧版 gen_e9_data.py",
+      "reason": "把一个 flight 当一个包，结论不成立"
+    },
+    {
+      "id": "T7-15-new",
+      "name": "丢包与抖动（netem 实测）",
+      "status": "pending",
+      "min_files": 1,
+      "sources": [
+        "results/E9/e9_measured.json"
+      ],
+      "producer": "analysis/netem_e2e.py --mode e9，再 analysis/gen_e9_data.py"
+    },
+    {
+      "id": "T7-16",
+      "name": "canonical 各策略选择",
+      "status": "stale",
+      "min_files": 1,
+      "sources": [
+        "results/E5/e5_planner_mnist.json",
+        "results/E5/e5_planner_cifar10.json",
+        "results/E5/e5_planner_uci_har.json"
+      ],
+      "producer": "analysis/gen_e5_data.py",
+      "reason": "planner 已重写，要重新生成"
+    },
+    {
+      "id": "T7-17",
+      "name": "VGG / fast 策略表",
+      "status": "archive",
+      "min_files": 0,
+      "sources": [
+        "results/E5/e5_planner_vgg.*",
+        "results/E5/e5_planner_fast.*",
+        "results/E5/acc084/*"
+      ],
+      "producer": "旧版 gen_e5_data.py",
+      "reason": "精度和服务端时间都是外推，改用模型 B"
+    },
+    {
+      "id": "T7-17-new",
+      "name": "模型 B 策略表",
+      "status": "pending",
+      "min_files": 1,
+      "sources": [
+        "results/E5/e5_planner_conv3.json"
+      ],
+      "producer": "analysis/gen_e5_data.py"
+    },
+    {
+      "id": "MODEL-B-TRAIN",
+      "name": "模型 B 全调度明文精度",
+      "status": "pending",
+      "min_files": 48,
+      "sources": [
+        "results/raw_results/E1/cifar10/mid/s[01][01][01][01]/seed*.json"
+      ],
+      "producer": "analysis/train_mid.py --schedules all --num-seeds 3"
+    },
+    {
+      "id": "MODEL-B-CIPHER",
+      "name": "模型 B 密文一致率、字节、时延",
+      "status": "pending",
+      "min_files": 13,
+      "sources": [
+        "results/raw_results/E1/cifar10/mid/s*_cipher_maskv3/seed*.json"
+      ],
+      "producer": "analysis/eval_deep_accuracy.py --mask-exact"
+    },
+    {
+      "id": "HE-BASELINE",
+      "name": "深度 ≤6 的最好 HE-only 基线",
+      "status": "pending",
+      "min_files": 3,
+      "sources": [
+        "results/raw_results/E1/cifar10/he_baseline/*/seed*.json"
+      ],
+      "producer": "待写脚本（RGB + BN 的 K=2 全 P2）"
+    },
+    {
+      "id": "T7-18",
+      "name": "事后替换 vs 按调度重训",
+      "status": "valid",
+      "freeze_exempt": true,
+      "min_files": 18,
+      "sources": [
+        "results/raw_results/E1/*/twin_substitution/*.json"
+      ],
+      "producer": "analysis/eval_twin_substitution.py",
+      "reason": "只证明调度要在训练期确定，不证明 Hybrid 的价值"
+    },
+    {
+      "id": "T7-19",
+      "name": "掩码复用与新鲜掩码",
+      "status": "partial",
+      "min_files": 91,
+      "sources": [
+        "results/raw_results/E10/all/summary_5seeds.json",
+        "results/raw_results/E10/*/mask_*/seed*.json"
+      ],
+      "producer": "analysis/leak_quant.py",
+      "reason": "v1、v2 可用；v3 组待跑"
+    },
+    {
+      "id": "T7-20",
+      "name": "M2 统计强度",
+      "status": "valid",
+      "freeze_exempt": true,
+      "min_files": 3,
+      "sources": [
+        "datas/mask_domains/*_s11_seed73.json"
+      ],
+      "producer": "analysis/mask_session.py --report",
+      "reason": "v2：2^-30.0 / 2^-28.3 / 2^-28.0；v3 加 --exact"
+    },
+    {
+      "id": "T7-21",
+      "name": "输出档位与成员推理",
+      "status": "stale",
+      "min_files": 30,
+      "sources": [
+        "results/raw_results/E10/*/mia_logits/seed*.json",
+        "results/raw_results/E10/*/mia_index_only/seed*.json"
+      ],
+      "producer": "analysis/leak_quant.py",
+      "reason": "文件来自 427d9e7，早于 c7e9e3d 的采样修复，要重跑"
+    },
+    {
+      "id": "T7-22",
+      "name": "随机截断 vs 直接截断",
+      "status": "archive",
+      "min_files": 0,
+      "sources": [
+        "results/E7/e7_truncation.*",
+        "results/E7/e7_summary.json"
+      ],
+      "producer": "analysis/gen_e7_data.py",
+      "reason": "主协议没有定点乘法和截断，不进 Table 8"
+    },
+    {
+      "id": "T7-23",
+      "name": "调度混淆代价",
+      "status": "partial",
+      "min_files": 2,
+      "sources": [
+        "results/E10/all/scheduling_obfuscation_measured/*"
+      ],
+      "producer": "analysis/gen_e10c_data.py",
+      "reason": "10-29 回环实测（M2 v2，baseline）；字节不含 SCI，要在 --mask-exact 下重测"
+    },
+    {
+      "id": "T7-24",
+      "name": "三种配置点对比",
+      "status": "stale",
+      "min_files": 0,
+      "sources": [],
+      "producer": "由 T7-4、T7-5、T7-11 汇总",
+      "reason": "字节不含 SCI"
+    },
+    {
+      "id": "T7-25",
+      "name": "LitePI 与 Delphi 客户端成本",
+      "status": "partial",
+      "min_files": 3,
+      "sources": [
+        "results/E_delphi/delphi_minionn_summary.csv",
+        "results/E_delphi/delphi_minionn_raw.csv",
+        "results/E_delphi/delphi_minionn_18thread.csv",
+        "results/E_delphi/*.md",
+        "results/E_delphi/logs/*",
+        "results/E_delphi/scripts/*"
+      ],
+      "producer": "Delphi 官方实现",
+      "reason": "Delphi 侧可用；LitePI 侧字节、内存和 CPU 口径要重测"
+    },
+    {
+      "id": "DELPHI-SAME",
+      "name": "Delphi 同模型对比",
+      "status": "pending",
+      "min_files": 1,
+      "sources": [
+        "results/E_delphi/litepi_*.csv"
+      ],
+      "producer": "Delphi litepi_canonical / litepi_mid 入口（待写）"
+    },
+    {
+      "id": "T8",
+      "name": "E7 消融 Table 8",
+      "status": "pending",
+      "min_files": 1,
+      "sources": [
+        "results/E7/e7_table8.json"
+      ],
+      "producer": "analysis/gen_e7_table8.py"
+    },
+    {
+      "id": "T8-old",
+      "name": "旧 planner 消融",
+      "status": "archive",
+      "min_files": 0,
+      "sources": [
+        "results/E7/e7_planner_ablations.*"
+      ],
+      "producer": "旧版 gen_e7_ablations.py",
+      "reason": "基于旧 planner"
+    },
+    {
+      "id": "T10",
+      "name": "E8 设备异构",
+      "status": "stale",
+      "min_files": 1,
+      "sources": [
+        "results/E8/e8_devices.json",
+        "results/E8/e8_table10.csv"
+      ],
+      "producer": "analysis/gen_e8_data.py",
+      "reason": "planner 和 E8 都已重写，要重新生成"
+    },
+    {
+      "id": "E6",
+      "name": "能耗",
+      "status": "pending",
+      "min_files": 1,
+      "sources": [
+        "results/raw_results/E6/*/*.json"
+      ],
+      "producer": "待设备：功率计"
+    },
+    {
+      "id": "PARAM-128",
+      "name": "128-bit 参数校核",
+      "status": "pending",
+      "min_files": 1,
+      "sources": [
+        "results/checks/lattice_estimator*.json"
+      ],
+      "producer": "lattice-estimator"
+    },
+    {
+      "id": "OLD-E1",
+      "name": "旧网络与早期精度",
+      "status": "archive",
+      "min_files": 0,
+      "sources": [
+        "results/raw_results/E1/*/plain_relu/*.json",
+        "results/raw_results/E1/*/plain_poly/*.json",
+        "results/raw_results/E1/*/approx_*/*.json",
+        "results/raw_results/E1/*/relu_baseline/*.json",
+        "results/raw_results/E1/*/hybrid_s11_seal/*.json",
+        "results/raw_results/E1/*/hybrid_s11_acc_seal_smoke/*.json",
+        "results/raw_results/E1/cifar10/deep/_archived_mismatch/*/*.json",
+        "results/raw_results/E4/all/wire_bytes/_archived_mismatch/*.json",
+        "results/agreement/E1/*/hybrid_s11_acc_seal_smoke/*.json"
+      ],
+      "producer": "早期脚本",
+      "reason": "旧网络结构或冒烟结果"
+    },
+    {
+      "id": "OLD-COST",
+      "name": "旧成本模型 JSON",
+      "status": "archive",
+      "min_files": 0,
+      "sources": [
+        "results/cost_model/*.json"
+      ],
+      "producer": "analysis/cost_model.py",
+      "reason": "现在从 results 现场拟合"
+    },
+    {
+      "id": "T7-23-old",
+      "name": "调度混淆解析估算",
+      "status": "archive",
+      "min_files": 0,
+      "sources": [
+        "results/raw_results/E10/all/scheduling_obfuscation/seed*.json"
+      ],
+      "producer": "analysis/leak_quant.py",
+      "reason": "已被实测结果取代"
+    },
+    {
+      "id": "FAST-CHECK",
+      "name": "fast 结构精度与 planner 单点验证",
+      "status": "partial",
+      "min_files": 7,
+      "sources": [
+        "results/raw_results/E1/cifar10/deep/gpu_*/seed*.json",
+        "results/raw_results/E1/cifar10/deep/sensitivity/*.json"
+      ],
+      "producer": "analysis/train_deep_conv.py --arch fast, analysis/measure_sensitivity.py",
+      "reason": "明文精度可作背景；sensitivity 文件的 retrain 字段为空，planner 已不再使用"
+    },
+    {
+      "id": "ADAPTIVE-OLD",
+      "name": "canonical 自适应密文汇总",
+      "status": "stale",
+      "min_files": 3,
+      "sources": [
+        "results/raw_results/E1/*/adaptive_seal/*.json"
+      ],
+      "producer": "analysis/adaptive_eval.py",
+      "reason": "planner 重写后要重新生成"
+    },
+    {
+      "id": "E2-TENSEAL",
+      "name": "E2 旧版 he_only",
+      "status": "archive",
+      "min_files": 0,
+      "sources": [
+        "results/raw_results/E2/*/he_only/*.json"
+      ],
+      "producer": "早期 TenSEAL 脚本",
+      "reason": "已被 litepi_seal 五种子结果取代"
+    },
+    {
+      "id": "PI-HYBRID-OLD",
+      "name": "早期 Pi hybrid 记录",
+      "status": "stale",
+      "min_files": 1,
+      "sources": [
+        "results/pi_hybrid/*"
+      ],
+      "producer": "未核对",
+      "reason": "尚未核对协议版本，先不引用，也不归档"
+    },
+    {
+      "id": "ENG-CHECKS",
+      "name": "工程自检（SEAL、掩码精度等）",
+      "status": "partial",
+      "freeze_exempt": true,
+      "min_files": 2,
+      "sources": [
+        "results/checks/*",
+        "results/seal_backend/*.json",
+        "results/seal_backend/seal41/*"
+      ],
+      "producer": "各 check 脚本",
+      "reason": "工程验证，不进论文表"
+    },
+    {
+      "id": "E3-PROBE",
+      "name": "DeepSeek netem 探针",
+      "status": "partial",
+      "min_files": 1,
+      "sources": [
+        "results/raw_results/E3/desktop_probe/*/*"
+      ],
+      "producer": "DeepSeek",
+      "reason": "未入库，用途待 DeepSeek 确认，先不引用"
+    }
+  ]
+}

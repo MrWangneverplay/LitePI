@@ -43,15 +43,15 @@
   "hybrid_layers": 0,
   "prediction": 7,
   "reuse_context": true,
-  "repeat": 2,
+  "repeat": 3,
   "output_mode": "logits",
-  "wall_s": 15.3753,
+  "wall_s": 23.3848,
   "timings": {
-    "keygen_s": 0.042371,
-    "context_upload_s": 0.766513,
-    "encrypt_input_s": 0.012024,
+    "keygen_s": 0.036603,
+    "context_upload_s": 0.691482,
+    "encrypt_input_s": 0.018952,
     "encode_input_s": 0.0,
-    "decrypt_s": 0.002159,
+    "decrypt_s": 0.002193,
     "mpc_s": 0.0,
     "reencrypt_s": 0.0,
     "mpc_elements": 0,
@@ -60,19 +60,19 @@
   "queries": [
     {
       "query_index": 0,
-      "wall_s": 7.2571,
+      "wall_s": 7.5953,
       "timings": {
-        "encrypt_input_s": 0.005815,
-        "decrypt_s": 0.001464,
+        "encrypt_input_s": 0.006461,
+        "decrypt_s": 0.000597,
         "mpc_s": 0.0,
         "reencrypt_s": 0.0
       },
       "mpc_elements": 0,
       "base_ots": 0,
       "bytes_sent": 917641,
-      "bytes_received": 263743,
+      "bytes_received": 263744,
       "online_up_bytes": 917641,
-      "online_down_bytes": 263743,
+      "online_down_bytes": 263744,
       "sci_bytes_sent": 0,
       "sci_bytes_received": 0,
       "server": {
@@ -139,16 +139,16 @@
         "output_mode": "logits",
         "query_index": 0,
         "reused_context": false,
-        "wall_s": 8.0663,
+        "wall_s": 8.3245,
         "timings": {
-          "linear_s": 7.195592,
-          "hybrid_relu_s": 0.01765,
+          "linear_s": 7.531843,
+          "hybrid_relu_s": 0.010794,
           "mpc_s": 0.0,
           "mpc_elements": 0,
           "base_ots": 0,
           "hybrid_wire_sends": 0,
           "hybrid_wire_recvs": 0,
-          "forward_s": 7.213271
+          "forward_s": 7.542667
         },
         "bytes_sent": 262290,
         "bytes_received": 187061441,
@@ -158,10 +158,10 @@
     },
     {
       "query_index": 1,
-      "wall_s": 7.046,
+      "wall_s": 7.392,
       "timings": {
-        "encrypt_input_s": 0.006209,
-        "decrypt_s": 0.000695,
+        "encrypt_input_s": 0.005783,
+        "decrypt_s": 0.000746,
         "mpc_s": 0.0,
         "reencrypt_s": 0.0
       },
@@ -237,16 +237,114 @@
         "output_mode": "logits",
         "query_index": 1,
         "reused_context": true,
-        "wall_s": 7.0457,
+        "wall_s": 7.3916,
         "timings": {
-          "linear_s": 6.993795,
-          "hybrid_relu_s": 0.010119,
+          "linear_s": 7.334564,
+          "hybrid_relu_s": 0.010656,
           "mpc_s": 0.0,
           "mpc_elements": 0,
           "base_ots": 0,
           "hybrid_wire_sends": 0,
           "hybrid_wire_recvs": 0,
-          "forward_s": 7.003938
+          "forward_s": 7.345249
+        },
+        "bytes_sent": 262282,
+        "bytes_received": 917641,
+        "sci_bytes_sent": 0,
+        "sci_setup_bytes_sent": 163141
+      }
+    },
+    {
+      "query_index": 2,
+      "wall_s": 7.3937,
+      "timings": {
+        "encrypt_input_s": 0.006708,
+        "decrypt_s": 0.00085,
+        "mpc_s": 0.0,
+        "reencrypt_s": 0.0
+      },
+      "mpc_elements": 0,
+      "base_ots": 0,
+      "bytes_sent": 917641,
+      "bytes_received": 263740,
+      "online_up_bytes": 917641,
+      "online_down_bytes": 263740,
+      "sci_bytes_sent": 0,
+      "sci_bytes_received": 0,
+      "server": {
+        "role": "server/party0",
+        "backend": "seal",
+        "simulation": false,
+        "deployment_compliant": true,
+        "protocol_failures": [],
+        "protocol_pending": [],
+        "mpc_backend": "litepi_sci",
+        "required_mpc_backend": "SCI/CrypTFlow2",
+        "mask_policy": "prg(seed_session,query,layer)",
+        "mask_domain_aligned": true,
+        "mask_resync_policy": "query-counter-gap-or-abort",
+        "profile_name": "paper-profile-B",
+        "paper_profile": true,
+        "poly_modulus_degree": 8192,
+        "coeff_mod_bit_sizes": [
+          40,
+          21,
+          21,
+          21,
+          21,
+          21,
+          21,
+          40
+        ],
+        "global_scale_bits": 21,
+        "k_ring": 44,
+        "k_compare": 14,
+        "f": 8,
+        "sigma": 30,
+        "architecture": "canonical_cnn",
+        "dims": [
+          784,
+          256,
+          64,
+          10
+        ],
+        "hybrid_layers": 0,
+        "schedule": [
+          0,
+          0
+        ],
+        "protocol_online_rounds": 2,
+        "protocol_online_messages": 2,
+        "mask_domains": {},
+        "mask_domains_fitted": {},
+        "schedule_obfuscated": false,
+        "obfuscation_level_aligned": false,
+        "obfuscation_levels_bits": null,
+        "dummy_legs": 0,
+        "wire": {
+          "name": "baseline",
+          "compr": "none",
+          "seeded_client": false,
+          "seeded_keys": false,
+          "modswitch_send": false,
+          "short_chain": false
+        },
+        "wire_plan": null,
+        "hybrid_roundtrips": 0,
+        "hybrid_r_h": 0.0,
+        "output_mode": "logits",
+        "query_index": 2,
+        "reused_context": true,
+        "wall_s": 7.3935,
+        "timings": {
+          "linear_s": 7.334096,
+          "hybrid_relu_s": 0.009832,
+          "mpc_s": 0.0,
+          "mpc_elements": 0,
+          "base_ots": 0,
+          "hybrid_wire_sends": 0,
+          "hybrid_wire_recvs": 0,
+          "forward_s": 7.343953
         },
         "bytes_sent": 262282,
         "bytes_received": 917641,
@@ -256,11 +354,11 @@
     }
   ],
   "last_query": {
-    "query_index": 1,
-    "wall_s": 7.046,
+    "query_index": 2,
+    "wall_s": 7.3937,
     "timings": {
-      "encrypt_input_s": 0.006209,
-      "decrypt_s": 0.000695,
+      "encrypt_input_s": 0.006708,
+      "decrypt_s": 0.00085,
       "mpc_s": 0.0,
       "reencrypt_s": 0.0
     },
@@ -334,18 +432,18 @@
       "hybrid_roundtrips": 0,
       "hybrid_r_h": 0.0,
       "output_mode": "logits",
-      "query_index": 1,
+      "query_index": 2,
       "reused_context": true,
-      "wall_s": 7.0457,
+      "wall_s": 7.3935,
       "timings": {
-        "linear_s": 6.993795,
-        "hybrid_relu_s": 0.010119,
+        "linear_s": 7.334096,
+        "hybrid_relu_s": 0.009832,
         "mpc_s": 0.0,
         "mpc_elements": 0,
         "base_ots": 0,
         "hybrid_wire_sends": 0,
         "hybrid_wire_recvs": 0,
-        "forward_s": 7.003938
+        "forward_s": 7.343953
       },
       "bytes_sent": 262282,
       "bytes_received": 917641,
@@ -353,8 +451,8 @@
       "sci_setup_bytes_sent": 163141
     }
   },
-  "bytes_sent": 187979317,
-  "bytes_received": 528813,
+  "bytes_sent": 188897071,
+  "bytes_received": 792562,
   "server": {
     "role": "server/party0",
     "backend": "seal",
@@ -417,18 +515,18 @@
     "hybrid_roundtrips": 0,
     "hybrid_r_h": 0.0,
     "output_mode": "logits",
-    "query_index": 1,
+    "query_index": 2,
     "reused_context": true,
-    "wall_s": 7.0457,
+    "wall_s": 7.3935,
     "timings": {
-      "linear_s": 6.993795,
-      "hybrid_relu_s": 0.010119,
+      "linear_s": 7.334096,
+      "hybrid_relu_s": 0.009832,
       "mpc_s": 0.0,
       "mpc_elements": 0,
       "base_ots": 0,
       "hybrid_wire_sends": 0,
       "hybrid_wire_recvs": 0,
-      "forward_s": 7.003938
+      "forward_s": 7.343953
     },
     "bytes_sent": 262282,
     "bytes_received": 917641,
@@ -436,7 +534,7 @@
     "sci_setup_bytes_sent": 163141
   },
   "mpc_runtime": "litepi_sci",
-  "client_peak_rss_mb": 112.94,
+  "client_peak_rss_mb": 121.09,
   "m0_streamed": true,
   "wire": {
     "name": "baseline",
@@ -448,16 +546,16 @@
   },
   "enc_timing_includes_serialization": false,
   "logits": [
-    -19.634067,
-    -7.032096,
-    28.011362,
-    -2.009865,
-    -24.295922,
-    -22.770994,
-    -80.820322,
-    30.932656,
-    -19.823742,
-    -17.682986
+    -19.598839,
+    -7.030573,
+    27.968724,
+    -2.012253,
+    -24.340517,
+    -22.79505,
+    -80.765783,
+    30.88163,
+    -19.788388,
+    -17.699817
   ],
   "seed": 7
 }

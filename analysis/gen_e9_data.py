@@ -38,6 +38,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 
 import planner as P
+from data_manifest import git_sha
 from gen_e5_data import DEFAULT_ACC_MIN
 
 ROOT = Path(__file__).resolve().parent.parent
@@ -50,8 +51,10 @@ def load_points(root: Path, device: str) -> list[dict]:
         dataset, schedule = re.search(r"netem_(.+)_s(\d+)", path).groups()
         run = json.loads(Path(path).read_text(encoding="utf-8"))
         for p in run["points"]:
-            rows.append({"dataset": dataset, "schedule": schedule,
-                         "delay_mult": run.get("delay_mult", 1.0), **p})
+            # the run stores the schedule as a bit list; keep the directory's
+            # string label as the hashable key
+            rows.append({**p, "dataset": dataset, "schedule": schedule,
+                         "delay_mult": run.get("delay_mult", 1.0)})
     return rows
 
 
@@ -119,7 +122,7 @@ def main() -> int:
         writer.writeheader()
         writer.writerows(points)
     (out / "e9_measured.json").write_text(json.dumps({
-        "exp_id": "E9", "device": args.device, "measured": True,
+        "exp_id": "E9", "git_sha": git_sha(args.root), "device": args.device, "measured": True,
         "timestamp_utc": datetime.now(timezone.utc).isoformat(timespec="seconds"),
         "points": points, "best_schedule_per_condition": best,
     }, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")

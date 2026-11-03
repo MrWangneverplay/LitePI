@@ -46,6 +46,7 @@ import numpy as np
 
 import planner as P
 from cost_model import fit
+from data_manifest import git_sha
 from pi_proto import make_backend
 
 ROOT = Path(__file__).resolve().parent.parent
@@ -271,7 +272,7 @@ def main() -> int:
     out = args.out or args.root / "results" / "E7"
     out.mkdir(parents=True, exist_ok=True)
     (out / "e7_table8.json").write_text(json.dumps({
-        "exp_id": "E7", "acc_floor": args.acc_floor, "rtt_ms": args.rtt_ms,
+        "exp_id": "E7", "git_sha": git_sha(args.root), "acc_floor": args.acc_floor, "rtt_ms": args.rtt_ms,
         "bandwidth_mbps": args.bandwidth_mbps, "r_h": R_H,
         "timestamp_utc": datetime.now(timezone.utc).isoformat(timespec="seconds"),
         "schedules": table, "rows": rows,

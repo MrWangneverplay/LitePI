@@ -43,29 +43,29 @@
   "hybrid_layers": 2,
   "prediction": 2,
   "reuse_context": true,
-  "repeat": 2,
+  "repeat": 3,
   "output_mode": "logits",
-  "wall_s": 22.2069,
+  "wall_s": 33.526,
   "timings": {
-    "keygen_s": 0.043162,
-    "context_upload_s": 0.776523,
-    "encrypt_input_s": 0.012455,
+    "keygen_s": 0.04362,
+    "context_upload_s": 0.692304,
+    "encrypt_input_s": 0.018468,
     "encode_input_s": 0.0,
-    "decrypt_s": 0.017191,
-    "mpc_s": 0.01894,
-    "reencrypt_s": 0.022555,
-    "mpc_elements": 640,
+    "decrypt_s": 0.017837,
+    "mpc_s": 0.026893,
+    "reencrypt_s": 0.036283,
+    "mpc_elements": 960,
     "base_ots": 0
   },
   "queries": [
     {
       "query_index": 0,
-      "wall_s": 10.5505,
+      "wall_s": 11.0953,
       "timings": {
-        "encrypt_input_s": 0.006631,
-        "decrypt_s": 0.008786,
-        "mpc_s": 0.008086,
-        "reencrypt_s": 0.011446
+        "encrypt_input_s": 0.007475,
+        "decrypt_s": 0.006293,
+        "mpc_s": 0.009459,
+        "reencrypt_s": 0.013271
       },
       "mpc_elements": 320,
       "base_ots": 0,
@@ -158,16 +158,16 @@
         "output_mode": "logits",
         "query_index": 0,
         "reused_context": false,
-        "wall_s": 11.3707,
+        "wall_s": 11.8315,
         "timings": {
-          "linear_s": 10.449202,
-          "hybrid_relu_s": 0.056107,
-          "mpc_s": 0.01442,
+          "linear_s": 10.977817,
+          "hybrid_relu_s": 0.06382,
+          "mpc_s": 0.015709,
           "mpc_elements": 320,
           "base_ots": 0,
           "hybrid_wire_sends": 2,
           "hybrid_wire_recvs": 2,
-          "forward_s": 10.505337
+          "forward_s": 11.041687
         },
         "bytes_sent": 2359702,
         "bytes_received": 188896709,
@@ -177,12 +177,129 @@
     },
     {
       "query_index": 1,
-      "wall_s": 10.5777,
+      "wall_s": 10.667,
       "timings": {
-        "encrypt_input_s": 0.005824,
-        "decrypt_s": 0.008405,
-        "mpc_s": 0.010854,
-        "reencrypt_s": 0.01111
+        "encrypt_input_s": 0.005419,
+        "decrypt_s": 0.005824,
+        "mpc_s": 0.009244,
+        "reencrypt_s": 0.011406
+      },
+      "mpc_elements": 320,
+      "base_ots": 0,
+      "bytes_sent": 2752909,
+      "bytes_received": 2361539,
+      "online_up_bytes": 2960749,
+      "online_down_bytes": 2397091,
+      "sci_bytes_sent": 207840,
+      "sci_bytes_received": 35552,
+      "server": {
+        "role": "server/party0",
+        "backend": "seal",
+        "simulation": false,
+        "deployment_compliant": true,
+        "protocol_failures": [],
+        "protocol_pending": [],
+        "mpc_backend": "litepi_sci",
+        "required_mpc_backend": "SCI/CrypTFlow2",
+        "mask_policy": "prg(seed_session,query,layer)",
+        "mask_domain_aligned": true,
+        "mask_resync_policy": "query-counter-gap-or-abort",
+        "profile_name": "paper-profile-B",
+        "paper_profile": true,
+        "poly_modulus_degree": 8192,
+        "coeff_mod_bit_sizes": [
+          40,
+          21,
+          21,
+          21,
+          21,
+          21,
+          21,
+          40
+        ],
+        "global_scale_bits": 21,
+        "k_ring": 44,
+        "k_compare": 14,
+        "f": 8,
+        "sigma": 30,
+        "architecture": "canonical_cnn",
+        "dims": [
+          784,
+          256,
+          64,
+          10
+        ],
+        "hybrid_layers": 2,
+        "schedule": [
+          1,
+          1
+        ],
+        "protocol_online_rounds": 4,
+        "protocol_online_messages": 6,
+        "mask_domains": {
+          "0": {
+            "lo": -4398046511104.0,
+            "hi": 4398046511104.0,
+            "rule": "M2-v2-statdist",
+            "activation_bound": 16.0,
+            "sigma": 38.0,
+            "log2_half_width": 42.0,
+            "sd_per_element": 1.8189894035458565e-12
+          },
+          "1": {
+            "lo": -4398046511104.0,
+            "hi": 4398046511104.0,
+            "rule": "M2-v2-statdist",
+            "activation_bound": 64.0,
+            "sigma": 36.0,
+            "log2_half_width": 42.0,
+            "sd_per_element": 7.275957614183426e-12
+          }
+        },
+        "mask_domains_fitted": {},
+        "schedule_obfuscated": false,
+        "obfuscation_level_aligned": false,
+        "obfuscation_levels_bits": null,
+        "dummy_legs": 0,
+        "wire": {
+          "name": "baseline",
+          "compr": "none",
+          "seeded_client": false,
+          "seeded_keys": false,
+          "modswitch_send": false,
+          "short_chain": false
+        },
+        "wire_plan": null,
+        "hybrid_roundtrips": 2,
+        "hybrid_r_h": 1.0,
+        "output_mode": "logits",
+        "query_index": 1,
+        "reused_context": true,
+        "wall_s": 10.6667,
+        "timings": {
+          "linear_s": 10.558556,
+          "hybrid_relu_s": 0.058442,
+          "mpc_s": 0.01469,
+          "mpc_elements": 320,
+          "base_ots": 0,
+          "hybrid_wire_sends": 2,
+          "hybrid_wire_recvs": 2,
+          "forward_s": 10.61702
+        },
+        "bytes_sent": 2359694,
+        "bytes_received": 2752909,
+        "sci_bytes_sent": 35552,
+        "sci_setup_bytes_sent": 163141
+      }
+    },
+    {
+      "query_index": 2,
+      "wall_s": 10.7374,
+      "timings": {
+        "encrypt_input_s": 0.005575,
+        "decrypt_s": 0.005721,
+        "mpc_s": 0.00819,
+        "reencrypt_s": 0.011605
       },
       "mpc_elements": 320,
       "base_ots": 0,
@@ -273,18 +390,18 @@
         "hybrid_roundtrips": 2,
         "hybrid_r_h": 1.0,
         "output_mode": "logits",
-        "query_index": 1,
+        "query_index": 2,
         "reused_context": true,
-        "wall_s": 10.5774,
+        "wall_s": 10.7371,
         "timings": {
-          "linear_s": 10.471302,
-          "hybrid_relu_s": 0.059635,
-          "mpc_s": 0.017603,
+          "linear_s": 10.633931,
+          "hybrid_relu_s": 0.054095,
+          "mpc_s": 0.012845,
           "mpc_elements": 320,
           "base_ots": 0,
           "hybrid_wire_sends": 2,
           "hybrid_wire_recvs": 2,
-          "forward_s": 10.530966
+          "forward_s": 10.688047
         },
         "bytes_sent": 2359694,
         "bytes_received": 2752909,
@@ -294,13 +411,13 @@
     }
   ],
   "last_query": {
-    "query_index": 1,
-    "wall_s": 10.5777,
+    "query_index": 2,
+    "wall_s": 10.7374,
     "timings": {
-      "encrypt_input_s": 0.005824,
-      "decrypt_s": 0.008405,
-      "mpc_s": 0.010854,
-      "reencrypt_s": 0.01111
+      "encrypt_input_s": 0.005575,
+      "decrypt_s": 0.005721,
+      "mpc_s": 0.00819,
+      "reencrypt_s": 0.011605
     },
     "mpc_elements": 320,
     "base_ots": 0,
@@ -391,18 +508,18 @@
       "hybrid_roundtrips": 2,
       "hybrid_r_h": 1.0,
       "output_mode": "logits",
-      "query_index": 1,
+      "query_index": 2,
       "reused_context": true,
-      "wall_s": 10.5774,
+      "wall_s": 10.7371,
       "timings": {
-        "linear_s": 10.471302,
-        "hybrid_relu_s": 0.059635,
-        "mpc_s": 0.017603,
+        "linear_s": 10.633931,
+        "hybrid_relu_s": 0.054095,
+        "mpc_s": 0.012845,
         "mpc_elements": 320,
         "base_ots": 0,
         "hybrid_wire_sends": 2,
         "hybrid_wire_recvs": 2,
-        "forward_s": 10.530966
+        "forward_s": 10.688047
       },
       "bytes_sent": 2359694,
       "bytes_received": 2752909,
@@ -410,8 +527,8 @@
       "sci_setup_bytes_sent": 163141
     }
   },
-  "bytes_sent": 191649853,
-  "bytes_received": 4724414,
+  "bytes_sent": 194402875,
+  "bytes_received": 7085961,
   "server": {
     "role": "server/party0",
     "backend": "seal",
@@ -493,18 +610,18 @@
     "hybrid_roundtrips": 2,
     "hybrid_r_h": 1.0,
     "output_mode": "logits",
-    "query_index": 1,
+    "query_index": 2,
     "reused_context": true,
-    "wall_s": 10.5774,
+    "wall_s": 10.7371,
     "timings": {
-      "linear_s": 10.471302,
-      "hybrid_relu_s": 0.059635,
-      "mpc_s": 0.017603,
+      "linear_s": 10.633931,
+      "hybrid_relu_s": 0.054095,
+      "mpc_s": 0.012845,
       "mpc_elements": 320,
       "base_ots": 0,
       "hybrid_wire_sends": 2,
       "hybrid_wire_recvs": 2,
-      "forward_s": 10.530966
+      "forward_s": 10.688047
     },
     "bytes_sent": 2359694,
     "bytes_received": 2752909,
@@ -512,7 +629,7 @@
     "sci_setup_bytes_sent": 163141
   },
   "mpc_runtime": "litepi_sci",
-  "client_peak_rss_mb": 112.6,
+  "client_peak_rss_mb": 121.0,
   "m0_streamed": true,
   "wire": {
     "name": "baseline",
@@ -524,16 +641,16 @@
   },
   "enc_timing_includes_serialization": false,
   "logits": [
-    -14.013548,
-    3.489798,
-    12.051617,
-    3.003812,
-    -56.666377,
-    2.165831,
-    7.22599,
-    -6.284631,
-    -8.683922,
-    -13.966717
+    -14.029928,
+    3.507158,
+    12.064603,
+    3.025963,
+    -56.653299,
+    2.137509,
+    7.218707,
+    -6.272145,
+    -8.68906,
+    -13.98498
   ],
   "seed": 7
 }

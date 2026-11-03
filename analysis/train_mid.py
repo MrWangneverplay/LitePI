@@ -36,6 +36,7 @@ import torch
 import torch.nn as nn
 import torch.optim as optim
 
+from data_manifest import git_sha
 from deep_net import from_npz
 from export_mask_domains import _distribution
 from mask_session import RULE_V2, MaskDomain, mask_security_report
@@ -229,6 +230,7 @@ def main() -> int:
             out.mkdir(parents=True, exist_ok=True)
             (out / f"seed{seed}.json").write_text(json.dumps({
                 "exp_id": "E1", "dataset": "cifar10", "method": "mid_alignment",
+                "git_sha": git_sha(args.root),
                 "schedule": tag, "seed": seed, "epochs": epochs,
                 "test_acc": acc, "export_logit_err": err,
                 "timestamp_utc": datetime.now(timezone.utc).isoformat(timespec="seconds"),

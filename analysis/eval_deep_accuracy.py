@@ -22,6 +22,7 @@ from pathlib import Path
 import numpy as np
 
 import pi_client
+from data_manifest import git_sha
 from deep_net import from_npz
 from train_deep_conv import CIFAR_MEAN, CIFAR_STD, load_module
 
@@ -104,6 +105,7 @@ def main() -> int:
     acc = float(np.mean([r["pred"] == r["label"] for r in rows]))
     (out_dir / f"seed{args.seed}.json").write_text(json.dumps({
         "exp_id": "E1", "dataset": "cifar10", "method": "mid_ciphertext",
+        "git_sha": git_sha(args.root),
         "schedule": args.schedule, "seed": args.seed, "samples": len(rows),
         "sample_seed": args.sample_seed, "threads": args.threads,
         "mask_exact": bool(args.mask_exact), "wire": args.wire,

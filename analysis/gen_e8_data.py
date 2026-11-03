@@ -28,6 +28,7 @@ from pathlib import Path
 
 import planner as P
 from cost_model import fit
+from data_manifest import git_sha
 from gen_e5_data import ARCHS, DEFAULT_ACC_MIN, row
 
 PROFILES = Path(__file__).resolve().parent / "device_profiles.json"
@@ -113,7 +114,7 @@ def main() -> int:
             })
 
     (args.out / "e8_devices.json").write_text(json.dumps(
-        {"wire": args.wire, "rows": rows, "skipped": skipped},
+        {"git_sha": git_sha(), "wire": args.wire, "rows": rows, "skipped": skipped},
         indent=2, ensure_ascii=False), encoding="utf-8")
     with (args.out / "e8_table10.csv").open("w", newline="", encoding="utf-8") as fh:
         w = csv.writer(fh)

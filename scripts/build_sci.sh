@@ -8,6 +8,20 @@ SCI_DIR="${REPO_ROOT}/third_party/EzPC/SCI"
 BUILD_DIR="${SCI_DIR}/build"
 INSTALL_DIR="${SCI_DIR}/install"
 
+EZPC_DIR="${REPO_ROOT}/third_party/EzPC"
+SCI_PATCH="${REPO_ROOT}/scripts/sci_min_build.patch"
+
+echo "[0/4] Fetching and patching EzPC/SCI..."
+if [ ! -d "${SCI_DIR}/src" ]; then
+    git clone --depth 1 https://github.com/mpc-msri/EzPC.git "${EZPC_DIR}"
+fi
+if (cd "${EZPC_DIR}" && git apply --reverse --check "${SCI_PATCH}" >/dev/null 2>&1); then
+    echo "  SCI patch already applied."
+else
+    echo "  applying sci_min_build.patch (ReLU-only target set; skips SEAL/LinearHE)"
+    (cd "${EZPC_DIR}" && git apply "${SCI_PATCH}")
+fi
+
 echo "[1/4] Installing build dependencies..."
 sudo apt-get update
 sudo apt-get install -y \

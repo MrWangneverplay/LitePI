@@ -1,0 +1,7 @@
+strategy,schedule,accuracy,T_client_ms,R_online,L_e2e_ms,S_online_bytes,mpc_elements,on_pareto_front
+all_p2,00,0.9034,10.205,2.0,12641.1,1704178,0,True
+all_relu,11,0.8975,50.626,4.0,18963.9,5112534,884,False
+rule,00,0.9034,10.205,2.0,12641.1,1704178,0,True
+greedy,00,0.9034,10.205,2.0,12641.1,1704178,0,True
+adaptive,00,0.9034,10.205,2.0,12641.1,1704178,0,True
+random_x5,10|10|11|01|10,0.9017,34.9278,3.2,16435.26,3749191.6,656,

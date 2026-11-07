@@ -1,0 +1,12 @@
+{
+  "exp_id": "E1",
+  "dataset": "cifar10",
+  "method": "mid_alignment",
+  "git_sha": null,
+  "schedule": "0110",
+  "seed": 75,
+  "epochs": 50,
+  "test_acc": 0.8341,
+  "export_logit_err": 4.9437235887239694e-06,
+  "timestamp_utc": "2026-11-02T03:27:07+00:00"
+}

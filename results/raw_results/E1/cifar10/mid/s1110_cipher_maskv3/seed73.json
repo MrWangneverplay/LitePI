@@ -1,0 +1,1874 @@
+{
+  "exp_id": "E1",
+  "dataset": "cifar10",
+  "method": "mid_ciphertext",
+  "git_sha": null,
+  "schedule": "1110",
+  "seed": 73,
+  "samples": 64,
+  "sample_seed": 20261030,
+  "threads": 8,
+  "mask_exact": true,
+  "wire": "baseline",
+  "agreement": 1.0,
+  "accuracy": 0.859375,
+  "timestamp_utc": "2026-11-02T10:36:57+00:00",
+  "rows": [
+    {
+      "index": 2173,
+      "label": 3,
+      "pred": 3,
+      "plain_pred": 3,
+      "max_abs_err": 0.014089724818372673,
+      "wall_s": 26.557579124113545,
+      "up_bytes": 26503336,
+      "down_bytes": 5335794,
+      "up_sci_bytes": 10903552,
+      "down_sci_bytes": 1662976,
+      "timings": {
+        "keygen_s": 0.021594,
+        "encrypt_input_s": 0.007387,
+        "encode_input_s": 0.0,
+        "decrypt_s": 0.014175,
+        "mpc_s": 0.07724,
+        "reencrypt_s": 0.052812,
+        "context_upload_s": 0.445223,
+        "mpc_elements": 16384,
+        "base_ots": 0
+      },
+      "server": {
+        "forward_s": 25.925432,
+        "linear_s": 25.718101,
+        "hybrid_relu_s": 0.207287,
+        "mpc_s": 0.085654
+      }
+    },
+    {
+      "index": 8926,
+      "label": 4,
+      "pred": 4,
+      "plain_pred": 4,
+      "max_abs_err": 0.021256895558035893,
+      "wall_s": 26.609155179932714,
+      "up_bytes": 26503336,
+      "down_bytes": 5335793,
+      "up_sci_bytes": 10903552,
+      "down_sci_bytes": 1662976,
+      "timings": {
+        "keygen_s": 0.020019,
+        "encrypt_input_s": 0.007212,
+        "encode_input_s": 0.0,
+        "decrypt_s": 0.013927,
+        "mpc_s": 0.077515,
+        "reencrypt_s": 0.052779,
+        "context_upload_s": 0.459515,
+        "mpc_elements": 16384,
+        "base_ots": 0
+      },
+      "server": {
+        "forward_s": 25.96926,
+        "linear_s": 25.761929,
+        "hybrid_relu_s": 0.207285,
+        "mpc_s": 0.086357
+      }
+    },
+    {
+      "index": 3349,
+      "label": 6,
+      "pred": 2,
+      "plain_pred": 2,
+      "max_abs_err": 0.024444100926744206,
+      "wall_s": 26.16026503802277,
+      "up_bytes": 26503336,
+      "down_bytes": 5335794,
+      "up_sci_bytes": 10903552,
+      "down_sci_bytes": 1662976,
+      "timings": {
+        "keygen_s": 0.020101,
+        "encrypt_input_s": 0.007216,
+        "encode_input_s": 0.0,
+        "decrypt_s": 0.013918,
+        "mpc_s": 0.076922,
+        "reencrypt_s": 0.052941,
+        "context_upload_s": 0.442333,
+        "mpc_elements": 16384,
+        "base_ots": 0
+      },
+      "server": {
+        "forward_s": 25.539243,
+        "linear_s": 25.332202,
+        "hybrid_relu_s": 0.206997,
+        "mpc_s": 0.085485
+      }
+    },
+    {
+      "index": 5122,
+      "label": 6,
+      "pred": 6,
+      "plain_pred": 6,
+      "max_abs_err": 0.024603716135566778,
+      "wall_s": 26.240872596856207,
+      "up_bytes": 26503336,
+      "down_bytes": 5335794,
+      "up_sci_bytes": 10903552,
+      "down_sci_bytes": 1662976,
+      "timings": {
+        "keygen_s": 0.020072,
+        "encrypt_input_s": 0.007223,
+        "encode_input_s": 0.0,
+        "decrypt_s": 0.014323,
+        "mpc_s": 0.07727,
+        "reencrypt_s": 0.053239,
+        "context_upload_s": 0.438917,
+        "mpc_elements": 16384,
+        "base_ots": 0
+      },
+      "server": {
+        "forward_s": 25.623026,
+        "linear_s": 25.414185,
+        "hybrid_relu_s": 0.208796,
+        "mpc_s": 0.086122
+      }
+    },
+    {
+      "index": 5626,
+      "label": 0,
+      "pred": 0,
+      "plain_pred": 0,
+      "max_abs_err": 0.023620438465396187,
+      "wall_s": 26.143882917938754,
+      "up_bytes": 26503336,
+      "down_bytes": 5335794,
+      "up_sci_bytes": 10903552,
+      "down_sci_bytes": 1662976,
+      "timings": {
+        "keygen_s": 0.020151,
+        "encrypt_input_s": 0.010764,
+        "encode_input_s": 0.0,
+        "decrypt_s": 0.014367,
+        "mpc_s": 0.076756,
+        "reencrypt_s": 0.053063,
+        "context_upload_s": 0.446877,
+        "mpc_elements": 16384,
+        "base_ots": 0
+      },
+      "server": {
+        "forward_s": 25.510834,
+        "linear_s": 25.302626,
+        "hybrid_relu_s": 0.208163,
+        "mpc_s": 0.085429
+      }
+    },
+    {
+      "index": 6353,
+      "label": 2,
+      "pred": 2,
+      "plain_pred": 2,
+      "max_abs_err": 0.01712540125314599,
+      "wall_s": 26.16801116010174,
+      "up_bytes": 26503336,
+      "down_bytes": 5335794,
+      "up_sci_bytes": 10903552,
+      "down_sci_bytes": 1662976,
+      "timings": {
+        "keygen_s": 0.020088,
+        "encrypt_input_s": 0.007273,
+        "encode_input_s": 0.0,
+        "decrypt_s": 0.013991,
+        "mpc_s": 0.07749,
+        "reencrypt_s": 0.052823,
+        "context_upload_s": 0.455622,
+        "mpc_elements": 16384,
+        "base_ots": 0
+      },
+      "server": {
+        "forward_s": 25.530851,
+        "linear_s": 25.323556,
+        "hybrid_relu_s": 0.207248,
+        "mpc_s": 0.085709
+      }
+    },
+    {
+      "index": 1556,
+      "label": 8,
+      "pred": 8,
+      "plain_pred": 8,
+      "max_abs_err": 0.023418724912302125,
+      "wall_s": 26.175966958049685,
+      "up_bytes": 26503336,
+      "down_bytes": 5335794,
+      "up_sci_bytes": 10903552,
+      "down_sci_bytes": 1662976,
+      "timings": {
+        "keygen_s": 0.020329,
+        "encrypt_input_s": 0.007263,
+        "encode_input_s": 0.0,
+        "decrypt_s": 0.013933,
+        "mpc_s": 0.076369,
+        "reencrypt_s": 0.053222,
+        "context_upload_s": 0.44338,
+        "mpc_elements": 16384,
+        "base_ots": 0
+      },
+      "server": {
+        "forward_s": 25.550601,
+        "linear_s": 25.343999,
+        "hybrid_relu_s": 0.206555,
+        "mpc_s": 0.084977
+      }
+    },
+    {
+      "index": 1875,
+      "label": 0,
+      "pred": 0,
+      "plain_pred": 0,
+      "max_abs_err": 0.016460309005230656,
+      "wall_s": 26.17537020891905,
+      "up_bytes": 26503336,
+      "down_bytes": 5335794,
+      "up_sci_bytes": 10903552,
+      "down_sci_bytes": 1662976,
+      "timings": {
+        "keygen_s": 0.020071,
+        "encrypt_input_s": 0.00737,
+        "encode_input_s": 0.0,
+        "decrypt_s": 0.014252,
+        "mpc_s": 0.077446,
+        "reencrypt_s": 0.052949,
+        "context_upload_s": 0.439576,
+        "mpc_elements": 16384,
+        "base_ots": 0
+      },
+      "server": {
+        "forward_s": 25.554375,
+        "linear_s": 25.345569,
+        "hybrid_relu_s": 0.208759,
+        "mpc_s": 0.086084
+      }
+    },
+    {
+      "index": 4623,
+      "label": 5,
+      "pred": 5,
+      "plain_pred": 5,
+      "max_abs_err": 0.01811350922564925,
+      "wall_s": 26.662662609945983,
+      "up_bytes": 26503336,
+      "down_bytes": 5335794,
+      "up_sci_bytes": 10903552,
+      "down_sci_bytes": 1662976,
+      "timings": {
+        "keygen_s": 0.020123,
+        "encrypt_input_s": 0.007248,
+        "encode_input_s": 0.0,
+        "decrypt_s": 0.013897,
+        "mpc_s": 0.077543,
+        "reencrypt_s": 0.053199,
+        "context_upload_s": 0.453513,
+        "mpc_elements": 16384,
+        "base_ots": 0
+      },
+      "server": {
+        "forward_s": 26.026762,
+        "linear_s": 25.818711,
+        "hybrid_relu_s": 0.208005,
+        "mpc_s": 0.086289
+      }
+    },
+    {
+      "index": 1992,
+      "label": 6,
+      "pred": 6,
+      "plain_pred": 6,
+      "max_abs_err": 0.035455626529977025,
+      "wall_s": 26.184754943009466,
+      "up_bytes": 26503336,
+      "down_bytes": 5335794,
+      "up_sci_bytes": 10903552,
+      "down_sci_bytes": 1662976,
+      "timings": {
+        "keygen_s": 0.020251,
+        "encrypt_input_s": 0.007287,
+        "encode_input_s": 0.0,
+        "decrypt_s": 0.014699,
+        "mpc_s": 0.076658,
+        "reencrypt_s": 0.053007,
+        "context_upload_s": 0.443465,
+        "mpc_elements": 16384,
+        "base_ots": 0
+      },
+      "server": {
+        "forward_s": 25.566752,
+        "linear_s": 25.358479,
+        "hybrid_relu_s": 0.208228,
+        "mpc_s": 0.085487
+      }
+    },
+    {
+      "index": 1388,
+      "label": 5,
+      "pred": 5,
+      "plain_pred": 5,
+      "max_abs_err": 0.018213101349948024,
+      "wall_s": 26.166306430008262,
+      "up_bytes": 26503336,
+      "down_bytes": 5335792,
+      "up_sci_bytes": 10903552,
+      "down_sci_bytes": 1662976,
+      "timings": {
+        "keygen_s": 0.020081,
+        "encrypt_input_s": 0.007233,
+        "encode_input_s": 0.0,
+        "decrypt_s": 0.014162,
+        "mpc_s": 0.075282,
+        "reencrypt_s": 0.05294,
+        "context_upload_s": 0.439626,
+        "mpc_elements": 16384,
+        "base_ots": 0
+      },
+      "server": {
+        "forward_s": 25.545813,
+        "linear_s": 25.339238,
+        "hybrid_relu_s": 0.20653,
+        "mpc_s": 0.08364
+      }
+    },
+    {
+      "index": 5619,
+      "label": 8,
+      "pred": 8,
+      "plain_pred": 8,
+      "max_abs_err": 0.03386159622116813,
+      "wall_s": 26.31684743310325,
+      "up_bytes": 26503336,
+      "down_bytes": 5335794,
+      "up_sci_bytes": 10903552,
+      "down_sci_bytes": 1662976,
+      "timings": {
+        "keygen_s": 0.020109,
+        "encrypt_input_s": 0.007322,
+        "encode_input_s": 0.0,
+        "decrypt_s": 0.014071,
+        "mpc_s": 0.076928,
+        "reencrypt_s": 0.053144,
+        "context_upload_s": 0.444794,
+        "mpc_elements": 16384,
+        "base_ots": 0
+      },
+      "server": {
+        "forward_s": 25.689299,
+        "linear_s": 25.480637,
+        "hybrid_relu_s": 0.208616,
+        "mpc_s": 0.085613
+      }
+    },
+    {
+      "index": 2687,
+      "label": 8,
+      "pred": 8,
+      "plain_pred": 8,
+      "max_abs_err": 0.02968111003828866,
+      "wall_s": 26.215601251926273,
+      "up_bytes": 26503336,
+      "down_bytes": 5335794,
+      "up_sci_bytes": 10903552,
+      "down_sci_bytes": 1662976,
+      "timings": {
+        "keygen_s": 0.020057,
+        "encrypt_input_s": 0.007213,
+        "encode_input_s": 0.0,
+        "decrypt_s": 0.014139,
+        "mpc_s": 0.07751,
+        "reencrypt_s": 0.052764,
+        "context_upload_s": 0.440485,
+        "mpc_elements": 16384,
+        "base_ots": 0
+      },
+      "server": {
+        "forward_s": 25.592705,
+        "linear_s": 25.384233,
+        "hybrid_relu_s": 0.208427,
+        "mpc_s": 0.086113
+      }
+    },
+    {
+      "index": 5869,
+      "label": 7,
+      "pred": 7,
+      "plain_pred": 7,
+      "max_abs_err": 0.029427302396051402,
+      "wall_s": 26.184403353836387,
+      "up_bytes": 26503336,
+      "down_bytes": 5335794,
+      "up_sci_bytes": 10903552,
+      "down_sci_bytes": 1662976,
+      "timings": {
+        "keygen_s": 0.020149,
+        "encrypt_input_s": 0.00728,
+        "encode_input_s": 0.0,
+        "decrypt_s": 0.013994,
+        "mpc_s": 0.078105,
+        "reencrypt_s": 0.052838,
+        "context_upload_s": 0.443267,
+        "mpc_elements": 16384,
+        "base_ots": 0
+      },
+      "server": {
+        "forward_s": 25.561648,
+        "linear_s": 25.353706,
+        "hybrid_relu_s": 0.207896,
+        "mpc_s": 0.086689
+      }
+    },
+    {
+      "index": 7272,
+      "label": 1,
+      "pred": 1,
+      "plain_pred": 1,
+      "max_abs_err": 0.03033672801222309,
+      "wall_s": 26.328599609900266,
+      "up_bytes": 26503336,
+      "down_bytes": 5335794,
+      "up_sci_bytes": 10903552,
+      "down_sci_bytes": 1662976,
+      "timings": {
+        "keygen_s": 0.020168,
+        "encrypt_input_s": 0.007273,
+        "encode_input_s": 0.0,
+        "decrypt_s": 0.014059,
+        "mpc_s": 0.077661,
+        "reencrypt_s": 0.052818,
+        "context_upload_s": 0.440121,
+        "mpc_elements": 16384,
+        "base_ots": 0
+      },
+      "server": {
+        "forward_s": 25.708699,
+        "linear_s": 25.499947,
+        "hybrid_relu_s": 0.208708,
+        "mpc_s": 0.086244
+      }
+    },
+    {
+      "index": 7152,
+      "label": 6,
+      "pred": 6,
+      "plain_pred": 6,
+      "max_abs_err": 0.016447436059172205,
+      "wall_s": 26.18762753996998,
+      "up_bytes": 26503336,
+      "down_bytes": 5335794,
+      "up_sci_bytes": 10903552,
+      "down_sci_bytes": 1662976,
+      "timings": {
+        "keygen_s": 0.02013,
+        "encrypt_input_s": 0.007229,
+        "encode_input_s": 0.0,
+        "decrypt_s": 0.014388,
+        "mpc_s": 0.07789,
+        "reencrypt_s": 0.053031,
+        "context_upload_s": 0.440301,
+        "mpc_elements": 16384,
+        "base_ots": 0
+      },
+      "server": {
+        "forward_s": 25.564269,
+        "linear_s": 25.355116,
+        "hybrid_relu_s": 0.209107,
+        "mpc_s": 0.086656
+      }
+    },
+    {
+      "index": 6416,
+      "label": 7,
+      "pred": 7,
+      "plain_pred": 7,
+      "max_abs_err": 0.022237520037663216,
+      "wall_s": 26.241607901873067,
+      "up_bytes": 26503336,
+      "down_bytes": 5335794,
+      "up_sci_bytes": 10903552,
+      "down_sci_bytes": 1662976,
+      "timings": {
+        "keygen_s": 0.020075,
+        "encrypt_input_s": 0.007243,
+        "encode_input_s": 0.0,
+        "decrypt_s": 0.014579,
+        "mpc_s": 0.07725,
+        "reencrypt_s": 0.052889,
+        "context_upload_s": 0.445395,
+        "mpc_elements": 16384,
+        "base_ots": 0
+      },
+      "server": {
+        "forward_s": 25.614034,
+        "linear_s": 25.404983,
+        "hybrid_relu_s": 0.209004,
+        "mpc_s": 0.086465
+      }
+    },
+    {
+      "index": 6789,
+      "label": 1,
+      "pred": 1,
+      "plain_pred": 1,
+      "max_abs_err": 0.033742396510930917,
+      "wall_s": 26.19961313996464,
+      "up_bytes": 26503336,
+      "down_bytes": 5335793,
+      "up_sci_bytes": 10903552,
+      "down_sci_bytes": 1662976,
+      "timings": {
+        "keygen_s": 0.020493,
+        "encrypt_input_s": 0.007533,
+        "encode_input_s": 0.0,
+        "decrypt_s": 0.013883,
+        "mpc_s": 0.077049,
+        "reencrypt_s": 0.052769,
+        "context_upload_s": 0.44644,
+        "mpc_elements": 16384,
+        "base_ots": 0
+      },
+      "server": {
+        "forward_s": 25.569532,
+        "linear_s": 25.362499,
+        "hybrid_relu_s": 0.206988,
+        "mpc_s": 0.085545
+      }
+    },
+    {
+      "index": 717,
+      "label": 8,
+      "pred": 4,
+      "plain_pred": 4,
+      "max_abs_err": 0.02165667136225302,
+      "wall_s": 26.129729714943096,
+      "up_bytes": 26503336,
+      "down_bytes": 5335793,
+      "up_sci_bytes": 10903552,
+      "down_sci_bytes": 1662976,
+      "timings": {
+        "keygen_s": 0.020165,
+        "encrypt_input_s": 0.007244,
+        "encode_input_s": 0.0,
+        "decrypt_s": 0.014186,
+        "mpc_s": 0.0778,
+        "reencrypt_s": 0.053092,
+        "context_upload_s": 0.440142,
+        "mpc_elements": 16384,
+        "base_ots": 0
+      },
+      "server": {
+        "forward_s": 25.503742,
+        "linear_s": 25.294488,
+        "hybrid_relu_s": 0.20921,
+        "mpc_s": 0.086152
+      }
+    },
+    {
+      "index": 8153,
+      "label": 4,
+      "pred": 4,
+      "plain_pred": 4,
+      "max_abs_err": 0.014717977869283416,
+      "wall_s": 26.22842237399891,
+      "up_bytes": 26503336,
+      "down_bytes": 5335794,
+      "up_sci_bytes": 10903552,
+      "down_sci_bytes": 1662976,
+      "timings": {
+        "keygen_s": 0.020158,
+        "encrypt_input_s": 0.007262,
+        "encode_input_s": 0.0,
+        "decrypt_s": 0.014229,
+        "mpc_s": 0.076741,
+        "reencrypt_s": 0.053011,
+        "context_upload_s": 0.43931,
+        "mpc_elements": 16384,
+        "base_ots": 0
+      },
+      "server": {
+        "forward_s": 25.606531,
+        "linear_s": 25.398635,
+        "hybrid_relu_s": 0.207852,
+        "mpc_s": 0.084964
+      }
+    },
+    {
+      "index": 9520,
+      "label": 1,
+      "pred": 1,
+      "plain_pred": 1,
+      "max_abs_err": 0.02453964075939119,
+      "wall_s": 26.198628338985145,
+      "up_bytes": 26503336,
+      "down_bytes": 5335794,
+      "up_sci_bytes": 10903552,
+      "down_sci_bytes": 1662976,
+      "timings": {
+        "keygen_s": 0.020105,
+        "encrypt_input_s": 0.007228,
+        "encode_input_s": 0.0,
+        "decrypt_s": 0.01415,
+        "mpc_s": 0.076542,
+        "reencrypt_s": 0.053133,
+        "context_upload_s": 0.443027,
+        "mpc_elements": 16384,
+        "base_ots": 0
+      },
+      "server": {
+        "forward_s": 25.573477,
+        "linear_s": 25.365421,
+        "hybrid_relu_s": 0.208012,
+        "mpc_s": 0.084994
+      }
+    },
+    {
+      "index": 1780,
+      "label": 7,
+      "pred": 7,
+      "plain_pred": 7,
+      "max_abs_err": 0.031634549532960854,
+      "wall_s": 26.19453852600418,
+      "up_bytes": 26503336,
+      "down_bytes": 5335794,
+      "up_sci_bytes": 10903552,
+      "down_sci_bytes": 1662976,
+      "timings": {
+        "keygen_s": 0.020121,
+        "encrypt_input_s": 0.007365,
+        "encode_input_s": 0.0,
+        "decrypt_s": 0.014315,
+        "mpc_s": 0.077548,
+        "reencrypt_s": 0.052862,
+        "context_upload_s": 0.443353,
+        "mpc_elements": 16384,
+        "base_ots": 0
+      },
+      "server": {
+        "forward_s": 25.568941,
+        "linear_s": 25.360053,
+        "hybrid_relu_s": 0.208844,
+        "mpc_s": 0.086146
+      }
+    },
+    {
+      "index": 6811,
+      "label": 9,
+      "pred": 9,
+      "plain_pred": 9,
+      "max_abs_err": 0.019855509787028325,
+      "wall_s": 26.262532669119537,
+      "up_bytes": 26503336,
+      "down_bytes": 5335793,
+      "up_sci_bytes": 10903552,
+      "down_sci_bytes": 1662976,
+      "timings": {
+        "keygen_s": 0.020065,
+        "encrypt_input_s": 0.007239,
+        "encode_input_s": 0.0,
+        "decrypt_s": 0.014072,
+        "mpc_s": 0.077348,
+        "reencrypt_s": 0.053016,
+        "context_upload_s": 0.440754,
+        "mpc_elements": 16384,
+        "base_ots": 0
+      },
+      "server": {
+        "forward_s": 25.639717,
+        "linear_s": 25.431192,
+        "hybrid_relu_s": 0.208481,
+        "mpc_s": 0.08609
+      }
+    },
+    {
+      "index": 5188,
+      "label": 8,
+      "pred": 8,
+      "plain_pred": 8,
+      "max_abs_err": 0.028345054692369587,
+      "wall_s": 26.170346981147304,
+      "up_bytes": 26503336,
+      "down_bytes": 5335793,
+      "up_sci_bytes": 10903552,
+      "down_sci_bytes": 1662976,
+      "timings": {
+        "keygen_s": 0.020307,
+        "encrypt_input_s": 0.007248,
+        "encode_input_s": 0.0,
+        "decrypt_s": 0.014379,
+        "mpc_s": 0.077267,
+        "reencrypt_s": 0.052845,
+        "context_upload_s": 0.440536,
+        "mpc_elements": 16384,
+        "base_ots": 0
+      },
+      "server": {
+        "forward_s": 25.548393,
+        "linear_s": 25.34034,
+        "hybrid_relu_s": 0.208005,
+        "mpc_s": 0.086319
+      }
+    },
+    {
+      "index": 3124,
+      "label": 6,
+      "pred": 6,
+      "plain_pred": 6,
+      "max_abs_err": 0.018626181882124726,
+      "wall_s": 26.242750148056075,
+      "up_bytes": 26503336,
+      "down_bytes": 5335794,
+      "up_sci_bytes": 10903552,
+      "down_sci_bytes": 1662976,
+      "timings": {
+        "keygen_s": 0.020103,
+        "encrypt_input_s": 0.007542,
+        "encode_input_s": 0.0,
+        "decrypt_s": 0.014222,
+        "mpc_s": 0.077748,
+        "reencrypt_s": 0.053112,
+        "context_upload_s": 0.441824,
+        "mpc_elements": 16384,
+        "base_ots": 0
+      },
+      "server": {
+        "forward_s": 25.618198,
+        "linear_s": 25.409344,
+        "hybrid_relu_s": 0.208809,
+        "mpc_s": 0.086166
+      }
+    },
+    {
+      "index": 8473,
+      "label": 2,
+      "pred": 2,
+      "plain_pred": 2,
+      "max_abs_err": 0.020721239540295366,
+      "wall_s": 26.200597272021696,
+      "up_bytes": 26503336,
+      "down_bytes": 5335794,
+      "up_sci_bytes": 10903552,
+      "down_sci_bytes": 1662976,
+      "timings": {
+        "keygen_s": 0.020075,
+        "encrypt_input_s": 0.007246,
+        "encode_input_s": 0.0,
+        "decrypt_s": 0.014061,
+        "mpc_s": 0.077197,
+        "reencrypt_s": 0.053115,
+        "context_upload_s": 0.443053,
+        "mpc_elements": 16384,
+        "base_ots": 0
+      },
+      "server": {
+        "forward_s": 25.575121,
+        "linear_s": 25.367178,
+        "hybrid_relu_s": 0.207899,
+        "mpc_s": 0.086021
+      }
+    },
+    {
+      "index": 4542,
+      "label": 3,
+      "pred": 4,
+      "plain_pred": 4,
+      "max_abs_err": 0.022302558118269644,
+      "wall_s": 26.680356357013807,
+      "up_bytes": 26503336,
+      "down_bytes": 5335793,
+      "up_sci_bytes": 10903552,
+      "down_sci_bytes": 1662976,
+      "timings": {
+        "keygen_s": 0.020041,
+        "encrypt_input_s": 0.007235,
+        "encode_input_s": 0.0,
+        "decrypt_s": 0.014868,
+        "mpc_s": 0.077681,
+        "reencrypt_s": 0.053595,
+        "context_upload_s": 0.445724,
+        "mpc_elements": 16384,
+        "base_ots": 0
+      },
+      "server": {
+        "forward_s": 26.055845,
+        "linear_s": 25.844617,
+        "hybrid_relu_s": 0.21118,
+        "mpc_s": 0.086734
+      }
+    },
+    {
+      "index": 7436,
+      "label": 0,
+      "pred": 0,
+      "plain_pred": 0,
+      "max_abs_err": 0.017240278640443307,
+      "wall_s": 26.31077015493065,
+      "up_bytes": 26503336,
+      "down_bytes": 5335792,
+      "up_sci_bytes": 10903552,
+      "down_sci_bytes": 1662976,
+      "timings": {
+        "keygen_s": 0.020048,
+        "encrypt_input_s": 0.007305,
+        "encode_input_s": 0.0,
+        "decrypt_s": 0.014558,
+        "mpc_s": 0.077243,
+        "reencrypt_s": 0.053048,
+        "context_upload_s": 0.442669,
+        "mpc_elements": 16384,
+        "base_ots": 0
+      },
+      "server": {
+        "forward_s": 25.685421,
+        "linear_s": 25.47571,
+        "hybrid_relu_s": 0.209664,
+        "mpc_s": 0.08587
+      }
+    },
+    {
+      "index": 1677,
+      "label": 1,
+      "pred": 1,
+      "plain_pred": 1,
+      "max_abs_err": 0.024348928757088828,
+      "wall_s": 26.782483214046806,
+      "up_bytes": 26503336,
+      "down_bytes": 5335794,
+      "up_sci_bytes": 10903552,
+      "down_sci_bytes": 1662976,
+      "timings": {
+        "keygen_s": 0.020101,
+        "encrypt_input_s": 0.007239,
+        "encode_input_s": 0.0,
+        "decrypt_s": 0.014291,
+        "mpc_s": 0.07787,
+        "reencrypt_s": 0.053128,
+        "context_upload_s": 0.44342,
+        "mpc_elements": 16384,
+        "base_ots": 0
+      },
+      "server": {
+        "forward_s": 26.160244,
+        "linear_s": 25.950823,
+        "hybrid_relu_s": 0.209375,
+        "mpc_s": 0.086907
+      }
+    },
+    {
+      "index": 460,
+      "label": 5,
+      "pred": 5,
+      "plain_pred": 5,
+      "max_abs_err": 0.025931812517161035,
+      "wall_s": 26.227409480838105,
+      "up_bytes": 26503336,
+      "down_bytes": 5335794,
+      "up_sci_bytes": 10903552,
+      "down_sci_bytes": 1662976,
+      "timings": {
+        "keygen_s": 0.02012,
+        "encrypt_input_s": 0.007262,
+        "encode_input_s": 0.0,
+        "decrypt_s": 0.014308,
+        "mpc_s": 0.077406,
+        "reencrypt_s": 0.053242,
+        "context_upload_s": 0.441933,
+        "mpc_elements": 16384,
+        "base_ots": 0
+      },
+      "server": {
+        "forward_s": 25.607035,
+        "linear_s": 25.397704,
+        "hybrid_relu_s": 0.209287,
+        "mpc_s": 0.085849
+      }
+    },
+    {
+      "index": 5832,
+      "label": 9,
+      "pred": 9,
+      "plain_pred": 9,
+      "max_abs_err": 0.012174625297335595,
+      "wall_s": 26.24995077215135,
+      "up_bytes": 26503336,
+      "down_bytes": 5335793,
+      "up_sci_bytes": 10903552,
+      "down_sci_bytes": 1662976,
+      "timings": {
+        "keygen_s": 0.020073,
+        "encrypt_input_s": 0.007238,
+        "encode_input_s": 0.0,
+        "decrypt_s": 0.014125,
+        "mpc_s": 0.078295,
+        "reencrypt_s": 0.052978,
+        "context_upload_s": 0.441469,
+        "mpc_elements": 16384,
+        "base_ots": 0
+      },
+      "server": {
+        "forward_s": 25.616403,
+        "linear_s": 25.407295,
+        "hybrid_relu_s": 0.209064,
+        "mpc_s": 0.086773
+      }
+    },
+    {
+      "index": 343,
+      "label": 5,
+      "pred": 5,
+      "plain_pred": 5,
+      "max_abs_err": 0.021167864804852998,
+      "wall_s": 26.19521908205934,
+      "up_bytes": 26503336,
+      "down_bytes": 5335794,
+      "up_sci_bytes": 10903552,
+      "down_sci_bytes": 1662976,
+      "timings": {
+        "keygen_s": 0.020073,
+        "encrypt_input_s": 0.00725,
+        "encode_input_s": 0.0,
+        "decrypt_s": 0.014474,
+        "mpc_s": 0.076776,
+        "reencrypt_s": 0.052896,
+        "context_upload_s": 0.443327,
+        "mpc_elements": 16384,
+        "base_ots": 0
+      },
+      "server": {
+        "forward_s": 25.569616,
+        "linear_s": 25.361735,
+        "hybrid_relu_s": 0.207835,
+        "mpc_s": 0.085353
+      }
+    },
+    {
+      "index": 2033,
+      "label": 2,
+      "pred": 2,
+      "plain_pred": 2,
+      "max_abs_err": 0.041350290597781836,
+      "wall_s": 26.135695297969505,
+      "up_bytes": 26503336,
+      "down_bytes": 5335794,
+      "up_sci_bytes": 10903552,
+      "down_sci_bytes": 1662976,
+      "timings": {
+        "keygen_s": 0.020161,
+        "encrypt_input_s": 0.007252,
+        "encode_input_s": 0.0,
+        "decrypt_s": 0.014192,
+        "mpc_s": 0.076775,
+        "reencrypt_s": 0.053132,
+        "context_upload_s": 0.444137,
+        "mpc_elements": 16384,
+        "base_ots": 0
+      },
+      "server": {
+        "forward_s": 25.512102,
+        "linear_s": 25.304112,
+        "hybrid_relu_s": 0.207946,
+        "mpc_s": 0.085015
+      }
+    },
+    {
+      "index": 1234,
+      "label": 1,
+      "pred": 1,
+      "plain_pred": 1,
+      "max_abs_err": 0.03890806876582786,
+      "wall_s": 26.635349679971114,
+      "up_bytes": 26503336,
+      "down_bytes": 5335794,
+      "up_sci_bytes": 10903552,
+      "down_sci_bytes": 1662976,
+      "timings": {
+        "keygen_s": 0.020039,
+        "encrypt_input_s": 0.007248,
+        "encode_input_s": 0.0,
+        "decrypt_s": 0.014046,
+        "mpc_s": 0.077249,
+        "reencrypt_s": 0.053433,
+        "context_upload_s": 0.440635,
+        "mpc_elements": 16384,
+        "base_ots": 0
+      },
+      "server": {
+        "forward_s": 26.012606,
+        "linear_s": 25.803761,
+        "hybrid_relu_s": 0.208799,
+        "mpc_s": 0.085912
+      }
+    },
+    {
+      "index": 5151,
+      "label": 9,
+      "pred": 3,
+      "plain_pred": 3,
+      "max_abs_err": 0.04352480110472712,
+      "wall_s": 26.2343829870224,
+      "up_bytes": 26503336,
+      "down_bytes": 5335794,
+      "up_sci_bytes": 10903552,
+      "down_sci_bytes": 1662976,
+      "timings": {
+        "keygen_s": 0.020129,
+        "encrypt_input_s": 0.007342,
+        "encode_input_s": 0.0,
+        "decrypt_s": 0.014197,
+        "mpc_s": 0.077594,
+        "reencrypt_s": 0.053226,
+        "context_upload_s": 0.444757,
+        "mpc_elements": 16384,
+        "base_ots": 0
+      },
+      "server": {
+        "forward_s": 25.607011,
+        "linear_s": 25.398123,
+        "hybrid_relu_s": 0.208843,
+        "mpc_s": 0.086276
+      }
+    },
+    {
+      "index": 1203,
+      "label": 0,
+      "pred": 0,
+      "plain_pred": 0,
+      "max_abs_err": 0.020830709843945527,
+      "wall_s": 26.231800040928647,
+      "up_bytes": 26503336,
+      "down_bytes": 5335793,
+      "up_sci_bytes": 10903552,
+      "down_sci_bytes": 1662976,
+      "timings": {
+        "keygen_s": 0.020231,
+        "encrypt_input_s": 0.007238,
+        "encode_input_s": 0.0,
+        "decrypt_s": 0.014242,
+        "mpc_s": 0.076745,
+        "reencrypt_s": 0.052833,
+        "context_upload_s": 0.437888,
+        "mpc_elements": 16384,
+        "base_ots": 0
+      },
+      "server": {
+        "forward_s": 25.61164,
+        "linear_s": 25.403487,
+        "hybrid_relu_s": 0.208108,
+        "mpc_s": 0.085495
+      }
+    },
+    {
+      "index": 673,
+      "label": 3,
+      "pred": 3,
+      "plain_pred": 3,
+      "max_abs_err": 0.04289209036488684,
+      "wall_s": 26.212682771030813,
+      "up_bytes": 26503336,
+      "down_bytes": 5335794,
+      "up_sci_bytes": 10903552,
+      "down_sci_bytes": 1662976,
+      "timings": {
+        "keygen_s": 0.020094,
+        "encrypt_input_s": 0.007224,
+        "encode_input_s": 0.0,
+        "decrypt_s": 0.014147,
+        "mpc_s": 0.077275,
+        "reencrypt_s": 0.05311,
+        "context_upload_s": 0.444396,
+        "mpc_elements": 16384,
+        "base_ots": 0
+      },
+      "server": {
+        "forward_s": 25.591046,
+        "linear_s": 25.381978,
+        "hybrid_relu_s": 0.209019,
+        "mpc_s": 0.086039
+      }
+    },
+    {
+      "index": 379,
+      "label": 6,
+      "pred": 6,
+      "plain_pred": 6,
+      "max_abs_err": 0.03258906351170121,
+      "wall_s": 26.357314861845225,
+      "up_bytes": 26503336,
+      "down_bytes": 5335794,
+      "up_sci_bytes": 10903552,
+      "down_sci_bytes": 1662976,
+      "timings": {
+        "keygen_s": 0.020043,
+        "encrypt_input_s": 0.007269,
+        "encode_input_s": 0.0,
+        "decrypt_s": 0.014282,
+        "mpc_s": 0.077841,
+        "reencrypt_s": 0.053158,
+        "context_upload_s": 0.443454,
+        "mpc_elements": 16384,
+        "base_ots": 0
+      },
+      "server": {
+        "forward_s": 25.731124,
+        "linear_s": 25.522133,
+        "hybrid_relu_s": 0.208944,
+        "mpc_s": 0.086697
+      }
+    },
+    {
+      "index": 2004,
+      "label": 7,
+      "pred": 7,
+      "plain_pred": 7,
+      "max_abs_err": 0.01518556761887524,
+      "wall_s": 26.226542433956638,
+      "up_bytes": 26503336,
+      "down_bytes": 5335794,
+      "up_sci_bytes": 10903552,
+      "down_sci_bytes": 1662976,
+      "timings": {
+        "keygen_s": 0.020044,
+        "encrypt_input_s": 0.007246,
+        "encode_input_s": 0.0,
+        "decrypt_s": 0.014288,
+        "mpc_s": 0.077442,
+        "reencrypt_s": 0.053216,
+        "context_upload_s": 0.445605,
+        "mpc_elements": 16384,
+        "base_ots": 0
+      },
+      "server": {
+        "forward_s": 25.598426,
+        "linear_s": 25.389483,
+        "hybrid_relu_s": 0.208895,
+        "mpc_s": 0.086124
+      }
+    },
+    {
+      "index": 9437,
+      "label": 3,
+      "pred": 2,
+      "plain_pred": 2,
+      "max_abs_err": 0.01828023802585932,
+      "wall_s": 26.15758756408468,
+      "up_bytes": 26503336,
+      "down_bytes": 5335794,
+      "up_sci_bytes": 10903552,
+      "down_sci_bytes": 1662976,
+      "timings": {
+        "keygen_s": 0.020064,
+        "encrypt_input_s": 0.007364,
+        "encode_input_s": 0.0,
+        "decrypt_s": 0.014655,
+        "mpc_s": 0.077904,
+        "reencrypt_s": 0.053179,
+        "context_upload_s": 0.438384,
+        "mpc_elements": 16384,
+        "base_ots": 0
+      },
+      "server": {
+        "forward_s": 25.545593,
+        "linear_s": 25.336303,
+        "hybrid_relu_s": 0.209245,
+        "mpc_s": 0.086538
+      }
+    },
+    {
+      "index": 1527,
+      "label": 5,
+      "pred": 3,
+      "plain_pred": 3,
+      "max_abs_err": 0.023272602148008303,
+      "wall_s": 26.215652719140053,
+      "up_bytes": 26503336,
+      "down_bytes": 5335794,
+      "up_sci_bytes": 10903552,
+      "down_sci_bytes": 1662976,
+      "timings": {
+        "keygen_s": 0.020161,
+        "encrypt_input_s": 0.007221,
+        "encode_input_s": 0.0,
+        "decrypt_s": 0.013994,
+        "mpc_s": 0.076999,
+        "reencrypt_s": 0.054101,
+        "context_upload_s": 0.449299,
+        "mpc_elements": 16384,
+        "base_ots": 0
+      },
+      "server": {
+        "forward_s": 25.585761,
+        "linear_s": 25.377069,
+        "hybrid_relu_s": 0.208647,
+        "mpc_s": 0.085743
+      }
+    },
+    {
+      "index": 7704,
+      "label": 1,
+      "pred": 1,
+      "plain_pred": 1,
+      "max_abs_err": 0.02890595736528212,
+      "wall_s": 26.177656159037724,
+      "up_bytes": 26503336,
+      "down_bytes": 5335793,
+      "up_sci_bytes": 10903552,
+      "down_sci_bytes": 1662976,
+      "timings": {
+        "keygen_s": 0.020134,
+        "encrypt_input_s": 0.007219,
+        "encode_input_s": 0.0,
+        "decrypt_s": 0.014285,
+        "mpc_s": 0.077346,
+        "reencrypt_s": 0.052773,
+        "context_upload_s": 0.44073,
+        "mpc_elements": 16384,
+        "base_ots": 0
+      },
+      "server": {
+        "forward_s": 25.555253,
+        "linear_s": 25.347649,
+        "hybrid_relu_s": 0.207558,
+        "mpc_s": 0.08627
+      }
+    },
+    {
+      "index": 311,
+      "label": 6,
+      "pred": 6,
+      "plain_pred": 6,
+      "max_abs_err": 0.026040493968836564,
+      "wall_s": 26.362497775116935,
+      "up_bytes": 26503336,
+      "down_bytes": 5335794,
+      "up_sci_bytes": 10903552,
+      "down_sci_bytes": 1662976,
+      "timings": {
+        "keygen_s": 0.020026,
+        "encrypt_input_s": 0.007261,
+        "encode_input_s": 0.0,
+        "decrypt_s": 0.014449,
+        "mpc_s": 0.077601,
+        "reencrypt_s": 0.052842,
+        "context_upload_s": 0.449097,
+        "mpc_elements": 16384,
+        "base_ots": 0
+      },
+      "server": {
+        "forward_s": 25.731464,
+        "linear_s": 25.522935,
+        "hybrid_relu_s": 0.208483,
+        "mpc_s": 0.086532
+      }
+    },
+    {
+      "index": 6686,
+      "label": 9,
+      "pred": 9,
+      "plain_pred": 9,
+      "max_abs_err": 0.025006895347282843,
+      "wall_s": 26.222148220986128,
+      "up_bytes": 26503336,
+      "down_bytes": 5335793,
+      "up_sci_bytes": 10903552,
+      "down_sci_bytes": 1662976,
+      "timings": {
+        "keygen_s": 0.020176,
+        "encrypt_input_s": 0.007249,
+        "encode_input_s": 0.0,
+        "decrypt_s": 0.014163,
+        "mpc_s": 0.076964,
+        "reencrypt_s": 0.052843,
+        "context_upload_s": 0.443301,
+        "mpc_elements": 16384,
+        "base_ots": 0
+      },
+      "server": {
+        "forward_s": 25.59627,
+        "linear_s": 25.388589,
+        "hybrid_relu_s": 0.207636,
+        "mpc_s": 0.085424
+      }
+    },
+    {
+      "index": 4881,
+      "label": 8,
+      "pred": 8,
+      "plain_pred": 8,
+      "max_abs_err": 0.022366962923021427,
+      "wall_s": 26.239933610893786,
+      "up_bytes": 26503336,
+      "down_bytes": 5335794,
+      "up_sci_bytes": 10903552,
+      "down_sci_bytes": 1662976,
+      "timings": {
+        "keygen_s": 0.020108,
+        "encrypt_input_s": 0.007256,
+        "encode_input_s": 0.0,
+        "decrypt_s": 0.014267,
+        "mpc_s": 0.077662,
+        "reencrypt_s": 0.053051,
+        "context_upload_s": 0.448753,
+        "mpc_elements": 16384,
+        "base_ots": 0
+      },
+      "server": {
+        "forward_s": 25.613132,
+        "linear_s": 25.403995,
+        "hybrid_relu_s": 0.209094,
+        "mpc_s": 0.086263
+      }
+    },
+    {
+      "index": 3240,
+      "label": 4,
+      "pred": 6,
+      "plain_pred": 6,
+      "max_abs_err": 0.017157972871721716,
+      "wall_s": 26.472362923901528,
+      "up_bytes": 26503336,
+      "down_bytes": 5335794,
+      "up_sci_bytes": 10903552,
+      "down_sci_bytes": 1662976,
+      "timings": {
+        "keygen_s": 0.020087,
+        "encrypt_input_s": 0.007255,
+        "encode_input_s": 0.0,
+        "decrypt_s": 0.014019,
+        "mpc_s": 0.077149,
+        "reencrypt_s": 0.053004,
+        "context_upload_s": 0.446442,
+        "mpc_elements": 16384,
+        "base_ots": 0
+      },
+      "server": {
+        "forward_s": 25.844164,
+        "linear_s": 25.637192,
+        "hybrid_relu_s": 0.206927,
+        "mpc_s": 0.085761
+      }
+    },
+    {
+      "index": 4667,
+      "label": 0,
+      "pred": 0,
+      "plain_pred": 0,
+      "max_abs_err": 0.02227558591759049,
+      "wall_s": 27.506637673825026,
+      "up_bytes": 26503336,
+      "down_bytes": 5335793,
+      "up_sci_bytes": 10903552,
+      "down_sci_bytes": 1662976,
+      "timings": {
+        "keygen_s": 0.020086,
+        "encrypt_input_s": 0.007305,
+        "encode_input_s": 0.0,
+        "decrypt_s": 0.01415,
+        "mpc_s": 0.076462,
+        "reencrypt_s": 0.0534,
+        "context_upload_s": 0.448137,
+        "mpc_elements": 16384,
+        "base_ots": 0
+      },
+      "server": {
+        "forward_s": 26.877664,
+        "linear_s": 26.669438,
+        "hybrid_relu_s": 0.208182,
+        "mpc_s": 0.085181
+      }
+    },
+    {
+      "index": 2867,
+      "label": 7,
+      "pred": 7,
+      "plain_pred": 7,
+      "max_abs_err": 0.03372792854215234,
+      "wall_s": 27.27887380309403,
+      "up_bytes": 26503336,
+      "down_bytes": 5335794,
+      "up_sci_bytes": 10903552,
+      "down_sci_bytes": 1662976,
+      "timings": {
+        "keygen_s": 0.021126,
+        "encrypt_input_s": 0.007807,
+        "encode_input_s": 0.0,
+        "decrypt_s": 0.01588,
+        "mpc_s": 0.086811,
+        "reencrypt_s": 0.056043,
+        "context_upload_s": 0.485716,
+        "mpc_elements": 16384,
+        "base_ots": 0
+      },
+      "server": {
+        "forward_s": 26.609599,
+        "linear_s": 26.383707,
+        "hybrid_relu_s": 0.225847,
+        "mpc_s": 0.096961
+      }
+    },
+    {
+      "index": 3613,
+      "label": 5,
+      "pred": 5,
+      "plain_pred": 5,
+      "max_abs_err": 0.018221142770141086,
+      "wall_s": 26.293911708984524,
+      "up_bytes": 26503336,
+      "down_bytes": 5335791,
+      "up_sci_bytes": 10903552,
+      "down_sci_bytes": 1662976,
+      "timings": {
+        "keygen_s": 0.020013,
+        "encrypt_input_s": 0.007242,
+        "encode_input_s": 0.0,
+        "decrypt_s": 0.014704,
+        "mpc_s": 0.075582,
+        "reencrypt_s": 0.055148,
+        "context_upload_s": 0.446176,
+        "mpc_elements": 16384,
+        "base_ots": 0
+      },
+      "server": {
+        "forward_s": 25.665,
+        "linear_s": 25.456081,
+        "hybrid_relu_s": 0.208875,
+        "mpc_s": 0.084523
+      }
+    },
+    {
+      "index": 9348,
+      "label": 5,
+      "pred": 5,
+      "plain_pred": 5,
+      "max_abs_err": 0.03582958269040759,
+      "wall_s": 26.177873149048537,
+      "up_bytes": 26503336,
+      "down_bytes": 5335794,
+      "up_sci_bytes": 10903552,
+      "down_sci_bytes": 1662976,
+      "timings": {
+        "keygen_s": 0.020533,
+        "encrypt_input_s": 0.007274,
+        "encode_input_s": 0.0,
+        "decrypt_s": 0.014562,
+        "mpc_s": 0.074064,
+        "reencrypt_s": 0.053122,
+        "context_upload_s": 0.442436,
+        "mpc_elements": 16384,
+        "base_ots": 0
+      },
+      "server": {
+        "forward_s": 25.552515,
+        "linear_s": 25.346957,
+        "hybrid_relu_s": 0.205514,
+        "mpc_s": 0.082784
+      }
+    },
+    {
+      "index": 5745,
+      "label": 5,
+      "pred": 5,
+      "plain_pred": 5,
+      "max_abs_err": 0.026772589915983858,
+      "wall_s": 26.503369787009433,
+      "up_bytes": 26503336,
+      "down_bytes": 5335792,
+      "up_sci_bytes": 10903552,
+      "down_sci_bytes": 1662976,
+      "timings": {
+        "keygen_s": 0.020111,
+        "encrypt_input_s": 0.007476,
+        "encode_input_s": 0.0,
+        "decrypt_s": 0.01425,
+        "mpc_s": 0.074444,
+        "reencrypt_s": 0.053408,
+        "context_upload_s": 0.454346,
+        "mpc_elements": 16384,
+        "base_ots": 0
+      },
+      "server": {
+        "forward_s": 25.865977,
+        "linear_s": 25.65983,
+        "hybrid_relu_s": 0.206104,
+        "mpc_s": 0.082842
+      }
+    },
+    {
+      "index": 1582,
+      "label": 9,
+      "pred": 9,
+      "plain_pred": 9,
+      "max_abs_err": 0.01715075031798463,
+      "wall_s": 26.735473429085687,
+      "up_bytes": 26503336,
+      "down_bytes": 5335793,
+      "up_sci_bytes": 10903552,
+      "down_sci_bytes": 1662976,
+      "timings": {
+        "keygen_s": 0.020345,
+        "encrypt_input_s": 0.007252,
+        "encode_input_s": 0.0,
+        "decrypt_s": 0.014856,
+        "mpc_s": 0.074978,
+        "reencrypt_s": 0.05318,
+        "context_upload_s": 0.446012,
+        "mpc_elements": 16384,
+        "base_ots": 0
+      },
+      "server": {
+        "forward_s": 26.105661,
+        "linear_s": 25.898887,
+        "hybrid_relu_s": 0.206728,
+        "mpc_s": 0.083421
+      }
+    },
+    {
+      "index": 1053,
+      "label": 3,
+      "pred": 5,
+      "plain_pred": 5,
+      "max_abs_err": 0.022515733831166784,
+      "wall_s": 26.488527382025495,
+      "up_bytes": 26503336,
+      "down_bytes": 5335793,
+      "up_sci_bytes": 10903552,
+      "down_sci_bytes": 1662976,
+      "timings": {
+        "keygen_s": 0.020223,
+        "encrypt_input_s": 0.007262,
+        "encode_input_s": 0.0,
+        "decrypt_s": 0.01409,
+        "mpc_s": 0.074403,
+        "reencrypt_s": 0.053098,
+        "context_upload_s": 0.451525,
+        "mpc_elements": 16384,
+        "base_ots": 0
+      },
+      "server": {
+        "forward_s": 25.861059,
+        "linear_s": 25.654223,
+        "hybrid_relu_s": 0.206789,
+        "mpc_s": 0.082222
+      }
+    },
+    {
+      "index": 2850,
+      "label": 5,
+      "pred": 5,
+      "plain_pred": 5,
+      "max_abs_err": 0.021223411346767307,
+      "wall_s": 27.399872082984075,
+      "up_bytes": 26503336,
+      "down_bytes": 5335794,
+      "up_sci_bytes": 10903552,
+      "down_sci_bytes": 1662976,
+      "timings": {
+        "keygen_s": 0.02008,
+        "encrypt_input_s": 0.007243,
+        "encode_input_s": 0.0,
+        "decrypt_s": 0.014286,
+        "mpc_s": 0.073925,
+        "reencrypt_s": 0.053006,
+        "context_upload_s": 0.442095,
+        "mpc_elements": 16384,
+        "base_ots": 0
+      },
+      "server": {
+        "forward_s": 26.776757,
+        "linear_s": 26.571163,
+        "hybrid_relu_s": 0.205547,
+        "mpc_s": 0.082154
+      }
+    },
+    {
+      "index": 5819,
+      "label": 2,
+      "pred": 2,
+      "plain_pred": 2,
+      "max_abs_err": 0.023677428177949267,
+      "wall_s": 26.939102273900062,
+      "up_bytes": 26503336,
+      "down_bytes": 5335793,
+      "up_sci_bytes": 10903552,
+      "down_sci_bytes": 1662976,
+      "timings": {
+        "keygen_s": 0.021668,
+        "encrypt_input_s": 0.010912,
+        "encode_input_s": 0.0,
+        "decrypt_s": 0.016488,
+        "mpc_s": 0.08607,
+        "reencrypt_s": 0.056934,
+        "context_upload_s": 0.47371,
+        "mpc_elements": 16384,
+        "base_ots": 0
+      },
+      "server": {
+        "forward_s": 26.25485,
+        "linear_s": 26.026843,
+        "hybrid_relu_s": 0.227958,
+        "mpc_s": 0.093261
+      }
+    },
+    {
+      "index": 6436,
+      "label": 0,
+      "pred": 8,
+      "plain_pred": 8,
+      "max_abs_err": 0.025282047495441162,
+      "wall_s": 26.31113065010868,
+      "up_bytes": 26503336,
+      "down_bytes": 5335792,
+      "up_sci_bytes": 10903552,
+      "down_sci_bytes": 1662976,
+      "timings": {
+        "keygen_s": 0.020068,
+        "encrypt_input_s": 0.00722,
+        "encode_input_s": 0.0,
+        "decrypt_s": 0.014275,
+        "mpc_s": 0.073933,
+        "reencrypt_s": 0.053077,
+        "context_upload_s": 0.448634,
+        "mpc_elements": 16384,
+        "base_ots": 0
+      },
+      "server": {
+        "forward_s": 25.679927,
+        "linear_s": 25.474983,
+        "hybrid_relu_s": 0.2049,
+        "mpc_s": 0.082479
+      }
+    },
+    {
+      "index": 6148,
+      "label": 4,
+      "pred": 4,
+      "plain_pred": 4,
+      "max_abs_err": 0.019499566185384287,
+      "wall_s": 26.212762562092394,
+      "up_bytes": 26503336,
+      "down_bytes": 5335794,
+      "up_sci_bytes": 10903552,
+      "down_sci_bytes": 1662976,
+      "timings": {
+        "keygen_s": 0.020149,
+        "encrypt_input_s": 0.007291,
+        "encode_input_s": 0.0,
+        "decrypt_s": 0.014236,
+        "mpc_s": 0.074173,
+        "reencrypt_s": 0.05293,
+        "context_upload_s": 0.43548,
+        "mpc_elements": 16384,
+        "base_ots": 0
+      },
+      "server": {
+        "forward_s": 25.594813,
+        "linear_s": 25.389233,
+        "hybrid_relu_s": 0.205537,
+        "mpc_s": 0.082815
+      }
+    },
+    {
+      "index": 3891,
+      "label": 1,
+      "pred": 1,
+      "plain_pred": 1,
+      "max_abs_err": 0.02149640742389125,
+      "wall_s": 27.86269766301848,
+      "up_bytes": 26503336,
+      "down_bytes": 5335794,
+      "up_sci_bytes": 10903552,
+      "down_sci_bytes": 1662976,
+      "timings": {
+        "keygen_s": 0.020176,
+        "encrypt_input_s": 0.007253,
+        "encode_input_s": 0.0,
+        "decrypt_s": 0.013971,
+        "mpc_s": 0.074472,
+        "reencrypt_s": 0.05306,
+        "context_upload_s": 0.44473,
+        "mpc_elements": 16384,
+        "base_ots": 0
+      },
+      "server": {
+        "forward_s": 27.234659,
+        "linear_s": 27.029558,
+        "hybrid_relu_s": 0.205056,
+        "mpc_s": 0.082702
+      }
+    },
+    {
+      "index": 8978,
+      "label": 6,
+      "pred": 6,
+      "plain_pred": 6,
+      "max_abs_err": 0.01676205033842315,
+      "wall_s": 28.902503984980285,
+      "up_bytes": 26503336,
+      "down_bytes": 5335794,
+      "up_sci_bytes": 10903552,
+      "down_sci_bytes": 1662976,
+      "timings": {
+        "keygen_s": 0.020803,
+        "encrypt_input_s": 0.007595,
+        "encode_input_s": 0.0,
+        "decrypt_s": 0.014777,
+        "mpc_s": 0.077294,
+        "reencrypt_s": 0.060595,
+        "context_upload_s": 0.46646,
+        "mpc_elements": 16384,
+        "base_ots": 0
+      },
+      "server": {
+        "forward_s": 28.254165,
+        "linear_s": 28.032193,
+        "hybrid_relu_s": 0.221924,
+        "mpc_s": 0.085859
+      }
+    },
+    {
+      "index": 6155,
+      "label": 8,
+      "pred": 8,
+      "plain_pred": 8,
+      "max_abs_err": 0.039209905079689134,
+      "wall_s": 28.042171522043645,
+      "up_bytes": 26503336,
+      "down_bytes": 5335793,
+      "up_sci_bytes": 10903552,
+      "down_sci_bytes": 1662976,
+      "timings": {
+        "keygen_s": 0.020386,
+        "encrypt_input_s": 0.007553,
+        "encode_input_s": 0.0,
+        "decrypt_s": 0.014898,
+        "mpc_s": 0.077022,
+        "reencrypt_s": 0.054496,
+        "context_upload_s": 0.471934,
+        "mpc_elements": 16384,
+        "base_ots": 0
+      },
+      "server": {
+        "forward_s": 27.393037,
+        "linear_s": 27.180423,
+        "hybrid_relu_s": 0.212563,
+        "mpc_s": 0.085641
+      }
+    },
+    {
+      "index": 3719,
+      "label": 5,
+      "pred": 5,
+      "plain_pred": 5,
+      "max_abs_err": 0.02054317616476453,
+      "wall_s": 28.232336247107014,
+      "up_bytes": 26503336,
+      "down_bytes": 5335794,
+      "up_sci_bytes": 10903552,
+      "down_sci_bytes": 1662976,
+      "timings": {
+        "keygen_s": 0.020451,
+        "encrypt_input_s": 0.007556,
+        "encode_input_s": 0.0,
+        "decrypt_s": 0.014961,
+        "mpc_s": 0.077437,
+        "reencrypt_s": 0.055832,
+        "context_upload_s": 0.464234,
+        "mpc_elements": 16384,
+        "base_ots": 0
+      },
+      "server": {
+        "forward_s": 27.592163,
+        "linear_s": 27.377781,
+        "hybrid_relu_s": 0.214334,
+        "mpc_s": 0.086031
+      }
+    },
+    {
+      "index": 5696,
+      "label": 7,
+      "pred": 7,
+      "plain_pred": 7,
+      "max_abs_err": 0.03668761457636904,
+      "wall_s": 28.4943824140355,
+      "up_bytes": 26503336,
+      "down_bytes": 5335794,
+      "up_sci_bytes": 10903552,
+      "down_sci_bytes": 1662976,
+      "timings": {
+        "keygen_s": 0.020473,
+        "encrypt_input_s": 0.00753,
+        "encode_input_s": 0.0,
+        "decrypt_s": 0.014836,
+        "mpc_s": 0.077101,
+        "reencrypt_s": 0.054336,
+        "context_upload_s": 0.448075,
+        "mpc_elements": 16384,
+        "base_ots": 0
+      },
+      "server": {
+        "forward_s": 27.867701,
+        "linear_s": 27.654647,
+        "hybrid_relu_s": 0.213008,
+        "mpc_s": 0.085698
+      }
+    },
+    {
+      "index": 9060,
+      "label": 9,
+      "pred": 9,
+      "plain_pred": 9,
+      "max_abs_err": 0.0281407790020598,
+      "wall_s": 28.454387854086235,
+      "up_bytes": 26503336,
+      "down_bytes": 5335794,
+      "up_sci_bytes": 10903552,
+      "down_sci_bytes": 1662976,
+      "timings": {
+        "keygen_s": 0.020621,
+        "encrypt_input_s": 0.00759,
+        "encode_input_s": 0.0,
+        "decrypt_s": 0.0147,
+        "mpc_s": 0.07719,
+        "reencrypt_s": 0.05434,
+        "context_upload_s": 0.46311,
+        "mpc_elements": 16384,
+        "base_ots": 0
+      },
+      "server": {
+        "forward_s": 27.810184,
+        "linear_s": 27.596482,
+        "hybrid_relu_s": 0.213655,
+        "mpc_s": 0.086137
+      }
+    },
+    {
+      "index": 7353,
+      "label": 8,
+      "pred": 8,
+      "plain_pred": 8,
+      "max_abs_err": 0.025393153953794823,
+      "wall_s": 28.545268672984093,
+      "up_bytes": 26503336,
+      "down_bytes": 5335794,
+      "up_sci_bytes": 10903552,
+      "down_sci_bytes": 1662976,
+      "timings": {
+        "keygen_s": 0.020434,
+        "encrypt_input_s": 0.007564,
+        "encode_input_s": 0.0,
+        "decrypt_s": 0.015509,
+        "mpc_s": 0.076956,
+        "reencrypt_s": 0.055523,
+        "context_upload_s": 0.467232,
+        "mpc_elements": 16384,
+        "base_ots": 0
+      },
+      "server": {
+        "forward_s": 27.897845,
+        "linear_s": 27.682758,
+        "hybrid_relu_s": 0.215037,
+        "mpc_s": 0.086359
+      }
+    }
+  ]
+}

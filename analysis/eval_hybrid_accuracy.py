@@ -56,7 +56,7 @@ import numpy as np
 
 from canonical_net import load_canonical_model
 from eval_encrypted import load_test_set
-from mask_session import load_mask_domains
+from mask_session import load_mask_domains, widen_domains
 from params_pi import (
     COEFF_MOD_BIT_SIZES,
     F,
@@ -514,6 +514,10 @@ def main() -> int:
     )}
     payload["wire"] = WIRE_PROFILES[args.wire].to_dict()
     payload["mask_exact"] = bool(args.mask_exact)
+    if domains and args.mask_exact:
+        # 服务端把每个 hybrid 层都换成 rule v3（σ=70，输出层除外）；磁盘上
+        # 的 mask_domains 是 v2 导出，直接写进去会和实际跑的域对不上。
+        domains = widen_domains(domains, keep=(model.output_layer_id(),))
     payload["mask_domains"] = (
         {str(k): v.to_dict() for k, v in sorted(domains.items())}
         if domains else None

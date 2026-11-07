@@ -15,12 +15,20 @@ PYBIND_INC=$("$PY" -c 'import pybind11; print(pybind11.get_include())')
 PY_INC=$("$PY" -c 'import sysconfig; print(sysconfig.get_paths()["include"])')
 EXT=$("$PY" -c 'import sysconfig; print(sysconfig.get_config_var("EXT_SUFFIX"))')
 
+# A SEAL built with -DSEAL_USE_MSGSL=ON (build_seal4_deps.sh) exposes gsl/span
+# through its own third-party tree; without this include the codec build fails
+# with "gsl/span: No such file or directory".
+EXTRA_INC=()
+if [ -d "$SEAL_DIR/build/thirdparty/msgsl-src/include" ]; then
+    EXTRA_INC=(-I"$SEAL_DIR/build/thirdparty/msgsl-src/include")
+fi
+
 mkdir -p "$WZY/seal/$OUT_DIR"
 cd "$WZY/seal"
 g++ -O3 -shared -fPIC -std=c++17 -maes -msse4.1 -mavx2 -mpclmul \
     -DLITEPI_SEAL_VERSION='"4.1.2"' \
     -I"$PYBIND_INC" -I"$PY_INC" \
-    -I"$SEAL_DIR/native/src" -I"$SEAL_DIR/build/native/src" \
+    -I"$SEAL_DIR/native/src" -I"$SEAL_DIR/build/native/src" "${EXTRA_INC[@]}" \
     litepi_seal.cpp "$SEAL_DIR/build/lib/libseal-4.1.a" -lpthread \
     -o "$OUT_DIR/litepi_seal${EXT}"
 

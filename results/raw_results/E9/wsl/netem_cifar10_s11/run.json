@@ -1,0 +1,1952 @@
+{
+  "exp_id": "E9",
+  "git_sha": "a8c5db6d05ff940abd624949d7acc51202558149-dirty",
+  "timestamp_utc": "2026-11-03T05:41:10+00:00",
+  "device": "wsl",
+  "dataset": "cifar10",
+  "schedule": "11",
+  "topology": "client egress netem (delay = full RTT), wired",
+  "delay_mult": 2.0,
+  "python_runtime": "3.11",
+  "deployment_compliant": true,
+  "protocol_failures": [],
+  "mpc_runtime": "litepi_sci",
+  "tcp_slow_start_after_idle": 0,
+  "warmup_discarded": 3,
+  "repeat": 10,
+  "measured": true,
+  "points": [
+    {
+      "rtt_ms": 20.0,
+      "bandwidth_mbps": 50.0,
+      "loss_pct": 0.0,
+      "jitter_ms": 0.0,
+      "wall_ms": [
+        44687.2,
+        44338.6,
+        44622.9,
+        43898.0,
+        43503.3,
+        43819.200000000004,
+        43818.8,
+        43706.8,
+        44374.200000000004,
+        44003.5
+      ],
+      "wall_mean_ms": 44077.25,
+      "wall_p95_ms": 44658.265,
+      "client_timings": [
+        {
+          "encrypt_input_s": 0.007244,
+          "decrypt_s": 0.011495,
+          "mpc_s": 0.577108,
+          "reencrypt_s": 0.014954
+        },
+        {
+          "encrypt_input_s": 0.00735,
+          "decrypt_s": 0.007385,
+          "mpc_s": 0.577361,
+          "reencrypt_s": 0.012724
+        },
+        {
+          "encrypt_input_s": 0.005854,
+          "decrypt_s": 0.008048,
+          "mpc_s": 0.580596,
+          "reencrypt_s": 0.013021
+        },
+        {
+          "encrypt_input_s": 0.005885,
+          "decrypt_s": 0.010573,
+          "mpc_s": 0.57748,
+          "reencrypt_s": 0.01212
+        },
+        {
+          "encrypt_input_s": 0.007725,
+          "decrypt_s": 0.009588,
+          "mpc_s": 0.577303,
+          "reencrypt_s": 0.013566
+        },
+        {
+          "encrypt_input_s": 0.007912,
+          "decrypt_s": 0.008634,
+          "mpc_s": 0.577115,
+          "reencrypt_s": 0.012745
+        },
+        {
+          "encrypt_input_s": 0.007147,
+          "decrypt_s": 0.010817,
+          "mpc_s": 0.576033,
+          "reencrypt_s": 0.014344
+        },
+        {
+          "encrypt_input_s": 0.007357,
+          "decrypt_s": 0.008158,
+          "mpc_s": 0.576044,
+          "reencrypt_s": 0.011742
+        },
+        {
+          "encrypt_input_s": 0.006443,
+          "decrypt_s": 0.009642,
+          "mpc_s": 0.57804,
+          "reencrypt_s": 0.013871
+        },
+        {
+          "encrypt_input_s": 0.008345,
+          "decrypt_s": 0.009539,
+          "mpc_s": 0.576565,
+          "reencrypt_s": 0.014197
+        }
+      ],
+      "bytes_sent": [
+        2752909,
+        2752909,
+        2752909,
+        2752909,
+        2752909,
+        2752909,
+        2752909,
+        2752909,
+        2752909,
+        2752909
+      ],
+      "bytes_received": [
+        2361545,
+        2361546,
+        2361545,
+        2361544,
+        2361546,
+        2361546,
+        2361544,
+        2361547,
+        2361547,
+        2361546
+      ],
+      "online_up_bytes": [
+        3609301,
+        3609301,
+        3609301,
+        3609301,
+        3609301,
+        3609301,
+        3609301,
+        3609301,
+        3609301,
+        3609301
+      ],
+      "online_down_bytes": [
+        2499665,
+        2499666,
+        2499665,
+        2499664,
+        2499666,
+        2499666,
+        2499664,
+        2499667,
+        2499667,
+        2499666
+      ],
+      "server_wall_s": [
+        44.6869,
+        44.3381,
+        44.6223,
+        43.8976,
+        43.5028,
+        43.8186,
+        43.8184,
+        43.7063,
+        44.3737,
+        44.003
+      ],
+      "hybrid_roundtrips": 2,
+      "schedule": [
+        1,
+        1
+      ],
+      "wire": {
+        "name": "baseline",
+        "compr": "none",
+        "seeded_client": false,
+        "seeded_keys": false,
+        "modswitch_send": false,
+        "short_chain": false
+      },
+      "mpc_runtime": "litepi_sci",
+      "deployment_compliant": true,
+      "protocol_failures": [],
+      "profile_name": "paper-profile-B",
+      "keygen_s": 0.599936,
+      "context_upload_s": 31.712235
+    },
+    {
+      "rtt_ms": 20.0,
+      "bandwidth_mbps": 50.0,
+      "loss_pct": 0.0,
+      "jitter_ms": 30.0,
+      "wall_ms": [
+        44444.4,
+        44117.5,
+        44227.0,
+        44229.2,
+        44918.6,
+        44801.6,
+        45249.5,
+        44950.899999999994,
+        44753.799999999996,
+        44417.200000000004
+      ],
+      "wall_mean_ms": 44610.969999999994,
+      "wall_p95_ms": 45115.13,
+      "client_timings": [
+        {
+          "encrypt_input_s": 0.006192,
+          "decrypt_s": 0.009012,
+          "mpc_s": 1.074005,
+          "reencrypt_s": 0.013833
+        },
+        {
+          "encrypt_input_s": 0.008399,
+          "decrypt_s": 0.010817,
+          "mpc_s": 0.9992,
+          "reencrypt_s": 0.013674
+        },
+        {
+          "encrypt_input_s": 0.007811,
+          "decrypt_s": 0.008304,
+          "mpc_s": 1.049337,
+          "reencrypt_s": 0.014759
+        },
+        {
+          "encrypt_input_s": 0.007884,
+          "decrypt_s": 0.010271,
+          "mpc_s": 1.034525,
+          "reencrypt_s": 0.011676
+        },
+        {
+          "encrypt_input_s": 0.008361,
+          "decrypt_s": 0.008451,
+          "mpc_s": 1.025288,
+          "reencrypt_s": 0.015433
+        },
+        {
+          "encrypt_input_s": 0.009778,
+          "decrypt_s": 0.009643,
+          "mpc_s": 1.053775,
+          "reencrypt_s": 0.012988
+        },
+        {
+          "encrypt_input_s": 0.006238,
+          "decrypt_s": 0.007483,
+          "mpc_s": 1.056608,
+          "reencrypt_s": 0.014327
+        },
+        {
+          "encrypt_input_s": 0.00772,
+          "decrypt_s": 0.007744,
+          "mpc_s": 1.033575,
+          "reencrypt_s": 0.017137
+        },
+        {
+          "encrypt_input_s": 0.005767,
+          "decrypt_s": 0.010268,
+          "mpc_s": 1.077478,
+          "reencrypt_s": 0.016193
+        },
+        {
+          "encrypt_input_s": 0.007371,
+          "decrypt_s": 0.009529,
+          "mpc_s": 1.100705,
+          "reencrypt_s": 0.016269
+        }
+      ],
+      "bytes_sent": [
+        2752909,
+        2752909,
+        2752909,
+        2752909,
+        2752909,
+        2752909,
+        2752909,
+        2752909,
+        2752909,
+        2752909
+      ],
+      "bytes_received": [
+        2361546,
+        2361545,
+        2361546,
+        2361546,
+        2361546,
+        2361545,
+        2361546,
+        2361547,
+        2361546,
+        2361546
+      ],
+      "online_up_bytes": [
+        3609301,
+        3609301,
+        3609301,
+        3609301,
+        3609301,
+        3609301,
+        3609301,
+        3609301,
+        3609301,
+        3609301
+      ],
+      "online_down_bytes": [
+        2499666,
+        2499665,
+        2499666,
+        2499666,
+        2499666,
+        2499665,
+        2499666,
+        2499667,
+        2499666,
+        2499666
+      ],
+      "server_wall_s": [
+        44.4806,
+        44.1311,
+        44.1988,
+        44.2483,
+        44.9064,
+        44.8277,
+        45.2301,
+        44.9582,
+        44.7453,
+        44.4633
+      ],
+      "hybrid_roundtrips": 2,
+      "schedule": [
+        1,
+        1
+      ],
+      "wire": {
+        "name": "baseline",
+        "compr": "none",
+        "seeded_client": false,
+        "seeded_keys": false,
+        "modswitch_send": false,
+        "short_chain": false
+      },
+      "mpc_runtime": "litepi_sci",
+      "deployment_compliant": true,
+      "protocol_failures": [],
+      "profile_name": "paper-profile-B",
+      "keygen_s": 0.528862,
+      "context_upload_s": 32.330768
+    },
+    {
+      "rtt_ms": 20.0,
+      "bandwidth_mbps": 50.0,
+      "loss_pct": 1.0,
+      "jitter_ms": 0.0,
+      "wall_ms": [
+        43944.4,
+        43690.7,
+        43430.0,
+        43817.5,
+        43824.2,
+        44013.2,
+        43552.799999999996,
+        44003.799999999996,
+        43571.6,
+        43332.0
+      ],
+      "wall_mean_ms": 43718.02,
+      "wall_p95_ms": 44008.969999999994,
+      "client_timings": [
+        {
+          "encrypt_input_s": 0.008119,
+          "decrypt_s": 0.009927,
+          "mpc_s": 0.798205,
+          "reencrypt_s": 0.014079
+        },
+        {
+          "encrypt_input_s": 0.007731,
+          "decrypt_s": 0.010817,
+          "mpc_s": 0.880211,
+          "reencrypt_s": 0.012845
+        },
+        {
+          "encrypt_input_s": 0.007913,
+          "decrypt_s": 0.009333,
+          "mpc_s": 0.799597,
+          "reencrypt_s": 0.011487
+        },
+        {
+          "encrypt_input_s": 0.007444,
+          "decrypt_s": 0.011868,
+          "mpc_s": 0.880796,
+          "reencrypt_s": 0.011818
+        },
+        {
+          "encrypt_input_s": 0.008195,
+          "decrypt_s": 0.009722,
+          "mpc_s": 0.795131,
+          "reencrypt_s": 0.013933
+        },
+        {
+          "encrypt_input_s": 0.008545,
+          "decrypt_s": 0.011369,
+          "mpc_s": 0.858879,
+          "reencrypt_s": 0.01182
+        },
+        {
+          "encrypt_input_s": 0.008299,
+          "decrypt_s": 0.011746,
+          "mpc_s": 0.897849,
+          "reencrypt_s": 0.012559
+        },
+        {
+          "encrypt_input_s": 0.007771,
+          "decrypt_s": 0.009715,
+          "mpc_s": 1.125469,
+          "reencrypt_s": 0.015212
+        },
+        {
+          "encrypt_input_s": 0.006659,
+          "decrypt_s": 0.010398,
+          "mpc_s": 0.845802,
+          "reencrypt_s": 0.014109
+        },
+        {
+          "encrypt_input_s": 0.007314,
+          "decrypt_s": 0.011227,
+          "mpc_s": 0.82415,
+          "reencrypt_s": 0.011815
+        }
+      ],
+      "bytes_sent": [
+        2752909,
+        2752909,
+        2752909,
+        2752909,
+        2752909,
+        2752909,
+        2752909,
+        2752909,
+        2752909,
+        2752909
+      ],
+      "bytes_received": [
+        2361545,
+        2361546,
+        2361546,
+        2361544,
+        2361546,
+        2361546,
+        2361546,
+        2361546,
+        2361547,
+        2361547
+      ],
+      "online_up_bytes": [
+        3609301,
+        3609301,
+        3609301,
+        3609301,
+        3609301,
+        3609301,
+        3609301,
+        3609301,
+        3609301,
+        3609301
+      ],
+      "online_down_bytes": [
+        2499665,
+        2499666,
+        2499666,
+        2499664,
+        2499666,
+        2499666,
+        2499666,
+        2499666,
+        2499667,
+        2499667
+      ],
+      "server_wall_s": [
+        43.9438,
+        43.6902,
+        43.4295,
+        43.817,
+        43.8238,
+        44.0128,
+        43.5524,
+        44.0032,
+        43.5711,
+        43.3315
+      ],
+      "hybrid_roundtrips": 2,
+      "schedule": [
+        1,
+        1
+      ],
+      "wire": {
+        "name": "baseline",
+        "compr": "none",
+        "seeded_client": false,
+        "seeded_keys": false,
+        "modswitch_send": false,
+        "short_chain": false
+      },
+      "mpc_runtime": "litepi_sci",
+      "deployment_compliant": true,
+      "protocol_failures": [],
+      "profile_name": "paper-profile-B",
+      "keygen_s": 0.533063,
+      "context_upload_s": 32.543284
+    },
+    {
+      "rtt_ms": 20.0,
+      "bandwidth_mbps": 50.0,
+      "loss_pct": 1.0,
+      "jitter_ms": 30.0,
+      "wall_ms": [
+        43813.8,
+        44402.299999999996,
+        45670.7,
+        45527.4,
+        45880.899999999994,
+        49766.1,
+        47370.5,
+        48556.3,
+        47472.700000000004,
+        47060.0
+      ],
+      "wall_mean_ms": 46552.07,
+      "wall_p95_ms": 49221.69,
+      "client_timings": [
+        {
+          "encrypt_input_s": 0.008246,
+          "decrypt_s": 0.007221,
+          "mpc_s": 1.240448,
+          "reencrypt_s": 0.011902
+        },
+        {
+          "encrypt_input_s": 0.008186,
+          "decrypt_s": 0.008685,
+          "mpc_s": 1.677033,
+          "reencrypt_s": 0.012818
+        },
+        {
+          "encrypt_input_s": 0.007743,
+          "decrypt_s": 0.008585,
+          "mpc_s": 1.352707,
+          "reencrypt_s": 0.014222
+        },
+        {
+          "encrypt_input_s": 0.006243,
+          "decrypt_s": 0.00881,
+          "mpc_s": 1.310303,
+          "reencrypt_s": 0.013451
+        },
+        {
+          "encrypt_input_s": 0.006647,
+          "decrypt_s": 0.00849,
+          "mpc_s": 1.581257,
+          "reencrypt_s": 0.015344
+        },
+        {
+          "encrypt_input_s": 0.006225,
+          "decrypt_s": 0.008563,
+          "mpc_s": 1.257798,
+          "reencrypt_s": 0.012605
+        },
+        {
+          "encrypt_input_s": 0.006847,
+          "decrypt_s": 0.007481,
+          "mpc_s": 1.242934,
+          "reencrypt_s": 0.01512
+        },
+        {
+          "encrypt_input_s": 0.00752,
+          "decrypt_s": 0.007672,
+          "mpc_s": 1.376883,
+          "reencrypt_s": 0.011566
+        },
+        {
+          "encrypt_input_s": 0.006736,
+          "decrypt_s": 0.007634,
+          "mpc_s": 1.274065,
+          "reencrypt_s": 0.01287
+        },
+        {
+          "encrypt_input_s": 0.005979,
+          "decrypt_s": 0.007811,
+          "mpc_s": 1.646053,
+          "reencrypt_s": 0.014184
+        }
+      ],
+      "bytes_sent": [
+        2752909,
+        2752909,
+        2752909,
+        2752909,
+        2752909,
+        2752909,
+        2752909,
+        2752909,
+        2752909,
+        2752909
+      ],
+      "bytes_received": [
+        2361544,
+        2361544,
+        2361546,
+        2361546,
+        2361544,
+        2361546,
+        2361546,
+        2361545,
+        2361546,
+        2361547
+      ],
+      "online_up_bytes": [
+        3609301,
+        3609301,
+        3609301,
+        3609301,
+        3609301,
+        3609301,
+        3609301,
+        3609301,
+        3609301,
+        3609301
+      ],
+      "online_down_bytes": [
+        2499664,
+        2499664,
+        2499666,
+        2499666,
+        2499664,
+        2499666,
+        2499666,
+        2499665,
+        2499666,
+        2499667
+      ],
+      "server_wall_s": [
+        43.7835,
+        44.3741,
+        45.6653,
+        45.5414,
+        45.924,
+        49.7686,
+        47.3823,
+        48.5683,
+        47.4293,
+        47.0885
+      ],
+      "hybrid_roundtrips": 2,
+      "schedule": [
+        1,
+        1
+      ],
+      "wire": {
+        "name": "baseline",
+        "compr": "none",
+        "seeded_client": false,
+        "seeded_keys": false,
+        "modswitch_send": false,
+        "short_chain": false
+      },
+      "mpc_runtime": "litepi_sci",
+      "deployment_compliant": true,
+      "protocol_failures": [],
+      "profile_name": "paper-profile-B",
+      "keygen_s": 0.517642,
+      "context_upload_s": 33.762824
+    },
+    {
+      "rtt_ms": 20.0,
+      "bandwidth_mbps": 50.0,
+      "loss_pct": 5.0,
+      "jitter_ms": 0.0,
+      "wall_ms": [
+        46824.399999999994,
+        46691.6,
+        48013.2,
+        47781.7,
+        47970.2,
+        48767.5,
+        48201.5,
+        47620.1,
+        48184.7,
+        47062.0
+      ],
+      "wall_mean_ms": 47711.689999999995,
+      "wall_p95_ms": 48512.8,
+      "client_timings": [
+        {
+          "encrypt_input_s": 0.005854,
+          "decrypt_s": 0.008381,
+          "mpc_s": 1.070448,
+          "reencrypt_s": 0.012411
+        },
+        {
+          "encrypt_input_s": 0.00746,
+          "decrypt_s": 0.007119,
+          "mpc_s": 1.054465,
+          "reencrypt_s": 0.012318
+        },
+        {
+          "encrypt_input_s": 0.006309,
+          "decrypt_s": 0.010006,
+          "mpc_s": 1.703136,
+          "reencrypt_s": 0.015273
+        },
+        {
+          "encrypt_input_s": 0.005858,
+          "decrypt_s": 0.007508,
+          "mpc_s": 1.165368,
+          "reencrypt_s": 0.014013
+        },
+        {
+          "encrypt_input_s": 0.007552,
+          "decrypt_s": 0.006903,
+          "mpc_s": 1.590496,
+          "reencrypt_s": 0.01209
+        },
+        {
+          "encrypt_input_s": 0.005881,
+          "decrypt_s": 0.008397,
+          "mpc_s": 1.656283,
+          "reencrypt_s": 0.011506
+        },
+        {
+          "encrypt_input_s": 0.007504,
+          "decrypt_s": 0.006814,
+          "mpc_s": 1.290928,
+          "reencrypt_s": 0.012759
+        },
+        {
+          "encrypt_input_s": 0.007897,
+          "decrypt_s": 0.007565,
+          "mpc_s": 1.741455,
+          "reencrypt_s": 0.012174
+        },
+        {
+          "encrypt_input_s": 0.006581,
+          "decrypt_s": 0.007576,
+          "mpc_s": 1.414584,
+          "reencrypt_s": 0.011354
+        },
+        {
+          "encrypt_input_s": 0.005959,
+          "decrypt_s": 0.008013,
+          "mpc_s": 1.107916,
+          "reencrypt_s": 0.012254
+        }
+      ],
+      "bytes_sent": [
+        2752909,
+        2752909,
+        2752909,
+        2752909,
+        2752909,
+        2752909,
+        2752909,
+        2752909,
+        2752909,
+        2752909
+      ],
+      "bytes_received": [
+        2361545,
+        2361546,
+        2361545,
+        2361546,
+        2361546,
+        2361546,
+        2361545,
+        2361547,
+        2361546,
+        2361547
+      ],
+      "online_up_bytes": [
+        3609301,
+        3609301,
+        3609301,
+        3609301,
+        3609301,
+        3609301,
+        3609301,
+        3609301,
+        3609301,
+        3609301
+      ],
+      "online_down_bytes": [
+        2499665,
+        2499666,
+        2499665,
+        2499666,
+        2499666,
+        2499666,
+        2499665,
+        2499667,
+        2499666,
+        2499667
+      ],
+      "server_wall_s": [
+        46.8238,
+        46.6908,
+        48.0126,
+        47.7811,
+        47.9696,
+        48.7669,
+        48.2009,
+        47.6195,
+        47.8812,
+        47.0616
+      ],
+      "hybrid_roundtrips": 2,
+      "schedule": [
+        1,
+        1
+      ],
+      "wire": {
+        "name": "baseline",
+        "compr": "none",
+        "seeded_client": false,
+        "seeded_keys": false,
+        "modswitch_send": false,
+        "short_chain": false
+      },
+      "mpc_runtime": "litepi_sci",
+      "deployment_compliant": true,
+      "protocol_failures": [],
+      "profile_name": "paper-profile-B",
+      "keygen_s": 0.569273,
+      "context_upload_s": 48.393194
+    },
+    {
+      "rtt_ms": 20.0,
+      "bandwidth_mbps": 50.0,
+      "loss_pct": 5.0,
+      "jitter_ms": 30.0,
+      "wall_ms": [
+        49206.4,
+        46079.6,
+        46762.2,
+        46078.5,
+        46270.8,
+        47062.5,
+        46268.3,
+        46931.2,
+        47166.1,
+        47474.4
+      ],
+      "wall_mean_ms": 46930.0,
+      "wall_p95_ms": 48427.0,
+      "client_timings": [
+        {
+          "encrypt_input_s": 0.00593,
+          "decrypt_s": 0.007212,
+          "mpc_s": 1.724738,
+          "reencrypt_s": 0.011501
+        },
+        {
+          "encrypt_input_s": 0.006635,
+          "decrypt_s": 0.008006,
+          "mpc_s": 1.469732,
+          "reencrypt_s": 0.012083
+        },
+        {
+          "encrypt_input_s": 0.005641,
+          "decrypt_s": 0.010129,
+          "mpc_s": 1.858729,
+          "reencrypt_s": 0.012784
+        },
+        {
+          "encrypt_input_s": 0.006972,
+          "decrypt_s": 0.009065,
+          "mpc_s": 1.928443,
+          "reencrypt_s": 0.011698
+        },
+        {
+          "encrypt_input_s": 0.00739,
+          "decrypt_s": 0.006019,
+          "mpc_s": 1.4457,
+          "reencrypt_s": 0.015032
+        },
+        {
+          "encrypt_input_s": 0.007088,
+          "decrypt_s": 0.00809,
+          "mpc_s": 1.359311,
+          "reencrypt_s": 0.013269
+        },
+        {
+          "encrypt_input_s": 0.005625,
+          "decrypt_s": 0.007787,
+          "mpc_s": 1.920178,
+          "reencrypt_s": 0.012214
+        },
+        {
+          "encrypt_input_s": 0.005625,
+          "decrypt_s": 0.007222,
+          "mpc_s": 1.933908,
+          "reencrypt_s": 0.012625
+        },
+        {
+          "encrypt_input_s": 0.007019,
+          "decrypt_s": 0.006107,
+          "mpc_s": 1.929982,
+          "reencrypt_s": 0.012769
+        },
+        {
+          "encrypt_input_s": 0.006439,
+          "decrypt_s": 0.006855,
+          "mpc_s": 1.494192,
+          "reencrypt_s": 0.011738
+        }
+      ],
+      "bytes_sent": [
+        2752909,
+        2752909,
+        2752909,
+        2752909,
+        2752909,
+        2752909,
+        2752909,
+        2752909,
+        2752909,
+        2752909
+      ],
+      "bytes_received": [
+        2361545,
+        2361546,
+        2361546,
+        2361546,
+        2361546,
+        2361545,
+        2361546,
+        2361545,
+        2361546,
+        2361545
+      ],
+      "online_up_bytes": [
+        3609301,
+        3609301,
+        3609301,
+        3609301,
+        3609301,
+        3609301,
+        3609301,
+        3609301,
+        3609301,
+        3609301
+      ],
+      "online_down_bytes": [
+        2499665,
+        2499666,
+        2499666,
+        2499666,
+        2499666,
+        2499665,
+        2499666,
+        2499665,
+        2499666,
+        2499665
+      ],
+      "server_wall_s": [
+        49.2167,
+        46.0982,
+        47.0485,
+        46.0881,
+        46.2732,
+        47.0797,
+        46.2809,
+        46.955,
+        47.2059,
+        47.4786
+      ],
+      "hybrid_roundtrips": 2,
+      "schedule": [
+        1,
+        1
+      ],
+      "wire": {
+        "name": "baseline",
+        "compr": "none",
+        "seeded_client": false,
+        "seeded_keys": false,
+        "modswitch_send": false,
+        "short_chain": false
+      },
+      "mpc_runtime": "litepi_sci",
+      "deployment_compliant": true,
+      "protocol_failures": [],
+      "profile_name": "paper-profile-B",
+      "keygen_s": 0.582005,
+      "context_upload_s": 52.226479
+    },
+    {
+      "rtt_ms": 100.0,
+      "bandwidth_mbps": 50.0,
+      "loss_pct": 0.0,
+      "jitter_ms": 0.0,
+      "wall_ms": [
+        46518.6,
+        45605.0,
+        46373.8,
+        46074.6,
+        46191.0,
+        46849.5,
+        45969.8,
+        46201.1,
+        46273.899999999994,
+        46244.9
+      ],
+      "wall_mean_ms": 46230.22000000001,
+      "wall_p95_ms": 46700.595,
+      "client_timings": [
+        {
+          "encrypt_input_s": 0.007884,
+          "decrypt_s": 0.010049,
+          "mpc_s": 2.184886,
+          "reencrypt_s": 0.014972
+        },
+        {
+          "encrypt_input_s": 0.005635,
+          "decrypt_s": 0.008257,
+          "mpc_s": 2.176509,
+          "reencrypt_s": 0.013738
+        },
+        {
+          "encrypt_input_s": 0.007683,
+          "decrypt_s": 0.007413,
+          "mpc_s": 2.175826,
+          "reencrypt_s": 0.015259
+        },
+        {
+          "encrypt_input_s": 0.007521,
+          "decrypt_s": 0.008828,
+          "mpc_s": 2.17628,
+          "reencrypt_s": 0.011439
+        },
+        {
+          "encrypt_input_s": 0.006385,
+          "decrypt_s": 0.010273,
+          "mpc_s": 2.176293,
+          "reencrypt_s": 0.013648
+        },
+        {
+          "encrypt_input_s": 0.00608,
+          "decrypt_s": 0.010259,
+          "mpc_s": 2.177639,
+          "reencrypt_s": 0.013327
+        },
+        {
+          "encrypt_input_s": 0.007946,
+          "decrypt_s": 0.009451,
+          "mpc_s": 2.176079,
+          "reencrypt_s": 0.012966
+        },
+        {
+          "encrypt_input_s": 0.007848,
+          "decrypt_s": 0.009327,
+          "mpc_s": 2.176645,
+          "reencrypt_s": 0.01449
+        },
+        {
+          "encrypt_input_s": 0.006679,
+          "decrypt_s": 0.008307,
+          "mpc_s": 2.176219,
+          "reencrypt_s": 0.013396
+        },
+        {
+          "encrypt_input_s": 0.007629,
+          "decrypt_s": 0.007633,
+          "mpc_s": 2.176111,
+          "reencrypt_s": 0.014392
+        }
+      ],
+      "bytes_sent": [
+        2752909,
+        2752909,
+        2752909,
+        2752909,
+        2752909,
+        2752909,
+        2752909,
+        2752909,
+        2752909,
+        2752909
+      ],
+      "bytes_received": [
+        2361546,
+        2361546,
+        2361546,
+        2361545,
+        2361546,
+        2361545,
+        2361546,
+        2361547,
+        2361547,
+        2361547
+      ],
+      "online_up_bytes": [
+        3609301,
+        3609301,
+        3609301,
+        3609301,
+        3609301,
+        3609301,
+        3609301,
+        3609301,
+        3609301,
+        3609301
+      ],
+      "online_down_bytes": [
+        2499666,
+        2499666,
+        2499666,
+        2499665,
+        2499666,
+        2499665,
+        2499666,
+        2499667,
+        2499667,
+        2499667
+      ],
+      "server_wall_s": [
+        46.5179,
+        45.6042,
+        46.3733,
+        46.074,
+        46.1904,
+        46.8489,
+        45.9692,
+        46.2005,
+        46.2733,
+        46.2444
+      ],
+      "hybrid_roundtrips": 2,
+      "schedule": [
+        1,
+        1
+      ],
+      "wire": {
+        "name": "baseline",
+        "compr": "none",
+        "seeded_client": false,
+        "seeded_keys": false,
+        "modswitch_send": false,
+        "short_chain": false
+      },
+      "mpc_runtime": "litepi_sci",
+      "deployment_compliant": true,
+      "protocol_failures": [],
+      "profile_name": "paper-profile-B",
+      "keygen_s": 0.581586,
+      "context_upload_s": 37.368441
+    },
+    {
+      "rtt_ms": 100.0,
+      "bandwidth_mbps": 50.0,
+      "loss_pct": 0.0,
+      "jitter_ms": 30.0,
+      "wall_ms": [
+        46714.799999999996,
+        46462.1,
+        46541.7,
+        46527.6,
+        46971.3,
+        46358.2,
+        46330.6,
+        46411.700000000004,
+        46250.799999999996,
+        46639.0
+      ],
+      "wall_mean_ms": 46520.78,
+      "wall_p95_ms": 46855.875,
+      "client_timings": [
+        {
+          "encrypt_input_s": 0.00576,
+          "decrypt_s": 0.007169,
+          "mpc_s": 2.679439,
+          "reencrypt_s": 0.014084
+        },
+        {
+          "encrypt_input_s": 0.006881,
+          "decrypt_s": 0.009056,
+          "mpc_s": 2.691645,
+          "reencrypt_s": 0.012929
+        },
+        {
+          "encrypt_input_s": 0.008151,
+          "decrypt_s": 0.01053,
+          "mpc_s": 2.643673,
+          "reencrypt_s": 0.013565
+        },
+        {
+          "encrypt_input_s": 0.007067,
+          "decrypt_s": 0.008213,
+          "mpc_s": 2.664318,
+          "reencrypt_s": 0.013825
+        },
+        {
+          "encrypt_input_s": 0.010242,
+          "decrypt_s": 0.007637,
+          "mpc_s": 2.688431,
+          "reencrypt_s": 0.014428
+        },
+        {
+          "encrypt_input_s": 0.007683,
+          "decrypt_s": 0.007917,
+          "mpc_s": 2.642856,
+          "reencrypt_s": 0.012744
+        },
+        {
+          "encrypt_input_s": 0.006253,
+          "decrypt_s": 0.008159,
+          "mpc_s": 2.68586,
+          "reencrypt_s": 0.015065
+        },
+        {
+          "encrypt_input_s": 0.006376,
+          "decrypt_s": 0.006058,
+          "mpc_s": 2.661446,
+          "reencrypt_s": 0.011846
+        },
+        {
+          "encrypt_input_s": 0.007955,
+          "decrypt_s": 0.010392,
+          "mpc_s": 2.663047,
+          "reencrypt_s": 0.01411
+        },
+        {
+          "encrypt_input_s": 0.007241,
+          "decrypt_s": 0.008675,
+          "mpc_s": 2.619663,
+          "reencrypt_s": 0.013583
+        }
+      ],
+      "bytes_sent": [
+        2752909,
+        2752909,
+        2752909,
+        2752909,
+        2752909,
+        2752909,
+        2752909,
+        2752909,
+        2752909,
+        2752909
+      ],
+      "bytes_received": [
+        2361545,
+        2361546,
+        2361546,
+        2361546,
+        2361546,
+        2361546,
+        2361544,
+        2361547,
+        2361547,
+        2361547
+      ],
+      "online_up_bytes": [
+        3609301,
+        3609301,
+        3609301,
+        3609301,
+        3609301,
+        3609301,
+        3609301,
+        3609301,
+        3609301,
+        3609301
+      ],
+      "online_down_bytes": [
+        2499665,
+        2499666,
+        2499666,
+        2499666,
+        2499666,
+        2499666,
+        2499664,
+        2499667,
+        2499667,
+        2499667
+      ],
+      "server_wall_s": [
+        46.7112,
+        46.4601,
+        46.5607,
+        46.5416,
+        47.0041,
+        46.4095,
+        46.32,
+        46.4633,
+        46.2592,
+        46.6583
+      ],
+      "hybrid_roundtrips": 2,
+      "schedule": [
+        1,
+        1
+      ],
+      "wire": {
+        "name": "baseline",
+        "compr": "none",
+        "seeded_client": false,
+        "seeded_keys": false,
+        "modswitch_send": false,
+        "short_chain": false
+      },
+      "mpc_runtime": "litepi_sci",
+      "deployment_compliant": true,
+      "protocol_failures": [],
+      "profile_name": "paper-profile-B",
+      "keygen_s": 0.575023,
+      "context_upload_s": 37.866394
+    },
+    {
+      "rtt_ms": 100.0,
+      "bandwidth_mbps": 50.0,
+      "loss_pct": 1.0,
+      "jitter_ms": 0.0,
+      "wall_ms": [
+        47654.5,
+        48344.9,
+        48213.5,
+        47973.6,
+        48270.6,
+        47791.7,
+        49143.5,
+        48408.700000000004,
+        48721.4,
+        48696.2
+      ],
+      "wall_mean_ms": 48321.86,
+      "wall_p95_ms": 48953.555,
+      "client_timings": [
+        {
+          "encrypt_input_s": 0.006022,
+          "decrypt_s": 0.008962,
+          "mpc_s": 3.359892,
+          "reencrypt_s": 0.015115
+        },
+        {
+          "encrypt_input_s": 0.008172,
+          "decrypt_s": 0.009114,
+          "mpc_s": 3.36411,
+          "reencrypt_s": 0.014464
+        },
+        {
+          "encrypt_input_s": 0.007227,
+          "decrypt_s": 0.011055,
+          "mpc_s": 3.534152,
+          "reencrypt_s": 0.015201
+        },
+        {
+          "encrypt_input_s": 0.006598,
+          "decrypt_s": 0.008751,
+          "mpc_s": 3.415243,
+          "reencrypt_s": 0.013478
+        },
+        {
+          "encrypt_input_s": 0.006135,
+          "decrypt_s": 0.009994,
+          "mpc_s": 3.363324,
+          "reencrypt_s": 0.013414
+        },
+        {
+          "encrypt_input_s": 0.008013,
+          "decrypt_s": 0.009808,
+          "mpc_s": 3.362827,
+          "reencrypt_s": 0.015117
+        },
+        {
+          "encrypt_input_s": 0.007425,
+          "decrypt_s": 0.009679,
+          "mpc_s": 3.564179,
+          "reencrypt_s": 0.013822
+        },
+        {
+          "encrypt_input_s": 0.007428,
+          "decrypt_s": 0.010201,
+          "mpc_s": 3.366009,
+          "reencrypt_s": 0.013004
+        },
+        {
+          "encrypt_input_s": 0.007925,
+          "decrypt_s": 0.009049,
+          "mpc_s": 3.363265,
+          "reencrypt_s": 0.013903
+        },
+        {
+          "encrypt_input_s": 0.006228,
+          "decrypt_s": 0.009512,
+          "mpc_s": 3.617355,
+          "reencrypt_s": 0.015963
+        }
+      ],
+      "bytes_sent": [
+        2752909,
+        2752909,
+        2752909,
+        2752909,
+        2752909,
+        2752909,
+        2752909,
+        2752909,
+        2752909,
+        2752909
+      ],
+      "bytes_received": [
+        2361545,
+        2361545,
+        2361545,
+        2361546,
+        2361545,
+        2361546,
+        2361546,
+        2361547,
+        2361546,
+        2361543
+      ],
+      "online_up_bytes": [
+        3609301,
+        3609301,
+        3609301,
+        3609301,
+        3609301,
+        3609301,
+        3609301,
+        3609301,
+        3609301,
+        3609301
+      ],
+      "online_down_bytes": [
+        2499665,
+        2499665,
+        2499665,
+        2499666,
+        2499665,
+        2499666,
+        2499666,
+        2499667,
+        2499666,
+        2499663
+      ],
+      "server_wall_s": [
+        47.654,
+        48.3444,
+        48.213,
+        47.9732,
+        48.2701,
+        47.7911,
+        49.1428,
+        48.4083,
+        48.7209,
+        48.6955
+      ],
+      "hybrid_roundtrips": 2,
+      "schedule": [
+        1,
+        1
+      ],
+      "wire": {
+        "name": "baseline",
+        "compr": "none",
+        "seeded_client": false,
+        "seeded_keys": false,
+        "modswitch_send": false,
+        "short_chain": false
+      },
+      "mpc_runtime": "litepi_sci",
+      "deployment_compliant": true,
+      "protocol_failures": [],
+      "profile_name": "paper-profile-B",
+      "keygen_s": 0.562892,
+      "context_upload_s": 40.179147
+    },
+    {
+      "rtt_ms": 100.0,
+      "bandwidth_mbps": 50.0,
+      "loss_pct": 1.0,
+      "jitter_ms": 30.0,
+      "wall_ms": [
+        48584.6,
+        47929.1,
+        47531.6,
+        48319.8,
+        48690.399999999994,
+        48131.2,
+        48676.7,
+        48608.1,
+        49203.1,
+        47652.799999999996
+      ],
+      "wall_mean_ms": 48332.73999999999,
+      "wall_p95_ms": 48972.384999999995,
+      "client_timings": [
+        {
+          "encrypt_input_s": 0.007487,
+          "decrypt_s": 0.007924,
+          "mpc_s": 3.850949,
+          "reencrypt_s": 0.014842
+        },
+        {
+          "encrypt_input_s": 0.006846,
+          "decrypt_s": 0.009709,
+          "mpc_s": 3.768855,
+          "reencrypt_s": 0.014018
+        },
+        {
+          "encrypt_input_s": 0.006839,
+          "decrypt_s": 0.008102,
+          "mpc_s": 3.606,
+          "reencrypt_s": 0.014441
+        },
+        {
+          "encrypt_input_s": 0.007722,
+          "decrypt_s": 0.006811,
+          "mpc_s": 4.283506,
+          "reencrypt_s": 0.013469
+        },
+        {
+          "encrypt_input_s": 0.005641,
+          "decrypt_s": 0.009248,
+          "mpc_s": 4.523963,
+          "reencrypt_s": 0.013079
+        },
+        {
+          "encrypt_input_s": 0.005926,
+          "decrypt_s": 0.009942,
+          "mpc_s": 3.689805,
+          "reencrypt_s": 0.013307
+        },
+        {
+          "encrypt_input_s": 0.007872,
+          "decrypt_s": 0.009241,
+          "mpc_s": 4.199766,
+          "reencrypt_s": 0.01454
+        },
+        {
+          "encrypt_input_s": 0.008263,
+          "decrypt_s": 0.009198,
+          "mpc_s": 4.305757,
+          "reencrypt_s": 0.018029
+        },
+        {
+          "encrypt_input_s": 0.007353,
+          "decrypt_s": 0.011277,
+          "mpc_s": 4.57789,
+          "reencrypt_s": 0.015109
+        },
+        {
+          "encrypt_input_s": 0.007869,
+          "decrypt_s": 0.011262,
+          "mpc_s": 3.863572,
+          "reencrypt_s": 0.012129
+        }
+      ],
+      "bytes_sent": [
+        2752909,
+        2752909,
+        2752909,
+        2752909,
+        2752909,
+        2752909,
+        2752909,
+        2752909,
+        2752909,
+        2752909
+      ],
+      "bytes_received": [
+        2361544,
+        2361546,
+        2361545,
+        2361546,
+        2361546,
+        2361544,
+        2361546,
+        2361546,
+        2361545,
+        2361546
+      ],
+      "online_up_bytes": [
+        3609301,
+        3609301,
+        3609301,
+        3609301,
+        3609301,
+        3609301,
+        3609301,
+        3609301,
+        3609301,
+        3609301
+      ],
+      "online_down_bytes": [
+        2499664,
+        2499666,
+        2499665,
+        2499666,
+        2499666,
+        2499664,
+        2499666,
+        2499666,
+        2499665,
+        2499666
+      ],
+      "server_wall_s": [
+        48.6116,
+        47.9458,
+        47.4999,
+        48.2855,
+        48.7203,
+        48.1313,
+        48.6804,
+        48.6369,
+        49.2244,
+        47.6327
+      ],
+      "hybrid_roundtrips": 2,
+      "schedule": [
+        1,
+        1
+      ],
+      "wire": {
+        "name": "baseline",
+        "compr": "none",
+        "seeded_client": false,
+        "seeded_keys": false,
+        "modswitch_send": false,
+        "short_chain": false
+      },
+      "mpc_runtime": "litepi_sci",
+      "deployment_compliant": true,
+      "protocol_failures": [],
+      "profile_name": "paper-profile-B",
+      "keygen_s": 0.54743,
+      "context_upload_s": 39.580646
+    },
+    {
+      "rtt_ms": 100.0,
+      "bandwidth_mbps": 50.0,
+      "loss_pct": 5.0,
+      "jitter_ms": 0.0,
+      "wall_ms": [
+        50285.200000000004,
+        49628.9,
+        49617.8,
+        54023.7,
+        51085.700000000004,
+        50623.0,
+        48387.3,
+        52227.1,
+        51898.6,
+        52163.3
+      ],
+      "wall_mean_ms": 50994.06,
+      "wall_p95_ms": 53215.229999999996,
+      "client_timings": [
+        {
+          "encrypt_input_s": 0.006718,
+          "decrypt_s": 0.009608,
+          "mpc_s": 5.251005,
+          "reencrypt_s": 0.016424
+        },
+        {
+          "encrypt_input_s": 0.008202,
+          "decrypt_s": 0.009913,
+          "mpc_s": 4.651817,
+          "reencrypt_s": 0.013858
+        },
+        {
+          "encrypt_input_s": 0.006759,
+          "decrypt_s": 0.0084,
+          "mpc_s": 5.437947,
+          "reencrypt_s": 0.014717
+        },
+        {
+          "encrypt_input_s": 0.0062,
+          "decrypt_s": 0.008368,
+          "mpc_s": 5.74824,
+          "reencrypt_s": 0.014701
+        },
+        {
+          "encrypt_input_s": 0.007336,
+          "decrypt_s": 0.010656,
+          "mpc_s": 4.572948,
+          "reencrypt_s": 0.013105
+        },
+        {
+          "encrypt_input_s": 0.00809,
+          "decrypt_s": 0.008074,
+          "mpc_s": 5.012857,
+          "reencrypt_s": 0.01578
+        },
+        {
+          "encrypt_input_s": 0.007811,
+          "decrypt_s": 0.011285,
+          "mpc_s": 3.808851,
+          "reencrypt_s": 0.014016
+        },
+        {
+          "encrypt_input_s": 0.007009,
+          "decrypt_s": 0.008671,
+          "mpc_s": 5.094802,
+          "reencrypt_s": 0.014549
+        },
+        {
+          "encrypt_input_s": 0.007984,
+          "decrypt_s": 0.008801,
+          "mpc_s": 4.316986,
+          "reencrypt_s": 0.016377
+        },
+        {
+          "encrypt_input_s": 0.006529,
+          "decrypt_s": 0.009707,
+          "mpc_s": 4.863867,
+          "reencrypt_s": 0.013773
+        }
+      ],
+      "bytes_sent": [
+        2752909,
+        2752909,
+        2752909,
+        2752909,
+        2752909,
+        2752909,
+        2752909,
+        2752909,
+        2752909,
+        2752909
+      ],
+      "bytes_received": [
+        2361546,
+        2361546,
+        2361545,
+        2361547,
+        2361546,
+        2361546,
+        2361546,
+        2361547,
+        2361547,
+        2361546
+      ],
+      "online_up_bytes": [
+        3609301,
+        3609301,
+        3609301,
+        3609301,
+        3609301,
+        3609301,
+        3609301,
+        3609301,
+        3609301,
+        3609301
+      ],
+      "online_down_bytes": [
+        2499666,
+        2499666,
+        2499665,
+        2499667,
+        2499666,
+        2499666,
+        2499666,
+        2499667,
+        2499667,
+        2499666
+      ],
+      "server_wall_s": [
+        50.2848,
+        49.6282,
+        49.6173,
+        54.0232,
+        51.0852,
+        50.6225,
+        48.3868,
+        52.6845,
+        51.8981,
+        52.1627
+      ],
+      "hybrid_roundtrips": 2,
+      "schedule": [
+        1,
+        1
+      ],
+      "wire": {
+        "name": "baseline",
+        "compr": "none",
+        "seeded_client": false,
+        "seeded_keys": false,
+        "modswitch_send": false,
+        "short_chain": false
+      },
+      "mpc_runtime": "litepi_sci",
+      "deployment_compliant": true,
+      "protocol_failures": [],
+      "profile_name": "paper-profile-B",
+      "keygen_s": 0.545704,
+      "context_upload_s": 104.134216
+    },
+    {
+      "rtt_ms": 100.0,
+      "bandwidth_mbps": 50.0,
+      "loss_pct": 5.0,
+      "jitter_ms": 30.0,
+      "wall_ms": [
+        50918.4,
+        51996.899999999994,
+        52737.1,
+        49905.4,
+        53656.2,
+        55003.3,
+        51215.899999999994,
+        50699.6,
+        51191.8,
+        51848.9
+      ],
+      "wall_mean_ms": 51917.35,
+      "wall_p95_ms": 54397.104999999996,
+      "client_timings": [
+        {
+          "encrypt_input_s": 0.007016,
+          "decrypt_s": 0.009689,
+          "mpc_s": 5.579722,
+          "reencrypt_s": 0.013491
+        },
+        {
+          "encrypt_input_s": 0.007986,
+          "decrypt_s": 0.007989,
+          "mpc_s": 6.266679,
+          "reencrypt_s": 0.01276
+        },
+        {
+          "encrypt_input_s": 0.007561,
+          "decrypt_s": 0.007653,
+          "mpc_s": 4.864502,
+          "reencrypt_s": 0.01264
+        },
+        {
+          "encrypt_input_s": 0.005674,
+          "decrypt_s": 0.008353,
+          "mpc_s": 4.115505,
+          "reencrypt_s": 0.0115
+        },
+        {
+          "encrypt_input_s": 0.006872,
+          "decrypt_s": 0.00738,
+          "mpc_s": 4.42812,
+          "reencrypt_s": 0.012655
+        },
+        {
+          "encrypt_input_s": 0.008485,
+          "decrypt_s": 0.010203,
+          "mpc_s": 5.7242,
+          "reencrypt_s": 0.016312
+        },
+        {
+          "encrypt_input_s": 0.006193,
+          "decrypt_s": 0.009611,
+          "mpc_s": 5.458468,
+          "reencrypt_s": 0.016007
+        },
+        {
+          "encrypt_input_s": 0.008381,
+          "decrypt_s": 0.009534,
+          "mpc_s": 5.43439,
+          "reencrypt_s": 0.014895
+        },
+        {
+          "encrypt_input_s": 0.006812,
+          "decrypt_s": 0.010032,
+          "mpc_s": 5.338689,
+          "reencrypt_s": 0.01538
+        },
+        {
+          "encrypt_input_s": 0.008395,
+          "decrypt_s": 0.007265,
+          "mpc_s": 6.720145,
+          "reencrypt_s": 0.012915
+        }
+      ],
+      "bytes_sent": [
+        2752909,
+        2752909,
+        2752909,
+        2752909,
+        2752909,
+        2752909,
+        2752909,
+        2752909,
+        2752909,
+        2752909
+      ],
+      "bytes_received": [
+        2361545,
+        2361546,
+        2361545,
+        2361546,
+        2361545,
+        2361548,
+        2361546,
+        2361547,
+        2361547,
+        2361547
+      ],
+      "online_up_bytes": [
+        3609301,
+        3609301,
+        3609301,
+        3609301,
+        3609301,
+        3609301,
+        3609301,
+        3609301,
+        3609301,
+        3609301
+      ],
+      "online_down_bytes": [
+        2499665,
+        2499666,
+        2499665,
+        2499666,
+        2499665,
+        2499668,
+        2499666,
+        2499667,
+        2499667,
+        2499667
+      ],
+      "server_wall_s": [
+        50.9253,
+        51.9778,
+        52.2689,
+        49.9163,
+        53.6255,
+        55.0377,
+        51.2258,
+        50.6991,
+        51.1967,
+        51.8465
+      ],
+      "hybrid_roundtrips": 2,
+      "schedule": [
+        1,
+        1
+      ],
+      "wire": {
+        "name": "baseline",
+        "compr": "none",
+        "seeded_client": false,
+        "seeded_keys": false,
+        "modswitch_send": false,
+        "short_chain": false
+      },
+      "mpc_runtime": "litepi_sci",
+      "deployment_compliant": true,
+      "protocol_failures": [],
+      "profile_name": "paper-profile-B",
+      "keygen_s": 0.552684,
+      "context_upload_s": 119.589596
+    }
+  ]
+}

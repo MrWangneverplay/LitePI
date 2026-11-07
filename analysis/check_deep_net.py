@@ -135,8 +135,12 @@ def run_net(net: DeepNet, x: np.ndarray, mask_exact: bool, profile: str = "basel
     if "error" in holder:
         raise holder["error"]
     got = np.asarray(res["logits"])
+    top2 = np.sort(np.asarray(ref).ravel())[::-1][:2]
     return {"err": float(np.max(np.abs(got - ref))),
             "ref": float(np.max(np.abs(ref))),
+            # synthetic random weights sometimes put the top-2 logits within the
+            # ciphertext error, so an argmax flip there is a tie, not a bug.
+            "margin": float(top2[0] - top2[1]),
             "argmax_ok": int(np.argmax(got)) == int(np.argmax(ref)),
             "wall_s": time.perf_counter() - t0,
             "up": res["online_up_bytes"], "down": res["online_down_bytes"],
@@ -150,11 +154,13 @@ def check_net(name, make, schedules, shape, mask_exact, threads, profile, tol) -
         net = DeepNet(make(rng), shape, [int(b) for b in sch], threads=threads)
         x = np.random.default_rng(8).normal(0, 1, shape)
         r = run_net(net, x, mask_exact, profile)
-        passed = r["err"] <= tol and r["argmax_ok"]
+        passed = r["err"] <= tol and (r["argmax_ok"] or r["margin"] <= r["err"])
         ok &= passed
-        print(f"{name} s{sch}: err={r['err']:.3e} (|ref|<={r['ref']:.2f})  "
+        print(f"{name} s{sch}: err={r['err']:.3e} (|ref|<={r['ref']:.2f}, "
+              f"top-2 margin {r['margin']:.1e})  "
               f"online up {r['up'] / 1e6:7.2f} MB down {r['down'] / 1e6:6.2f} MB  "
-              f"{r['wall_s']:6.1f}s  {'PASS' if passed else 'FAIL'}")
+              f"{r['wall_s']:6.1f}s  {'PASS' if passed else 'FAIL'}"
+              f"{'' if r['argmax_ok'] else ' (argmax flip within margin)'}")
     return ok
 
 

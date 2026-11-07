@@ -362,26 +362,30 @@ def e10b(split: dict, rng, n_perm: int = 200) -> dict:
 
 # ------------------------------------------------------------------ E10c
 def e10c(k_nonlinear: int = 2, per_layer_bytes: int = 128 * 1024,
-         rtt_ms: float = 50.0, downlink_bytes: int = 64) -> dict:
+         rtt_ms: float = 50.0, downlink_bytes: int = 64,
+         rounds_per_segment: float = 6.0) -> dict:
     """调度混淆（dummy-round padding）的额外代价估算。
 
-    参数含义：每个 HE-only 层注入 1 次与 hybrid 层等长的假交互；
+    参数含义：每个 HE-only 层注入 1 段与 hybrid 段等长的假交互；
     per_layer_bytes 为一次交互的上行密文字节数（默认按 CKKS poly 8192 的 fresh 密文量级估）。
+    rounds_per_segment 是实测的端到端 r_h（results/rounds/r_h_netem_*.json，6.02），
+    所以一段假交互 = 6 个往返，而不是 1 个。
     """
     rows = []
     for k_h in range(k_nonlinear + 1):
         he_only = k_nonlinear - k_h
+        rounds = he_only * rounds_per_segment
         rows.append({
             "K_h": k_h,
             "he_only_layers": he_only,
-            "extra_rounds": he_only,
+            "extra_rounds": rounds,
             "extra_uplink_bytes": he_only * per_layer_bytes,
             "extra_downlink_bytes": he_only * downlink_bytes,
-            "extra_latency_ms": he_only * rtt_ms,
+            "extra_latency_ms": rounds * rtt_ms,
         })
     return {"k_nonlinear": k_nonlinear, "per_layer_bytes": per_layer_bytes,
-            "rtt_ms": rtt_ms, "rows": rows,
-            "note": "字节数按参数量级估算；真实值以协议设计 §6 的字节预算与实测密文大小为准"}
+            "rtt_ms": rtt_ms, "rounds_per_segment": rounds_per_segment, "rows": rows,
+            "note": "字节数按参数量级估算；轮数按实测 r_h≈6；真实值以协议设计 §6 的字节预算与实测密文大小为准"}
 
 
 # ------------------------------------------------------------------ 主流程
@@ -528,7 +532,7 @@ def main() -> None:
               f"（per-layer={per_layer_bytes/1024:.0f} KB，取自 E4 实测）")
         print(f"  {'K_h':>4}{'HE-only 层':>11}{'额外轮数':>10}{'额外上行':>12}{'额外延迟':>10}")
         for row in overhead["rows"]:
-            print(f"  {row['K_h']:>4}{row['he_only_layers']:>11}{row['extra_rounds']:>10}"
+            print(f"  {row['K_h']:>4}{row['he_only_layers']:>11}{row['extra_rounds']:>10.0f}"
                   f"{row['extra_uplink_bytes']/1024:>10.0f} KB{row['extra_latency_ms']:>8.0f} ms")
         if not args.smoke:
             save_record(root, "E10", "all", "scheduling_obfuscation", args.seed, overhead)

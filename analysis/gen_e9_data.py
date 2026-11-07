@@ -24,7 +24,11 @@ measured growth of each schedule, and the winner is the schedule with the lowest
 measured p95 among those above the accuracy floor.  With no runs it stops and
 prints what to run.
 
-    python analysis/gen_e9_data.py --device pi5
+    python analysis/gen_e9_data.py --device pi5,wsl
+
+The default merges devices by priority: s00 comes from the Pi 5 over Wi-Fi
+(wlan0 netem, delay_mult 1.0) and the hybrid schedules from the WSL loopback
+(delay_mult 2.0).  Each row records which device produced it.
 """
 
 from __future__ import annotations
@@ -44,17 +48,33 @@ from gen_e5_data import DEFAULT_ACC_MIN
 ROOT = Path(__file__).resolve().parent.parent
 
 
-def load_points(root: Path, device: str) -> list[dict]:
-    pattern = str(root / "results" / "raw_results" / "E9" / device / "netem_*_s*" / "run.json")
-    rows = []
-    for path in sorted(glob.glob(pattern)):
-        dataset, schedule = re.search(r"netem_(.+)_s(\d+)", path).groups()
-        run = json.loads(Path(path).read_text(encoding="utf-8"))
-        for p in run["points"]:
-            # the run stores the schedule as a bit list; keep the directory's
-            # string label as the hashable key
-            rows.append({**p, "dataset": dataset, "schedule": schedule,
-                         "delay_mult": run.get("delay_mult", 1.0)})
+def load_points(root: Path, devices: list[str]) -> list[dict]:
+    """Load the grid from several devices; earlier devices win on a tie.
+
+    s00 has a real-hardware row (pi5, wlan0 netem, delay_mult 1) while the
+    hybrid schedules were only measured on loopback (wsl, delay_mult 2), so the
+    table is a merge: for each (dataset, schedule, rtt, loss, jitter) the first
+    device in ``devices`` that has the point supplies it.  Every row keeps its
+    ``device`` and the measured ``delay_mult`` so the two link models stay
+    distinguishable.
+    """
+    rows: list[dict] = []
+    seen: set[tuple] = set()
+    for device in devices:
+        pattern = str(root / "results" / "raw_results" / "E9" / device / "netem_*_s*" / "run.json")
+        for path in sorted(glob.glob(pattern)):
+            dataset, schedule = re.search(r"netem_(.+)_s(\d+)", path).groups()
+            run = json.loads(Path(path).read_text(encoding="utf-8"))
+            for p in run["points"]:
+                key = (dataset, schedule, p["rtt_ms"], p["loss_pct"], p["jitter_ms"])
+                if key in seen:
+                    continue
+                seen.add(key)
+                # the run stores the schedule as a bit list; keep the directory's
+                # string label as the hashable key
+                rows.append({**p, "dataset": dataset, "schedule": schedule,
+                             "device": device,
+                             "delay_mult": run.get("delay_mult", 1.0)})
     return rows
 
 
@@ -67,7 +87,7 @@ def amplification(rows: list[dict]) -> list[dict]:
         if base is None:
             continue
         out.append({
-            "dataset": r["dataset"], "schedule": r["schedule"],
+            "dataset": r["dataset"], "schedule": r["schedule"], "device": r["device"],
             "K_h": r["schedule"].count("1"), "rtt_ms": r["rtt_ms"],
             "effective_rtt_ms": r["rtt_ms"] * r["delay_mult"],
             "bandwidth_mbps": r["bandwidth_mbps"],
@@ -97,6 +117,7 @@ def best_schedules(points: list[dict], acc_floor: float | None) -> list[dict]:
             best = min(ok, key=lambda p: p["wall_p95_ms"])
             out.append({"dataset": dataset, "rtt_ms": rtt, "loss_pct": loss,
                         "jitter_ms": jitter, "schedule": best["schedule"],
+                        "device": best["device"],
                         "K_h": best["K_h"], "wall_p95_ms": best["wall_p95_ms"]})
     return out
 
@@ -104,11 +125,13 @@ def best_schedules(points: list[dict], acc_floor: float | None) -> list[dict]:
 def main() -> int:
     ap = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     ap.add_argument("--root", type=Path, default=ROOT)
-    ap.add_argument("--device", default="pi5")
+    ap.add_argument("--device", default="pi5,wsl",
+                    help="comma-separated, highest priority first")
     ap.add_argument("--acc-floor", type=float, default=None)
     args = ap.parse_args()
+    devices = [d.strip() for d in args.device.split(",") if d.strip()]
 
-    rows = load_points(args.root, args.device)
+    rows = load_points(args.root, devices)
     if not rows:
         print("no netem E9 runs under results/raw_results/E9/"
               f"{args.device}/; run netem_e2e.py --mode e9 per (dataset, schedule)")
@@ -122,7 +145,8 @@ def main() -> int:
         writer.writeheader()
         writer.writerows(points)
     (out / "e9_measured.json").write_text(json.dumps({
-        "exp_id": "E9", "git_sha": git_sha(args.root), "device": args.device, "measured": True,
+        "exp_id": "E9", "git_sha": git_sha(args.root), "device": ",".join(devices),
+        "devices": devices, "measured": True,
         "timestamp_utc": datetime.now(timezone.utc).isoformat(timespec="seconds"),
         "points": points, "best_schedule_per_condition": best,
     }, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")

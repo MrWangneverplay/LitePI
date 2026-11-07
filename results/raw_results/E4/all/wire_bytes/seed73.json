@@ -1,8 +1,8 @@
 {
   "exp_id": "E4",
   "experiment": "wire-profile bytes (per message, real SEAL serialisation)",
-  "timestamp_utc": "2026-10-29T09:18:16+00:00",
-  "git_sha": "a13424f",
+  "timestamp_utc": "2026-11-01T05:27:48+00:00",
+  "git_sha": "a8c5db6",
   "seal_version": "4.1.2",
   "seal_codecs": [
     "none",
@@ -699,28 +699,28 @@
           "msg": "M1",
           "direction": "C->S",
           "chain_index": 6,
-          "bytes": 438854
+          "bytes": 439241
         },
         {
           "msg": "M3",
           "direction": "S->C",
           "chain_index": 1,
           "modulus_bits": 61,
-          "bytes": 157262
+          "bytes": 157160
         }
       ],
-      "online_up_bytes": 438854,
-      "online_down_bytes": 157262,
-      "online_total_bytes": 596116,
-      "M0_key_bytes": 95453515,
+      "online_up_bytes": 439241,
+      "online_down_bytes": 157160,
+      "online_total_bytes": 596401,
+      "M0_key_bytes": 95449129,
       "key_sizes": {
-        "public_key_bytes": 541978,
-        "galois_keys_bytes": 91104598,
-        "relin_keys_bytes": 3806887,
+        "public_key_bytes": 540799,
+        "galois_keys_bytes": 91102678,
+        "relin_keys_bytes": 3805600,
         "galois_key_count": 24,
         "compr": "zstd",
         "seeded": 0,
-        "public_context_bytes": 95453515
+        "public_context_bytes": 95449129
       },
       "plan": {
         "data_primes": [
@@ -734,8 +734,7 @@
         ],
         "send_abs": {
           "out": 64.0,
-          "argmax": 4398046511168.0,
-          "dummy": 4398046511104.0
+          "argmax": 4398046511168.0
         },
         "chain_index": {
           "logits": {
@@ -746,7 +745,7 @@
           }
         }
       },
-      "online_reduction_vs_baseline": 1.979,
+      "online_reduction_vs_baseline": 1.978,
       "M0_reduction_vs_baseline": 1.934
     },
     {
@@ -765,41 +764,41 @@
           "msg": "M1",
           "direction": "C->S",
           "chain_index": 6,
-          "bytes": 439162
+          "bytes": 438244
         },
         {
           "msg": "①_2",
           "direction": "S->C",
           "chain_index": 3,
           "modulus_bits": 103,
-          "bytes": 269173
+          "bytes": 268808
         },
         {
           "msg": "②_2",
           "direction": "C->S",
           "chain_index": 6,
-          "bytes": 439596
+          "bytes": 437651
         },
         {
           "msg": "M3",
           "direction": "S->C",
           "chain_index": 5,
           "modulus_bits": 145,
-          "bytes": 382091
+          "bytes": 382629
         }
       ],
-      "online_up_bytes": 878758,
-      "online_down_bytes": 651264,
-      "online_total_bytes": 1530022,
-      "M0_key_bytes": 95453515,
+      "online_up_bytes": 875895,
+      "online_down_bytes": 651437,
+      "online_total_bytes": 1527332,
+      "M0_key_bytes": 95449129,
       "key_sizes": {
-        "public_key_bytes": 541978,
-        "galois_keys_bytes": 91104598,
-        "relin_keys_bytes": 3806887,
+        "public_key_bytes": 540799,
+        "galois_keys_bytes": 91102678,
+        "relin_keys_bytes": 3805600,
         "galois_key_count": 24,
         "compr": "zstd",
         "seeded": 0,
-        "public_context_bytes": 95453515
+        "public_context_bytes": 95449129
       },
       "plan": {
         "data_primes": [
@@ -814,8 +813,7 @@
         "send_abs": {
           "hyb1": 4398046511168.0,
           "out": 64.0,
-          "argmax": 4398046511168.0,
-          "dummy": 4398046511104.0
+          "argmax": 4398046511168.0
         },
         "chain_index": {
           "logits": {
@@ -828,7 +826,7 @@
           }
         }
       },
-      "online_reduction_vs_baseline": 2.056,
+      "online_reduction_vs_baseline": 2.06,
       "M0_reduction_vs_baseline": 1.934
     },
     {
@@ -847,41 +845,41 @@
           "msg": "M1",
           "direction": "C->S",
           "chain_index": 6,
-          "bytes": 437391
+          "bytes": 437364
         },
         {
           "msg": "①_1",
           "direction": "S->C",
           "chain_index": 5,
           "modulus_bits": 145,
-          "bytes": 382848
+          "bytes": 381638
         },
         {
           "msg": "②_1",
           "direction": "C->S",
           "chain_index": 6,
-          "bytes": 438703
+          "bytes": 439381
         },
         {
           "msg": "M3",
           "direction": "S->C",
           "chain_index": 3,
           "modulus_bits": 103,
-          "bytes": 270633
+          "bytes": 269985
         }
       ],
-      "online_up_bytes": 876094,
-      "online_down_bytes": 653481,
-      "online_total_bytes": 1529575,
-      "M0_key_bytes": 95453515,
+      "online_up_bytes": 876745,
+      "online_down_bytes": 651623,
+      "online_total_bytes": 1528368,
+      "M0_key_bytes": 95449129,
       "key_sizes": {
-        "public_key_bytes": 541978,
-        "galois_keys_bytes": 91104598,
-        "relin_keys_bytes": 3806887,
+        "public_key_bytes": 540799,
+        "galois_keys_bytes": 91102678,
+        "relin_keys_bytes": 3805600,
         "galois_key_count": 24,
         "compr": "zstd",
         "seeded": 0,
-        "public_context_bytes": 95453515
+        "public_context_bytes": 95449129
       },
       "plan": {
         "data_primes": [
@@ -896,8 +894,7 @@
         "send_abs": {
           "hyb0": 4398046511120.0,
           "out": 64.0,
-          "argmax": 4398046511168.0,
-          "dummy": 4398046511104.0
+          "argmax": 4398046511168.0
         },
         "chain_index": {
           "logits": {
@@ -910,7 +907,7 @@
           }
         }
       },
-      "online_reduction_vs_baseline": 2.057,
+      "online_reduction_vs_baseline": 2.059,
       "M0_reduction_vs_baseline": 1.934
     },
     {
@@ -929,54 +926,54 @@
           "msg": "M1",
           "direction": "C->S",
           "chain_index": 6,
-          "bytes": 439064
+          "bytes": 437426
         },
         {
           "msg": "①_1",
           "direction": "S->C",
           "chain_index": 5,
           "modulus_bits": 145,
-          "bytes": 381510
+          "bytes": 381304
         },
         {
           "msg": "②_1",
           "direction": "C->S",
           "chain_index": 6,
-          "bytes": 437560
+          "bytes": 438604
         },
         {
           "msg": "①_2",
           "direction": "S->C",
           "chain_index": 5,
           "modulus_bits": 145,
-          "bytes": 381300
+          "bytes": 381155
         },
         {
           "msg": "②_2",
           "direction": "C->S",
           "chain_index": 6,
-          "bytes": 437653
+          "bytes": 437425
         },
         {
           "msg": "M3",
           "direction": "S->C",
           "chain_index": 5,
           "modulus_bits": 145,
-          "bytes": 381325
+          "bytes": 382922
         }
       ],
-      "online_up_bytes": 1314277,
-      "online_down_bytes": 1144135,
-      "online_total_bytes": 2458412,
-      "M0_key_bytes": 95453515,
+      "online_up_bytes": 1313455,
+      "online_down_bytes": 1145381,
+      "online_total_bytes": 2458836,
+      "M0_key_bytes": 95449129,
       "key_sizes": {
-        "public_key_bytes": 541978,
-        "galois_keys_bytes": 91104598,
-        "relin_keys_bytes": 3806887,
+        "public_key_bytes": 540799,
+        "galois_keys_bytes": 91102678,
+        "relin_keys_bytes": 3805600,
         "galois_key_count": 24,
         "compr": "zstd",
         "seeded": 0,
-        "public_context_bytes": 95453515
+        "public_context_bytes": 95449129
       },
       "plan": {
         "data_primes": [
@@ -992,8 +989,7 @@
           "hyb0": 4398046511120.0,
           "hyb1": 4398046511168.0,
           "out": 64.0,
-          "argmax": 4398046511168.0,
-          "dummy": 4398046511104.0
+          "argmax": 4398046511168.0
         },
         "chain_index": {
           "logits": {
@@ -1008,7 +1004,7 @@
           }
         }
       },
-      "online_reduction_vs_baseline": 2.08,
+      "online_reduction_vs_baseline": 2.079,
       "M0_reduction_vs_baseline": 1.934
     },
     {
@@ -1027,28 +1023,28 @@
           "msg": "M1",
           "direction": "C->S",
           "chain_index": 6,
-          "bytes": 437683
+          "bytes": 438760
         },
         {
           "msg": "M3",
           "direction": "S->C",
           "chain_index": 1,
           "modulus_bits": 61,
-          "bytes": 157991
+          "bytes": 158429
         }
       ],
-      "online_up_bytes": 437683,
-      "online_down_bytes": 157991,
-      "online_total_bytes": 595674,
-      "M0_key_bytes": 95453515,
+      "online_up_bytes": 438760,
+      "online_down_bytes": 158429,
+      "online_total_bytes": 597189,
+      "M0_key_bytes": 95449129,
       "key_sizes": {
-        "public_key_bytes": 541978,
-        "galois_keys_bytes": 91104598,
-        "relin_keys_bytes": 3806887,
+        "public_key_bytes": 540799,
+        "galois_keys_bytes": 91102678,
+        "relin_keys_bytes": 3805600,
         "galois_key_count": 24,
         "compr": "zstd",
         "seeded": 0,
-        "public_context_bytes": 95453515
+        "public_context_bytes": 95449129
       },
       "plan": {
         "data_primes": [
@@ -1062,8 +1058,7 @@
         ],
         "send_abs": {
           "out": 64.0,
-          "argmax": 4398046511168.0,
-          "dummy": 4398046511104.0
+          "argmax": 4398046511168.0
         },
         "chain_index": {
           "logits": {
@@ -1074,7 +1069,7 @@
           }
         }
       },
-      "online_reduction_vs_baseline": 1.981,
+      "online_reduction_vs_baseline": 1.976,
       "M0_reduction_vs_baseline": 1.934
     },
     {
@@ -1093,41 +1088,41 @@
           "msg": "M1",
           "direction": "C->S",
           "chain_index": 6,
-          "bytes": 437495
+          "bytes": 439200
         },
         {
           "msg": "①_2",
           "direction": "S->C",
           "chain_index": 3,
           "modulus_bits": 103,
-          "bytes": 270359
+          "bytes": 270515
         },
         {
           "msg": "②_2",
           "direction": "C->S",
           "chain_index": 6,
-          "bytes": 437765
+          "bytes": 437670
         },
         {
           "msg": "M3",
           "direction": "S->C",
           "chain_index": 5,
           "modulus_bits": 145,
-          "bytes": 381611
+          "bytes": 381429
         }
       ],
-      "online_up_bytes": 875260,
-      "online_down_bytes": 651970,
-      "online_total_bytes": 1527230,
-      "M0_key_bytes": 95453515,
+      "online_up_bytes": 876870,
+      "online_down_bytes": 651944,
+      "online_total_bytes": 1528814,
+      "M0_key_bytes": 95449129,
       "key_sizes": {
-        "public_key_bytes": 541978,
-        "galois_keys_bytes": 91104598,
-        "relin_keys_bytes": 3806887,
+        "public_key_bytes": 540799,
+        "galois_keys_bytes": 91102678,
+        "relin_keys_bytes": 3805600,
         "galois_key_count": 24,
         "compr": "zstd",
         "seeded": 0,
-        "public_context_bytes": 95453515
+        "public_context_bytes": 95449129
       },
       "plan": {
         "data_primes": [
@@ -1142,8 +1137,7 @@
         "send_abs": {
           "hyb1": 4398046511168.0,
           "out": 64.0,
-          "argmax": 4398046511168.0,
-          "dummy": 4398046511104.0
+          "argmax": 4398046511168.0
         },
         "chain_index": {
           "logits": {
@@ -1156,7 +1150,7 @@
           }
         }
       },
-      "online_reduction_vs_baseline": 2.06,
+      "online_reduction_vs_baseline": 2.058,
       "M0_reduction_vs_baseline": 1.934
     },
     {
@@ -1175,41 +1169,41 @@
           "msg": "M1",
           "direction": "C->S",
           "chain_index": 6,
-          "bytes": 437438
+          "bytes": 437292
         },
         {
           "msg": "①_1",
           "direction": "S->C",
           "chain_index": 5,
           "modulus_bits": 145,
-          "bytes": 382490
+          "bytes": 381388
         },
         {
           "msg": "②_1",
           "direction": "C->S",
           "chain_index": 6,
-          "bytes": 437585
+          "bytes": 437511
         },
         {
           "msg": "M3",
           "direction": "S->C",
           "chain_index": 3,
           "modulus_bits": 103,
-          "bytes": 268940
+          "bytes": 269092
         }
       ],
-      "online_up_bytes": 875023,
-      "online_down_bytes": 651430,
-      "online_total_bytes": 1526453,
-      "M0_key_bytes": 95453515,
+      "online_up_bytes": 874803,
+      "online_down_bytes": 650480,
+      "online_total_bytes": 1525283,
+      "M0_key_bytes": 95449129,
       "key_sizes": {
-        "public_key_bytes": 541978,
-        "galois_keys_bytes": 91104598,
-        "relin_keys_bytes": 3806887,
+        "public_key_bytes": 540799,
+        "galois_keys_bytes": 91102678,
+        "relin_keys_bytes": 3805600,
         "galois_key_count": 24,
         "compr": "zstd",
         "seeded": 0,
-        "public_context_bytes": 95453515
+        "public_context_bytes": 95449129
       },
       "plan": {
         "data_primes": [
@@ -1224,8 +1218,7 @@
         "send_abs": {
           "hyb0": 4398046511120.0,
           "out": 64.0,
-          "argmax": 4398046511168.0,
-          "dummy": 4398046511104.0
+          "argmax": 4398046511168.0
         },
         "chain_index": {
           "logits": {
@@ -1238,7 +1231,7 @@
           }
         }
       },
-      "online_reduction_vs_baseline": 2.061,
+      "online_reduction_vs_baseline": 2.063,
       "M0_reduction_vs_baseline": 1.934
     },
     {
@@ -1257,54 +1250,54 @@
           "msg": "M1",
           "direction": "C->S",
           "chain_index": 6,
-          "bytes": 437534
+          "bytes": 437447
         },
         {
           "msg": "①_1",
           "direction": "S->C",
           "chain_index": 5,
           "modulus_bits": 145,
-          "bytes": 381237
+          "bytes": 381442
         },
         {
           "msg": "②_1",
           "direction": "C->S",
           "chain_index": 6,
-          "bytes": 439052
+          "bytes": 438486
         },
         {
           "msg": "①_2",
           "direction": "S->C",
           "chain_index": 5,
           "modulus_bits": 145,
-          "bytes": 381240
+          "bytes": 383212
         },
         {
           "msg": "②_2",
           "direction": "C->S",
           "chain_index": 6,
-          "bytes": 437454
+          "bytes": 437321
         },
         {
           "msg": "M3",
           "direction": "S->C",
           "chain_index": 5,
           "modulus_bits": 145,
-          "bytes": 382963
+          "bytes": 381728
         }
       ],
-      "online_up_bytes": 1314040,
-      "online_down_bytes": 1145440,
-      "online_total_bytes": 2459480,
-      "M0_key_bytes": 95453515,
+      "online_up_bytes": 1313254,
+      "online_down_bytes": 1146382,
+      "online_total_bytes": 2459636,
+      "M0_key_bytes": 95449129,
       "key_sizes": {
-        "public_key_bytes": 541978,
-        "galois_keys_bytes": 91104598,
-        "relin_keys_bytes": 3806887,
+        "public_key_bytes": 540799,
+        "galois_keys_bytes": 91102678,
+        "relin_keys_bytes": 3805600,
         "galois_key_count": 24,
         "compr": "zstd",
         "seeded": 0,
-        "public_context_bytes": 95453515
+        "public_context_bytes": 95449129
       },
       "plan": {
         "data_primes": [
@@ -1320,8 +1313,7 @@
           "hyb0": 4398046511120.0,
           "hyb1": 4398046511168.0,
           "out": 64.0,
-          "argmax": 4398046511168.0,
-          "dummy": 4398046511104.0
+          "argmax": 4398046511168.0
         },
         "chain_index": {
           "logits": {
@@ -1355,28 +1347,28 @@
           "msg": "M1",
           "direction": "C->S",
           "chain_index": 6,
-          "bytes": 438234
+          "bytes": 437405
         },
         {
           "msg": "M3",
           "direction": "S->C",
           "chain_index": 1,
           "modulus_bits": 61,
-          "bytes": 158697
+          "bytes": 158063
         }
       ],
-      "online_up_bytes": 438234,
-      "online_down_bytes": 158697,
-      "online_total_bytes": 596931,
-      "M0_key_bytes": 95453515,
+      "online_up_bytes": 437405,
+      "online_down_bytes": 158063,
+      "online_total_bytes": 595468,
+      "M0_key_bytes": 95449129,
       "key_sizes": {
-        "public_key_bytes": 541978,
-        "galois_keys_bytes": 91104598,
-        "relin_keys_bytes": 3806887,
+        "public_key_bytes": 540799,
+        "galois_keys_bytes": 91102678,
+        "relin_keys_bytes": 3805600,
         "galois_key_count": 24,
         "compr": "zstd",
         "seeded": 0,
-        "public_context_bytes": 95453515
+        "public_context_bytes": 95449129
       },
       "plan": {
         "data_primes": [
@@ -1390,8 +1382,7 @@
         ],
         "send_abs": {
           "out": 64.0,
-          "argmax": 4398046511168.0,
-          "dummy": 4398046511104.0
+          "argmax": 4398046511168.0
         },
         "chain_index": {
           "logits": {
@@ -1402,7 +1393,7 @@
           }
         }
       },
-      "online_reduction_vs_baseline": 1.977,
+      "online_reduction_vs_baseline": 1.981,
       "M0_reduction_vs_baseline": 1.934
     },
     {
@@ -1421,41 +1412,41 @@
           "msg": "M1",
           "direction": "C->S",
           "chain_index": 6,
-          "bytes": 439306
+          "bytes": 439281
         },
         {
           "msg": "①_2",
           "direction": "S->C",
           "chain_index": 3,
           "modulus_bits": 103,
-          "bytes": 268923
+          "bytes": 268927
         },
         {
           "msg": "②_2",
           "direction": "C->S",
           "chain_index": 6,
-          "bytes": 438960
+          "bytes": 438923
         },
         {
           "msg": "M3",
           "direction": "S->C",
           "chain_index": 5,
           "modulus_bits": 145,
-          "bytes": 381105
+          "bytes": 381246
         }
       ],
-      "online_up_bytes": 878266,
-      "online_down_bytes": 650028,
-      "online_total_bytes": 1528294,
-      "M0_key_bytes": 95453515,
+      "online_up_bytes": 878204,
+      "online_down_bytes": 650173,
+      "online_total_bytes": 1528377,
+      "M0_key_bytes": 95449129,
       "key_sizes": {
-        "public_key_bytes": 541978,
-        "galois_keys_bytes": 91104598,
-        "relin_keys_bytes": 3806887,
+        "public_key_bytes": 540799,
+        "galois_keys_bytes": 91102678,
+        "relin_keys_bytes": 3805600,
         "galois_key_count": 24,
         "compr": "zstd",
         "seeded": 0,
-        "public_context_bytes": 95453515
+        "public_context_bytes": 95449129
       },
       "plan": {
         "data_primes": [
@@ -1470,8 +1461,7 @@
         "send_abs": {
           "hyb1": 4398046511168.0,
           "out": 64.0,
-          "argmax": 4398046511168.0,
-          "dummy": 4398046511104.0
+          "argmax": 4398046511168.0
         },
         "chain_index": {
           "logits": {
@@ -1503,41 +1493,41 @@
           "msg": "M1",
           "direction": "C->S",
           "chain_index": 6,
-          "bytes": 439033
+          "bytes": 438674
         },
         {
           "msg": "①_1",
           "direction": "S->C",
           "chain_index": 5,
           "modulus_bits": 145,
-          "bytes": 381207
+          "bytes": 381299
         },
         {
           "msg": "②_1",
           "direction": "C->S",
           "chain_index": 6,
-          "bytes": 437559
+          "bytes": 438868
         },
         {
           "msg": "M3",
           "direction": "S->C",
           "chain_index": 3,
           "modulus_bits": 103,
-          "bytes": 270703
+          "bytes": 269429
         }
       ],
-      "online_up_bytes": 876592,
-      "online_down_bytes": 651910,
-      "online_total_bytes": 1528502,
-      "M0_key_bytes": 95453515,
+      "online_up_bytes": 877542,
+      "online_down_bytes": 650728,
+      "online_total_bytes": 1528270,
+      "M0_key_bytes": 95449129,
       "key_sizes": {
-        "public_key_bytes": 541978,
-        "galois_keys_bytes": 91104598,
-        "relin_keys_bytes": 3806887,
+        "public_key_bytes": 540799,
+        "galois_keys_bytes": 91102678,
+        "relin_keys_bytes": 3805600,
         "galois_key_count": 24,
         "compr": "zstd",
         "seeded": 0,
-        "public_context_bytes": 95453515
+        "public_context_bytes": 95449129
       },
       "plan": {
         "data_primes": [
@@ -1552,8 +1542,7 @@
         "send_abs": {
           "hyb0": 4398046511120.0,
           "out": 64.0,
-          "argmax": 4398046511168.0,
-          "dummy": 4398046511104.0
+          "argmax": 4398046511168.0
         },
         "chain_index": {
           "logits": {
@@ -1566,7 +1555,7 @@
           }
         }
       },
-      "online_reduction_vs_baseline": 2.058,
+      "online_reduction_vs_baseline": 2.059,
       "M0_reduction_vs_baseline": 1.934
     },
     {
@@ -1585,54 +1574,54 @@
           "msg": "M1",
           "direction": "C->S",
           "chain_index": 6,
-          "bytes": 438612
+          "bytes": 437349
         },
         {
           "msg": "①_1",
           "direction": "S->C",
           "chain_index": 5,
           "modulus_bits": 145,
-          "bytes": 381098
+          "bytes": 381365
         },
         {
           "msg": "②_1",
           "direction": "C->S",
           "chain_index": 6,
-          "bytes": 437452
+          "bytes": 437470
         },
         {
           "msg": "①_2",
           "direction": "S->C",
           "chain_index": 5,
           "modulus_bits": 145,
-          "bytes": 381446
+          "bytes": 382069
         },
         {
           "msg": "②_2",
           "direction": "C->S",
           "chain_index": 6,
-          "bytes": 437475
+          "bytes": 439417
         },
         {
           "msg": "M3",
           "direction": "S->C",
           "chain_index": 5,
           "modulus_bits": 145,
-          "bytes": 382626
+          "bytes": 381318
         }
       ],
-      "online_up_bytes": 1313539,
-      "online_down_bytes": 1145170,
-      "online_total_bytes": 2458709,
-      "M0_key_bytes": 95453515,
+      "online_up_bytes": 1314236,
+      "online_down_bytes": 1144752,
+      "online_total_bytes": 2458988,
+      "M0_key_bytes": 95449129,
       "key_sizes": {
-        "public_key_bytes": 541978,
-        "galois_keys_bytes": 91104598,
-        "relin_keys_bytes": 3806887,
+        "public_key_bytes": 540799,
+        "galois_keys_bytes": 91102678,
+        "relin_keys_bytes": 3805600,
         "galois_key_count": 24,
         "compr": "zstd",
         "seeded": 0,
-        "public_context_bytes": 95453515
+        "public_context_bytes": 95449129
       },
       "plan": {
         "data_primes": [
@@ -1648,8 +1637,7 @@
           "hyb0": 4398046511120.0,
           "hyb1": 4398046511168.0,
           "out": 64.0,
-          "argmax": 4398046511168.0,
-          "dummy": 4398046511104.0
+          "argmax": 4398046511168.0
         },
         "chain_index": {
           "logits": {
@@ -1718,8 +1706,7 @@
         ],
         "send_abs": {
           "out": 64.0,
-          "argmax": 4398046511168.0,
-          "dummy": 4398046511104.0
+          "argmax": 4398046511168.0
         },
         "chain_index": {
           "logits": {
@@ -1798,8 +1785,7 @@
         "send_abs": {
           "hyb1": 4398046511168.0,
           "out": 64.0,
-          "argmax": 4398046511168.0,
-          "dummy": 4398046511104.0
+          "argmax": 4398046511168.0
         },
         "chain_index": {
           "logits": {
@@ -1880,8 +1866,7 @@
         "send_abs": {
           "hyb0": 4398046511120.0,
           "out": 64.0,
-          "argmax": 4398046511168.0,
-          "dummy": 4398046511104.0
+          "argmax": 4398046511168.0
         },
         "chain_index": {
           "logits": {
@@ -1976,8 +1961,7 @@
           "hyb0": 4398046511120.0,
           "hyb1": 4398046511168.0,
           "out": 64.0,
-          "argmax": 4398046511168.0,
-          "dummy": 4398046511104.0
+          "argmax": 4398046511168.0
         },
         "chain_index": {
           "logits": {
@@ -2046,8 +2030,7 @@
         ],
         "send_abs": {
           "out": 64.0,
-          "argmax": 4398046511168.0,
-          "dummy": 4398046511104.0
+          "argmax": 4398046511168.0
         },
         "chain_index": {
           "logits": {
@@ -2126,8 +2109,7 @@
         "send_abs": {
           "hyb1": 4398046511168.0,
           "out": 64.0,
-          "argmax": 4398046511168.0,
-          "dummy": 4398046511104.0
+          "argmax": 4398046511168.0
         },
         "chain_index": {
           "logits": {
@@ -2208,8 +2190,7 @@
         "send_abs": {
           "hyb0": 4398046511120.0,
           "out": 64.0,
-          "argmax": 4398046511168.0,
-          "dummy": 4398046511104.0
+          "argmax": 4398046511168.0
         },
         "chain_index": {
           "logits": {
@@ -2304,8 +2285,7 @@
           "hyb0": 4398046511120.0,
           "hyb1": 4398046511168.0,
           "out": 64.0,
-          "argmax": 4398046511168.0,
-          "dummy": 4398046511104.0
+          "argmax": 4398046511168.0
         },
         "chain_index": {
           "logits": {
@@ -2374,8 +2354,7 @@
         ],
         "send_abs": {
           "out": 64.0,
-          "argmax": 4398046511168.0,
-          "dummy": 4398046511104.0
+          "argmax": 4398046511168.0
         },
         "chain_index": {
           "logits": {
@@ -2454,8 +2433,7 @@
         "send_abs": {
           "hyb1": 4398046511168.0,
           "out": 64.0,
-          "argmax": 4398046511168.0,
-          "dummy": 4398046511104.0
+          "argmax": 4398046511168.0
         },
         "chain_index": {
           "logits": {
@@ -2536,8 +2514,7 @@
         "send_abs": {
           "hyb0": 4398046511120.0,
           "out": 64.0,
-          "argmax": 4398046511168.0,
-          "dummy": 4398046511104.0
+          "argmax": 4398046511168.0
         },
         "chain_index": {
           "logits": {
@@ -2632,8 +2609,7 @@
           "hyb0": 4398046511120.0,
           "hyb1": 4398046511168.0,
           "out": 64.0,
-          "argmax": 4398046511168.0,
-          "dummy": 4398046511104.0
+          "argmax": 4398046511168.0
         },
         "chain_index": {
           "logits": {
@@ -2702,8 +2678,7 @@
         ],
         "send_abs": {
           "out": 64.0,
-          "argmax": 4398046511168.0,
-          "dummy": 4398046511104.0
+          "argmax": 4398046511168.0
         },
         "chain_index": {
           "logits": {
@@ -2782,8 +2757,7 @@
         "send_abs": {
           "hyb1": 4398046511168.0,
           "out": 64.0,
-          "argmax": 4398046511168.0,
-          "dummy": 4398046511104.0
+          "argmax": 4398046511168.0
         },
         "chain_index": {
           "logits": {
@@ -2864,8 +2838,7 @@
         "send_abs": {
           "hyb0": 4398046511120.0,
           "out": 64.0,
-          "argmax": 4398046511168.0,
-          "dummy": 4398046511104.0
+          "argmax": 4398046511168.0
         },
         "chain_index": {
           "logits": {
@@ -2960,8 +2933,7 @@
           "hyb0": 4398046511120.0,
           "hyb1": 4398046511168.0,
           "out": 64.0,
-          "argmax": 4398046511168.0,
-          "dummy": 4398046511104.0
+          "argmax": 4398046511168.0
         },
         "chain_index": {
           "logits": {
@@ -3030,8 +3002,7 @@
         ],
         "send_abs": {
           "out": 64.0,
-          "argmax": 4398046511168.0,
-          "dummy": 4398046511104.0
+          "argmax": 4398046511168.0
         },
         "chain_index": {
           "logits": {
@@ -3110,8 +3081,7 @@
         "send_abs": {
           "hyb1": 4398046511168.0,
           "out": 64.0,
-          "argmax": 4398046511168.0,
-          "dummy": 4398046511104.0
+          "argmax": 4398046511168.0
         },
         "chain_index": {
           "logits": {
@@ -3192,8 +3162,7 @@
         "send_abs": {
           "hyb0": 4398046511120.0,
           "out": 64.0,
-          "argmax": 4398046511168.0,
-          "dummy": 4398046511104.0
+          "argmax": 4398046511168.0
         },
         "chain_index": {
           "logits": {
@@ -3288,8 +3257,7 @@
           "hyb0": 4398046511120.0,
           "hyb1": 4398046511168.0,
           "out": 64.0,
-          "argmax": 4398046511168.0,
-          "dummy": 4398046511104.0
+          "argmax": 4398046511168.0
         },
         "chain_index": {
           "logits": {
@@ -3358,8 +3326,7 @@
         ],
         "send_abs": {
           "out": 64.0,
-          "argmax": 4398046511168.0,
-          "dummy": 4398046511104.0
+          "argmax": 4398046511168.0
         },
         "chain_index": {
           "logits": {
@@ -3438,8 +3405,7 @@
         "send_abs": {
           "hyb1": 4398046511168.0,
           "out": 64.0,
-          "argmax": 4398046511168.0,
-          "dummy": 4398046511104.0
+          "argmax": 4398046511168.0
         },
         "chain_index": {
           "logits": {
@@ -3520,8 +3486,7 @@
         "send_abs": {
           "hyb0": 4398046511120.0,
           "out": 64.0,
-          "argmax": 4398046511168.0,
-          "dummy": 4398046511104.0
+          "argmax": 4398046511168.0
         },
         "chain_index": {
           "logits": {
@@ -3616,8 +3581,7 @@
           "hyb0": 4398046511120.0,
           "hyb1": 4398046511168.0,
           "out": 64.0,
-          "argmax": 4398046511168.0,
-          "dummy": 4398046511104.0
+          "argmax": 4398046511168.0
         },
         "chain_index": {
           "logits": {
@@ -3686,8 +3650,7 @@
         ],
         "send_abs": {
           "out": 64.0,
-          "argmax": 4398046511168.0,
-          "dummy": 4398046511104.0
+          "argmax": 4398046511168.0
         },
         "chain_index": {
           "logits": {
@@ -3766,8 +3729,7 @@
         "send_abs": {
           "hyb1": 4398046511168.0,
           "out": 64.0,
-          "argmax": 4398046511168.0,
-          "dummy": 4398046511104.0
+          "argmax": 4398046511168.0
         },
         "chain_index": {
           "logits": {
@@ -3848,8 +3810,7 @@
         "send_abs": {
           "hyb0": 4398046511120.0,
           "out": 64.0,
-          "argmax": 4398046511168.0,
-          "dummy": 4398046511104.0
+          "argmax": 4398046511168.0
         },
         "chain_index": {
           "logits": {
@@ -3944,8 +3905,7 @@
           "hyb0": 4398046511120.0,
           "hyb1": 4398046511168.0,
           "out": 64.0,
-          "argmax": 4398046511168.0,
-          "dummy": 4398046511104.0
+          "argmax": 4398046511168.0
         },
         "chain_index": {
           "logits": {
@@ -4014,8 +3974,7 @@
         ],
         "send_abs": {
           "out": 64.0,
-          "argmax": 4398046511168.0,
-          "dummy": 4398046511104.0
+          "argmax": 4398046511168.0
         },
         "chain_index": {
           "logits": {
@@ -4094,8 +4053,7 @@
         "send_abs": {
           "hyb1": 4398046511168.0,
           "out": 64.0,
-          "argmax": 4398046511168.0,
-          "dummy": 4398046511104.0
+          "argmax": 4398046511168.0
         },
         "chain_index": {
           "logits": {
@@ -4176,8 +4134,7 @@
         "send_abs": {
           "hyb0": 4398046511120.0,
           "out": 64.0,
-          "argmax": 4398046511168.0,
-          "dummy": 4398046511104.0
+          "argmax": 4398046511168.0
         },
         "chain_index": {
           "logits": {
@@ -4272,8 +4229,7 @@
           "hyb0": 4398046511120.0,
           "hyb1": 4398046511168.0,
           "out": 64.0,
-          "argmax": 4398046511168.0,
-          "dummy": 4398046511104.0
+          "argmax": 4398046511168.0
         },
         "chain_index": {
           "logits": {
@@ -4342,8 +4298,7 @@
         ],
         "send_abs": {
           "out": 64.0,
-          "argmax": 4398046511168.0,
-          "dummy": 4398046511104.0
+          "argmax": 4398046511168.0
         },
         "chain_index": {
           "logits": {
@@ -4422,8 +4377,7 @@
         "send_abs": {
           "hyb1": 4398046511168.0,
           "out": 64.0,
-          "argmax": 4398046511168.0,
-          "dummy": 4398046511104.0
+          "argmax": 4398046511168.0
         },
         "chain_index": {
           "logits": {
@@ -4504,8 +4458,7 @@
         "send_abs": {
           "hyb0": 4398046511120.0,
           "out": 64.0,
-          "argmax": 4398046511168.0,
-          "dummy": 4398046511104.0
+          "argmax": 4398046511168.0
         },
         "chain_index": {
           "logits": {
@@ -4600,8 +4553,7 @@
           "hyb0": 4398046511120.0,
           "hyb1": 4398046511168.0,
           "out": 64.0,
-          "argmax": 4398046511168.0,
-          "dummy": 4398046511104.0
+          "argmax": 4398046511168.0
         },
         "chain_index": {
           "logits": {
@@ -4635,28 +4587,28 @@
           "msg": "M1",
           "direction": "C->S",
           "chain_index": 6,
-          "bytes": 217199
+          "bytes": 218666
         },
         {
           "msg": "M3",
           "direction": "S->C",
           "chain_index": 0,
           "modulus_bits": 40,
-          "bytes": 94499
+          "bytes": 94367
         }
       ],
-      "online_up_bytes": 217199,
-      "online_down_bytes": 94499,
-      "online_total_bytes": 311698,
-      "M0_key_bytes": 47744607,
+      "online_up_bytes": 218666,
+      "online_down_bytes": 94367,
+      "online_total_bytes": 313033,
+      "M0_key_bytes": 47745708,
       "key_sizes": {
-        "public_key_bytes": 269384,
-        "galois_keys_bytes": 45576297,
-        "relin_keys_bytes": 1901489,
+        "public_key_bytes": 269885,
+        "galois_keys_bytes": 45574743,
+        "relin_keys_bytes": 1903082,
         "galois_key_count": 24,
         "compr": "zstd",
         "seeded": 1,
-        "public_context_bytes": 47744607
+        "public_context_bytes": 47745708
       },
       "plan": {
         "data_primes": [
@@ -4670,8 +4622,7 @@
         ],
         "send_abs": {
           "out": 64.0,
-          "argmax": 4398046511168.0,
-          "dummy": 4398046511104.0
+          "argmax": 4398046511168.0
         },
         "chain_index": {
           "logits": {
@@ -4682,7 +4633,7 @@
           }
         }
       },
-      "online_reduction_vs_baseline": 3.785,
+      "online_reduction_vs_baseline": 3.769,
       "M0_reduction_vs_baseline": 3.867
     },
     {
@@ -4701,41 +4652,41 @@
           "msg": "M1",
           "direction": "C->S",
           "chain_index": 5,
-          "bytes": 190650
+          "bytes": 189283
         },
         {
           "msg": "①_2",
           "direction": "S->C",
           "chain_index": 2,
           "modulus_bits": 82,
-          "bytes": 214568
+          "bytes": 213314
         },
         {
           "msg": "②_2",
           "direction": "C->S",
           "chain_index": 1,
-          "bytes": 80614
+          "bytes": 80601
         },
         {
           "msg": "M3",
           "direction": "S->C",
           "chain_index": 0,
           "modulus_bits": 40,
-          "bytes": 94384
+          "bytes": 94348
         }
       ],
-      "online_up_bytes": 271264,
-      "online_down_bytes": 308952,
-      "online_total_bytes": 580216,
-      "M0_key_bytes": 47744607,
+      "online_up_bytes": 269884,
+      "online_down_bytes": 307662,
+      "online_total_bytes": 577546,
+      "M0_key_bytes": 47745708,
       "key_sizes": {
-        "public_key_bytes": 269384,
-        "galois_keys_bytes": 45576297,
-        "relin_keys_bytes": 1901489,
+        "public_key_bytes": 269885,
+        "galois_keys_bytes": 45574743,
+        "relin_keys_bytes": 1903082,
         "galois_key_count": 24,
         "compr": "zstd",
         "seeded": 1,
-        "public_context_bytes": 47744607
+        "public_context_bytes": 47745708
       },
       "plan": {
         "data_primes": [
@@ -4750,8 +4701,7 @@
         "send_abs": {
           "hyb1": 4398046511168.0,
           "out": 64.0,
-          "argmax": 4398046511168.0,
-          "dummy": 4398046511104.0
+          "argmax": 4398046511168.0
         },
         "chain_index": {
           "logits": {
@@ -4764,7 +4714,7 @@
           }
         }
       },
-      "online_reduction_vs_baseline": 5.422,
+      "online_reduction_vs_baseline": 5.448,
       "M0_reduction_vs_baseline": 3.867
     },
     {
@@ -4783,697 +4733,41 @@
           "msg": "M1",
           "direction": "C->S",
           "chain_index": 3,
-          "bytes": 133440
+          "bytes": 133370
         },
         {
           "msg": "①_1",
           "direction": "S->C",
           "chain_index": 2,
           "modulus_bits": 82,
-          "bytes": 213117
+          "bytes": 213243
         },
         {
           "msg": "②_1",
           "direction": "C->S",
           "chain_index": 3,
-          "bytes": 133521
+          "bytes": 134857
         },
         {
           "msg": "M3",
           "direction": "S->C",
           "chain_index": 0,
           "modulus_bits": 40,
-          "bytes": 94333
+          "bytes": 94360
         }
       ],
-      "online_up_bytes": 266961,
-      "online_down_bytes": 307450,
-      "online_total_bytes": 574411,
-      "M0_key_bytes": 47744607,
-      "key_sizes": {
-        "public_key_bytes": 269384,
-        "galois_keys_bytes": 45576297,
-        "relin_keys_bytes": 1901489,
-        "galois_key_count": 24,
-        "compr": "zstd",
-        "seeded": 1,
-        "public_context_bytes": 47744607
-      },
-      "plan": {
-        "data_primes": [
-          1099510890497,
-          1196033,
-          1376257,
-          1589249,
-          1720321,
-          1769473,
-          1785857
-        ],
-        "send_abs": {
-          "hyb0": 4398046511120.0,
-          "out": 64.0,
-          "argmax": 4398046511168.0,
-          "dummy": 4398046511104.0
-        },
-        "chain_index": {
-          "logits": {
-            "M1": 3,
-            "re0": 3
-          },
-          "index": {
-            "M1": 3,
-            "re0": 5
-          }
-        }
-      },
-      "online_reduction_vs_baseline": 5.477,
-      "M0_reduction_vs_baseline": 3.867
-    },
-    {
-      "dataset": "mnist",
-      "schedule": "11",
-      "wire": {
-        "name": "compact",
-        "compr": "zstd",
-        "seeded_client": true,
-        "seeded_keys": true,
-        "modswitch_send": true,
-        "short_chain": true
-      },
-      "messages": [
-        {
-          "msg": "M1",
-          "direction": "C->S",
-          "chain_index": 3,
-          "bytes": 133467
-        },
-        {
-          "msg": "①_1",
-          "direction": "S->C",
-          "chain_index": 2,
-          "modulus_bits": 82,
-          "bytes": 213914
-        },
-        {
-          "msg": "②_1",
-          "direction": "C->S",
-          "chain_index": 3,
-          "bytes": 133300
-        },
-        {
-          "msg": "①_2",
-          "direction": "S->C",
-          "chain_index": 2,
-          "modulus_bits": 82,
-          "bytes": 214027
-        },
-        {
-          "msg": "②_2",
-          "direction": "C->S",
-          "chain_index": 1,
-          "bytes": 80612
-        },
-        {
-          "msg": "M3",
-          "direction": "S->C",
-          "chain_index": 0,
-          "modulus_bits": 40,
-          "bytes": 94353
-        }
-      ],
-      "online_up_bytes": 347379,
-      "online_down_bytes": 522294,
-      "online_total_bytes": 869673,
-      "M0_key_bytes": 47744607,
-      "key_sizes": {
-        "public_key_bytes": 269384,
-        "galois_keys_bytes": 45576297,
-        "relin_keys_bytes": 1901489,
-        "galois_key_count": 24,
-        "compr": "zstd",
-        "seeded": 1,
-        "public_context_bytes": 47744607
-      },
-      "plan": {
-        "data_primes": [
-          1099510890497,
-          1196033,
-          1376257,
-          1589249,
-          1720321,
-          1769473,
-          1785857
-        ],
-        "send_abs": {
-          "hyb0": 4398046511120.0,
-          "hyb1": 4398046511168.0,
-          "out": 64.0,
-          "argmax": 4398046511168.0,
-          "dummy": 4398046511104.0
-        },
-        "chain_index": {
-          "logits": {
-            "M1": 3,
-            "re0": 3,
-            "re1": 1
-          },
-          "index": {
-            "M1": 3,
-            "re0": 3,
-            "re1": 3
-          }
-        }
-      },
-      "online_reduction_vs_baseline": 5.879,
-      "M0_reduction_vs_baseline": 3.867
-    },
-    {
-      "dataset": "cifar10",
-      "schedule": "00",
-      "wire": {
-        "name": "compact",
-        "compr": "zstd",
-        "seeded_client": true,
-        "seeded_keys": true,
-        "modswitch_send": true,
-        "short_chain": true
-      },
-      "messages": [
-        {
-          "msg": "M1",
-          "direction": "C->S",
-          "chain_index": 6,
-          "bytes": 217119
-        },
-        {
-          "msg": "M3",
-          "direction": "S->C",
-          "chain_index": 0,
-          "modulus_bits": 40,
-          "bytes": 94413
-        }
-      ],
-      "online_up_bytes": 217119,
-      "online_down_bytes": 94413,
-      "online_total_bytes": 311532,
-      "M0_key_bytes": 47744607,
-      "key_sizes": {
-        "public_key_bytes": 269384,
-        "galois_keys_bytes": 45576297,
-        "relin_keys_bytes": 1901489,
-        "galois_key_count": 24,
-        "compr": "zstd",
-        "seeded": 1,
-        "public_context_bytes": 47744607
-      },
-      "plan": {
-        "data_primes": [
-          1099510890497,
-          1196033,
-          1376257,
-          1589249,
-          1720321,
-          1769473,
-          1785857
-        ],
-        "send_abs": {
-          "out": 64.0,
-          "argmax": 4398046511168.0,
-          "dummy": 4398046511104.0
-        },
-        "chain_index": {
-          "logits": {
-            "M1": 6
-          },
-          "index": {
-            "M1": 6
-          }
-        }
-      },
-      "online_reduction_vs_baseline": 3.787,
-      "M0_reduction_vs_baseline": 3.867
-    },
-    {
-      "dataset": "cifar10",
-      "schedule": "01",
-      "wire": {
-        "name": "compact",
-        "compr": "zstd",
-        "seeded_client": true,
-        "seeded_keys": true,
-        "modswitch_send": true,
-        "short_chain": true
-      },
-      "messages": [
-        {
-          "msg": "M1",
-          "direction": "C->S",
-          "chain_index": 5,
-          "bytes": 189226
-        },
-        {
-          "msg": "①_2",
-          "direction": "S->C",
-          "chain_index": 2,
-          "modulus_bits": 82,
-          "bytes": 213026
-        },
-        {
-          "msg": "②_2",
-          "direction": "C->S",
-          "chain_index": 1,
-          "bytes": 80671
-        },
-        {
-          "msg": "M3",
-          "direction": "S->C",
-          "chain_index": 0,
-          "modulus_bits": 40,
-          "bytes": 94368
-        }
-      ],
-      "online_up_bytes": 269897,
-      "online_down_bytes": 307394,
-      "online_total_bytes": 577291,
-      "M0_key_bytes": 47744607,
-      "key_sizes": {
-        "public_key_bytes": 269384,
-        "galois_keys_bytes": 45576297,
-        "relin_keys_bytes": 1901489,
-        "galois_key_count": 24,
-        "compr": "zstd",
-        "seeded": 1,
-        "public_context_bytes": 47744607
-      },
-      "plan": {
-        "data_primes": [
-          1099510890497,
-          1196033,
-          1376257,
-          1589249,
-          1720321,
-          1769473,
-          1785857
-        ],
-        "send_abs": {
-          "hyb1": 4398046511168.0,
-          "out": 64.0,
-          "argmax": 4398046511168.0,
-          "dummy": 4398046511104.0
-        },
-        "chain_index": {
-          "logits": {
-            "M1": 5,
-            "re1": 1
-          },
-          "index": {
-            "M1": 5,
-            "re1": 3
-          }
-        }
-      },
-      "online_reduction_vs_baseline": 5.45,
-      "M0_reduction_vs_baseline": 3.867
-    },
-    {
-      "dataset": "cifar10",
-      "schedule": "10",
-      "wire": {
-        "name": "compact",
-        "compr": "zstd",
-        "seeded_client": true,
-        "seeded_keys": true,
-        "modswitch_send": true,
-        "short_chain": true
-      },
-      "messages": [
-        {
-          "msg": "M1",
-          "direction": "C->S",
-          "chain_index": 3,
-          "bytes": 133821
-        },
-        {
-          "msg": "①_1",
-          "direction": "S->C",
-          "chain_index": 2,
-          "modulus_bits": 82,
-          "bytes": 212990
-        },
-        {
-          "msg": "②_1",
-          "direction": "C->S",
-          "chain_index": 3,
-          "bytes": 133247
-        },
-        {
-          "msg": "M3",
-          "direction": "S->C",
-          "chain_index": 0,
-          "modulus_bits": 40,
-          "bytes": 94381
-        }
-      ],
-      "online_up_bytes": 267068,
-      "online_down_bytes": 307371,
-      "online_total_bytes": 574439,
-      "M0_key_bytes": 47744607,
-      "key_sizes": {
-        "public_key_bytes": 269384,
-        "galois_keys_bytes": 45576297,
-        "relin_keys_bytes": 1901489,
-        "galois_key_count": 24,
-        "compr": "zstd",
-        "seeded": 1,
-        "public_context_bytes": 47744607
-      },
-      "plan": {
-        "data_primes": [
-          1099510890497,
-          1196033,
-          1376257,
-          1589249,
-          1720321,
-          1769473,
-          1785857
-        ],
-        "send_abs": {
-          "hyb0": 4398046511120.0,
-          "out": 64.0,
-          "argmax": 4398046511168.0,
-          "dummy": 4398046511104.0
-        },
-        "chain_index": {
-          "logits": {
-            "M1": 3,
-            "re0": 3
-          },
-          "index": {
-            "M1": 3,
-            "re0": 5
-          }
-        }
-      },
-      "online_reduction_vs_baseline": 5.477,
-      "M0_reduction_vs_baseline": 3.867
-    },
-    {
-      "dataset": "cifar10",
-      "schedule": "11",
-      "wire": {
-        "name": "compact",
-        "compr": "zstd",
-        "seeded_client": true,
-        "seeded_keys": true,
-        "modswitch_send": true,
-        "short_chain": true
-      },
-      "messages": [
-        {
-          "msg": "M1",
-          "direction": "C->S",
-          "chain_index": 3,
-          "bytes": 133441
-        },
-        {
-          "msg": "①_1",
-          "direction": "S->C",
-          "chain_index": 2,
-          "modulus_bits": 82,
-          "bytes": 213023
-        },
-        {
-          "msg": "②_1",
-          "direction": "C->S",
-          "chain_index": 3,
-          "bytes": 133377
-        },
-        {
-          "msg": "①_2",
-          "direction": "S->C",
-          "chain_index": 2,
-          "modulus_bits": 82,
-          "bytes": 214484
-        },
-        {
-          "msg": "②_2",
-          "direction": "C->S",
-          "chain_index": 1,
-          "bytes": 80648
-        },
-        {
-          "msg": "M3",
-          "direction": "S->C",
-          "chain_index": 0,
-          "modulus_bits": 40,
-          "bytes": 94353
-        }
-      ],
-      "online_up_bytes": 347466,
-      "online_down_bytes": 521860,
-      "online_total_bytes": 869326,
-      "M0_key_bytes": 47744607,
-      "key_sizes": {
-        "public_key_bytes": 269384,
-        "galois_keys_bytes": 45576297,
-        "relin_keys_bytes": 1901489,
-        "galois_key_count": 24,
-        "compr": "zstd",
-        "seeded": 1,
-        "public_context_bytes": 47744607
-      },
-      "plan": {
-        "data_primes": [
-          1099510890497,
-          1196033,
-          1376257,
-          1589249,
-          1720321,
-          1769473,
-          1785857
-        ],
-        "send_abs": {
-          "hyb0": 4398046511120.0,
-          "hyb1": 4398046511168.0,
-          "out": 64.0,
-          "argmax": 4398046511168.0,
-          "dummy": 4398046511104.0
-        },
-        "chain_index": {
-          "logits": {
-            "M1": 3,
-            "re0": 3,
-            "re1": 1
-          },
-          "index": {
-            "M1": 3,
-            "re0": 3,
-            "re1": 3
-          }
-        }
-      },
-      "online_reduction_vs_baseline": 5.881,
-      "M0_reduction_vs_baseline": 3.867
-    },
-    {
-      "dataset": "uci_har",
-      "schedule": "00",
-      "wire": {
-        "name": "compact",
-        "compr": "zstd",
-        "seeded_client": true,
-        "seeded_keys": true,
-        "modswitch_send": true,
-        "short_chain": true
-      },
-      "messages": [
-        {
-          "msg": "M1",
-          "direction": "C->S",
-          "chain_index": 6,
-          "bytes": 217147
-        },
-        {
-          "msg": "M3",
-          "direction": "S->C",
-          "chain_index": 0,
-          "modulus_bits": 40,
-          "bytes": 94296
-        }
-      ],
-      "online_up_bytes": 217147,
-      "online_down_bytes": 94296,
-      "online_total_bytes": 311443,
-      "M0_key_bytes": 47744607,
-      "key_sizes": {
-        "public_key_bytes": 269384,
-        "galois_keys_bytes": 45576297,
-        "relin_keys_bytes": 1901489,
-        "galois_key_count": 24,
-        "compr": "zstd",
-        "seeded": 1,
-        "public_context_bytes": 47744607
-      },
-      "plan": {
-        "data_primes": [
-          1099510890497,
-          1196033,
-          1376257,
-          1589249,
-          1720321,
-          1769473,
-          1785857
-        ],
-        "send_abs": {
-          "out": 64.0,
-          "argmax": 4398046511168.0,
-          "dummy": 4398046511104.0
-        },
-        "chain_index": {
-          "logits": {
-            "M1": 6
-          },
-          "index": {
-            "M1": 6
-          }
-        }
-      },
-      "online_reduction_vs_baseline": 3.788,
-      "M0_reduction_vs_baseline": 3.867
-    },
-    {
-      "dataset": "uci_har",
-      "schedule": "01",
-      "wire": {
-        "name": "compact",
-        "compr": "zstd",
-        "seeded_client": true,
-        "seeded_keys": true,
-        "modswitch_send": true,
-        "short_chain": true
-      },
-      "messages": [
-        {
-          "msg": "M1",
-          "direction": "C->S",
-          "chain_index": 5,
-          "bytes": 189273
-        },
-        {
-          "msg": "①_2",
-          "direction": "S->C",
-          "chain_index": 2,
-          "modulus_bits": 82,
-          "bytes": 214303
-        },
-        {
-          "msg": "②_2",
-          "direction": "C->S",
-          "chain_index": 1,
-          "bytes": 80541
-        },
-        {
-          "msg": "M3",
-          "direction": "S->C",
-          "chain_index": 0,
-          "modulus_bits": 40,
-          "bytes": 94323
-        }
-      ],
-      "online_up_bytes": 269814,
-      "online_down_bytes": 308626,
-      "online_total_bytes": 578440,
-      "M0_key_bytes": 47744607,
-      "key_sizes": {
-        "public_key_bytes": 269384,
-        "galois_keys_bytes": 45576297,
-        "relin_keys_bytes": 1901489,
-        "galois_key_count": 24,
-        "compr": "zstd",
-        "seeded": 1,
-        "public_context_bytes": 47744607
-      },
-      "plan": {
-        "data_primes": [
-          1099510890497,
-          1196033,
-          1376257,
-          1589249,
-          1720321,
-          1769473,
-          1785857
-        ],
-        "send_abs": {
-          "hyb1": 4398046511168.0,
-          "out": 64.0,
-          "argmax": 4398046511168.0,
-          "dummy": 4398046511104.0
-        },
-        "chain_index": {
-          "logits": {
-            "M1": 5,
-            "re1": 1
-          },
-          "index": {
-            "M1": 5,
-            "re1": 3
-          }
-        }
-      },
-      "online_reduction_vs_baseline": 5.439,
-      "M0_reduction_vs_baseline": 3.867
-    },
-    {
-      "dataset": "uci_har",
-      "schedule": "10",
-      "wire": {
-        "name": "compact",
-        "compr": "zstd",
-        "seeded_client": true,
-        "seeded_keys": true,
-        "modswitch_send": true,
-        "short_chain": true
-      },
-      "messages": [
-        {
-          "msg": "M1",
-          "direction": "C->S",
-          "chain_index": 3,
-          "bytes": 133388
-        },
-        {
-          "msg": "①_1",
-          "direction": "S->C",
-          "chain_index": 2,
-          "modulus_bits": 82,
-          "bytes": 213214
-        },
-        {
-          "msg": "②_1",
-          "direction": "C->S",
-          "chain_index": 3,
-          "bytes": 133551
-        },
-        {
-          "msg": "M3",
-          "direction": "S->C",
-          "chain_index": 0,
-          "modulus_bits": 40,
-          "bytes": 94389
-        }
-      ],
-      "online_up_bytes": 266939,
+      "online_up_bytes": 268227,
       "online_down_bytes": 307603,
-      "online_total_bytes": 574542,
-      "M0_key_bytes": 47744607,
+      "online_total_bytes": 575830,
+      "M0_key_bytes": 47745708,
       "key_sizes": {
-        "public_key_bytes": 269384,
-        "galois_keys_bytes": 45576297,
-        "relin_keys_bytes": 1901489,
+        "public_key_bytes": 269885,
+        "galois_keys_bytes": 45574743,
+        "relin_keys_bytes": 1903082,
         "galois_key_count": 24,
         "compr": "zstd",
         "seeded": 1,
-        "public_context_bytes": 47744607
+        "public_context_bytes": 47745708
       },
       "plan": {
         "data_primes": [
@@ -5488,8 +4782,7 @@
         "send_abs": {
           "hyb0": 4398046511120.0,
           "out": 64.0,
-          "argmax": 4398046511168.0,
-          "dummy": 4398046511104.0
+          "argmax": 4398046511168.0
         },
         "chain_index": {
           "logits": {
@@ -5502,7 +4795,655 @@
           }
         }
       },
-      "online_reduction_vs_baseline": 5.476,
+      "online_reduction_vs_baseline": 5.464,
+      "M0_reduction_vs_baseline": 3.867
+    },
+    {
+      "dataset": "mnist",
+      "schedule": "11",
+      "wire": {
+        "name": "compact",
+        "compr": "zstd",
+        "seeded_client": true,
+        "seeded_keys": true,
+        "modswitch_send": true,
+        "short_chain": true
+      },
+      "messages": [
+        {
+          "msg": "M1",
+          "direction": "C->S",
+          "chain_index": 3,
+          "bytes": 134725
+        },
+        {
+          "msg": "①_1",
+          "direction": "S->C",
+          "chain_index": 2,
+          "modulus_bits": 82,
+          "bytes": 213082
+        },
+        {
+          "msg": "②_1",
+          "direction": "C->S",
+          "chain_index": 3,
+          "bytes": 133362
+        },
+        {
+          "msg": "①_2",
+          "direction": "S->C",
+          "chain_index": 2,
+          "modulus_bits": 82,
+          "bytes": 212851
+        },
+        {
+          "msg": "②_2",
+          "direction": "C->S",
+          "chain_index": 1,
+          "bytes": 80575
+        },
+        {
+          "msg": "M3",
+          "direction": "S->C",
+          "chain_index": 0,
+          "modulus_bits": 40,
+          "bytes": 94361
+        }
+      ],
+      "online_up_bytes": 348662,
+      "online_down_bytes": 520294,
+      "online_total_bytes": 868956,
+      "M0_key_bytes": 47745708,
+      "key_sizes": {
+        "public_key_bytes": 269885,
+        "galois_keys_bytes": 45574743,
+        "relin_keys_bytes": 1903082,
+        "galois_key_count": 24,
+        "compr": "zstd",
+        "seeded": 1,
+        "public_context_bytes": 47745708
+      },
+      "plan": {
+        "data_primes": [
+          1099510890497,
+          1196033,
+          1376257,
+          1589249,
+          1720321,
+          1769473,
+          1785857
+        ],
+        "send_abs": {
+          "hyb0": 4398046511120.0,
+          "hyb1": 4398046511168.0,
+          "out": 64.0,
+          "argmax": 4398046511168.0
+        },
+        "chain_index": {
+          "logits": {
+            "M1": 3,
+            "re0": 3,
+            "re1": 1
+          },
+          "index": {
+            "M1": 3,
+            "re0": 3,
+            "re1": 3
+          }
+        }
+      },
+      "online_reduction_vs_baseline": 5.884,
+      "M0_reduction_vs_baseline": 3.867
+    },
+    {
+      "dataset": "cifar10",
+      "schedule": "00",
+      "wire": {
+        "name": "compact",
+        "compr": "zstd",
+        "seeded_client": true,
+        "seeded_keys": true,
+        "modswitch_send": true,
+        "short_chain": true
+      },
+      "messages": [
+        {
+          "msg": "M1",
+          "direction": "C->S",
+          "chain_index": 6,
+          "bytes": 217281
+        },
+        {
+          "msg": "M3",
+          "direction": "S->C",
+          "chain_index": 0,
+          "modulus_bits": 40,
+          "bytes": 94390
+        }
+      ],
+      "online_up_bytes": 217281,
+      "online_down_bytes": 94390,
+      "online_total_bytes": 311671,
+      "M0_key_bytes": 47745708,
+      "key_sizes": {
+        "public_key_bytes": 269885,
+        "galois_keys_bytes": 45574743,
+        "relin_keys_bytes": 1903082,
+        "galois_key_count": 24,
+        "compr": "zstd",
+        "seeded": 1,
+        "public_context_bytes": 47745708
+      },
+      "plan": {
+        "data_primes": [
+          1099510890497,
+          1196033,
+          1376257,
+          1589249,
+          1720321,
+          1769473,
+          1785857
+        ],
+        "send_abs": {
+          "out": 64.0,
+          "argmax": 4398046511168.0
+        },
+        "chain_index": {
+          "logits": {
+            "M1": 6
+          },
+          "index": {
+            "M1": 6
+          }
+        }
+      },
+      "online_reduction_vs_baseline": 3.786,
+      "M0_reduction_vs_baseline": 3.867
+    },
+    {
+      "dataset": "cifar10",
+      "schedule": "01",
+      "wire": {
+        "name": "compact",
+        "compr": "zstd",
+        "seeded_client": true,
+        "seeded_keys": true,
+        "modswitch_send": true,
+        "short_chain": true
+      },
+      "messages": [
+        {
+          "msg": "M1",
+          "direction": "C->S",
+          "chain_index": 5,
+          "bytes": 189433
+        },
+        {
+          "msg": "①_2",
+          "direction": "S->C",
+          "chain_index": 2,
+          "modulus_bits": 82,
+          "bytes": 213031
+        },
+        {
+          "msg": "②_2",
+          "direction": "C->S",
+          "chain_index": 1,
+          "bytes": 80601
+        },
+        {
+          "msg": "M3",
+          "direction": "S->C",
+          "chain_index": 0,
+          "modulus_bits": 40,
+          "bytes": 94360
+        }
+      ],
+      "online_up_bytes": 270034,
+      "online_down_bytes": 307391,
+      "online_total_bytes": 577425,
+      "M0_key_bytes": 47745708,
+      "key_sizes": {
+        "public_key_bytes": 269885,
+        "galois_keys_bytes": 45574743,
+        "relin_keys_bytes": 1903082,
+        "galois_key_count": 24,
+        "compr": "zstd",
+        "seeded": 1,
+        "public_context_bytes": 47745708
+      },
+      "plan": {
+        "data_primes": [
+          1099510890497,
+          1196033,
+          1376257,
+          1589249,
+          1720321,
+          1769473,
+          1785857
+        ],
+        "send_abs": {
+          "hyb1": 4398046511168.0,
+          "out": 64.0,
+          "argmax": 4398046511168.0
+        },
+        "chain_index": {
+          "logits": {
+            "M1": 5,
+            "re1": 1
+          },
+          "index": {
+            "M1": 5,
+            "re1": 3
+          }
+        }
+      },
+      "online_reduction_vs_baseline": 5.449,
+      "M0_reduction_vs_baseline": 3.867
+    },
+    {
+      "dataset": "cifar10",
+      "schedule": "10",
+      "wire": {
+        "name": "compact",
+        "compr": "zstd",
+        "seeded_client": true,
+        "seeded_keys": true,
+        "modswitch_send": true,
+        "short_chain": true
+      },
+      "messages": [
+        {
+          "msg": "M1",
+          "direction": "C->S",
+          "chain_index": 3,
+          "bytes": 134058
+        },
+        {
+          "msg": "①_1",
+          "direction": "S->C",
+          "chain_index": 2,
+          "modulus_bits": 82,
+          "bytes": 213617
+        },
+        {
+          "msg": "②_1",
+          "direction": "C->S",
+          "chain_index": 3,
+          "bytes": 134371
+        },
+        {
+          "msg": "M3",
+          "direction": "S->C",
+          "chain_index": 0,
+          "modulus_bits": 40,
+          "bytes": 94315
+        }
+      ],
+      "online_up_bytes": 268429,
+      "online_down_bytes": 307932,
+      "online_total_bytes": 576361,
+      "M0_key_bytes": 47745708,
+      "key_sizes": {
+        "public_key_bytes": 269885,
+        "galois_keys_bytes": 45574743,
+        "relin_keys_bytes": 1903082,
+        "galois_key_count": 24,
+        "compr": "zstd",
+        "seeded": 1,
+        "public_context_bytes": 47745708
+      },
+      "plan": {
+        "data_primes": [
+          1099510890497,
+          1196033,
+          1376257,
+          1589249,
+          1720321,
+          1769473,
+          1785857
+        ],
+        "send_abs": {
+          "hyb0": 4398046511120.0,
+          "out": 64.0,
+          "argmax": 4398046511168.0
+        },
+        "chain_index": {
+          "logits": {
+            "M1": 3,
+            "re0": 3
+          },
+          "index": {
+            "M1": 3,
+            "re0": 5
+          }
+        }
+      },
+      "online_reduction_vs_baseline": 5.459,
+      "M0_reduction_vs_baseline": 3.867
+    },
+    {
+      "dataset": "cifar10",
+      "schedule": "11",
+      "wire": {
+        "name": "compact",
+        "compr": "zstd",
+        "seeded_client": true,
+        "seeded_keys": true,
+        "modswitch_send": true,
+        "short_chain": true
+      },
+      "messages": [
+        {
+          "msg": "M1",
+          "direction": "C->S",
+          "chain_index": 3,
+          "bytes": 133434
+        },
+        {
+          "msg": "①_1",
+          "direction": "S->C",
+          "chain_index": 2,
+          "modulus_bits": 82,
+          "bytes": 213212
+        },
+        {
+          "msg": "②_1",
+          "direction": "C->S",
+          "chain_index": 3,
+          "bytes": 133264
+        },
+        {
+          "msg": "①_2",
+          "direction": "S->C",
+          "chain_index": 2,
+          "modulus_bits": 82,
+          "bytes": 212965
+        },
+        {
+          "msg": "②_2",
+          "direction": "C->S",
+          "chain_index": 1,
+          "bytes": 80570
+        },
+        {
+          "msg": "M3",
+          "direction": "S->C",
+          "chain_index": 0,
+          "modulus_bits": 40,
+          "bytes": 94400
+        }
+      ],
+      "online_up_bytes": 347268,
+      "online_down_bytes": 520577,
+      "online_total_bytes": 867845,
+      "M0_key_bytes": 47745708,
+      "key_sizes": {
+        "public_key_bytes": 269885,
+        "galois_keys_bytes": 45574743,
+        "relin_keys_bytes": 1903082,
+        "galois_key_count": 24,
+        "compr": "zstd",
+        "seeded": 1,
+        "public_context_bytes": 47745708
+      },
+      "plan": {
+        "data_primes": [
+          1099510890497,
+          1196033,
+          1376257,
+          1589249,
+          1720321,
+          1769473,
+          1785857
+        ],
+        "send_abs": {
+          "hyb0": 4398046511120.0,
+          "hyb1": 4398046511168.0,
+          "out": 64.0,
+          "argmax": 4398046511168.0
+        },
+        "chain_index": {
+          "logits": {
+            "M1": 3,
+            "re0": 3,
+            "re1": 1
+          },
+          "index": {
+            "M1": 3,
+            "re0": 3,
+            "re1": 3
+          }
+        }
+      },
+      "online_reduction_vs_baseline": 5.891,
+      "M0_reduction_vs_baseline": 3.867
+    },
+    {
+      "dataset": "uci_har",
+      "schedule": "00",
+      "wire": {
+        "name": "compact",
+        "compr": "zstd",
+        "seeded_client": true,
+        "seeded_keys": true,
+        "modswitch_send": true,
+        "short_chain": true
+      },
+      "messages": [
+        {
+          "msg": "M1",
+          "direction": "C->S",
+          "chain_index": 6,
+          "bytes": 218879
+        },
+        {
+          "msg": "M3",
+          "direction": "S->C",
+          "chain_index": 0,
+          "modulus_bits": 40,
+          "bytes": 94297
+        }
+      ],
+      "online_up_bytes": 218879,
+      "online_down_bytes": 94297,
+      "online_total_bytes": 313176,
+      "M0_key_bytes": 47745708,
+      "key_sizes": {
+        "public_key_bytes": 269885,
+        "galois_keys_bytes": 45574743,
+        "relin_keys_bytes": 1903082,
+        "galois_key_count": 24,
+        "compr": "zstd",
+        "seeded": 1,
+        "public_context_bytes": 47745708
+      },
+      "plan": {
+        "data_primes": [
+          1099510890497,
+          1196033,
+          1376257,
+          1589249,
+          1720321,
+          1769473,
+          1785857
+        ],
+        "send_abs": {
+          "out": 64.0,
+          "argmax": 4398046511168.0
+        },
+        "chain_index": {
+          "logits": {
+            "M1": 6
+          },
+          "index": {
+            "M1": 6
+          }
+        }
+      },
+      "online_reduction_vs_baseline": 3.767,
+      "M0_reduction_vs_baseline": 3.867
+    },
+    {
+      "dataset": "uci_har",
+      "schedule": "01",
+      "wire": {
+        "name": "compact",
+        "compr": "zstd",
+        "seeded_client": true,
+        "seeded_keys": true,
+        "modswitch_send": true,
+        "short_chain": true
+      },
+      "messages": [
+        {
+          "msg": "M1",
+          "direction": "C->S",
+          "chain_index": 5,
+          "bytes": 189228
+        },
+        {
+          "msg": "①_2",
+          "direction": "S->C",
+          "chain_index": 2,
+          "modulus_bits": 82,
+          "bytes": 213006
+        },
+        {
+          "msg": "②_2",
+          "direction": "C->S",
+          "chain_index": 1,
+          "bytes": 80580
+        },
+        {
+          "msg": "M3",
+          "direction": "S->C",
+          "chain_index": 0,
+          "modulus_bits": 40,
+          "bytes": 94309
+        }
+      ],
+      "online_up_bytes": 269808,
+      "online_down_bytes": 307315,
+      "online_total_bytes": 577123,
+      "M0_key_bytes": 47745708,
+      "key_sizes": {
+        "public_key_bytes": 269885,
+        "galois_keys_bytes": 45574743,
+        "relin_keys_bytes": 1903082,
+        "galois_key_count": 24,
+        "compr": "zstd",
+        "seeded": 1,
+        "public_context_bytes": 47745708
+      },
+      "plan": {
+        "data_primes": [
+          1099510890497,
+          1196033,
+          1376257,
+          1589249,
+          1720321,
+          1769473,
+          1785857
+        ],
+        "send_abs": {
+          "hyb1": 4398046511168.0,
+          "out": 64.0,
+          "argmax": 4398046511168.0
+        },
+        "chain_index": {
+          "logits": {
+            "M1": 5,
+            "re1": 1
+          },
+          "index": {
+            "M1": 5,
+            "re1": 3
+          }
+        }
+      },
+      "online_reduction_vs_baseline": 5.452,
+      "M0_reduction_vs_baseline": 3.867
+    },
+    {
+      "dataset": "uci_har",
+      "schedule": "10",
+      "wire": {
+        "name": "compact",
+        "compr": "zstd",
+        "seeded_client": true,
+        "seeded_keys": true,
+        "modswitch_send": true,
+        "short_chain": true
+      },
+      "messages": [
+        {
+          "msg": "M1",
+          "direction": "C->S",
+          "chain_index": 3,
+          "bytes": 133501
+        },
+        {
+          "msg": "①_1",
+          "direction": "S->C",
+          "chain_index": 2,
+          "modulus_bits": 82,
+          "bytes": 214366
+        },
+        {
+          "msg": "②_1",
+          "direction": "C->S",
+          "chain_index": 3,
+          "bytes": 133835
+        },
+        {
+          "msg": "M3",
+          "direction": "S->C",
+          "chain_index": 0,
+          "modulus_bits": 40,
+          "bytes": 94306
+        }
+      ],
+      "online_up_bytes": 267336,
+      "online_down_bytes": 308672,
+      "online_total_bytes": 576008,
+      "M0_key_bytes": 47745708,
+      "key_sizes": {
+        "public_key_bytes": 269885,
+        "galois_keys_bytes": 45574743,
+        "relin_keys_bytes": 1903082,
+        "galois_key_count": 24,
+        "compr": "zstd",
+        "seeded": 1,
+        "public_context_bytes": 47745708
+      },
+      "plan": {
+        "data_primes": [
+          1099510890497,
+          1196033,
+          1376257,
+          1589249,
+          1720321,
+          1769473,
+          1785857
+        ],
+        "send_abs": {
+          "hyb0": 4398046511120.0,
+          "out": 64.0,
+          "argmax": 4398046511168.0
+        },
+        "chain_index": {
+          "logits": {
+            "M1": 3,
+            "re0": 3
+          },
+          "index": {
+            "M1": 3,
+            "re0": 5
+          }
+        }
+      },
+      "online_reduction_vs_baseline": 5.462,
       "M0_reduction_vs_baseline": 3.867
     },
     {
@@ -5521,54 +5462,54 @@
           "msg": "M1",
           "direction": "C->S",
           "chain_index": 3,
-          "bytes": 134832
+          "bytes": 133564
         },
         {
           "msg": "①_1",
           "direction": "S->C",
           "chain_index": 2,
           "modulus_bits": 82,
-          "bytes": 214453
+          "bytes": 213040
         },
         {
           "msg": "②_1",
           "direction": "C->S",
           "chain_index": 3,
-          "bytes": 134611
+          "bytes": 133506
         },
         {
           "msg": "①_2",
           "direction": "S->C",
           "chain_index": 2,
           "modulus_bits": 82,
-          "bytes": 213113
+          "bytes": 214672
         },
         {
           "msg": "②_2",
           "direction": "C->S",
           "chain_index": 1,
-          "bytes": 80595
+          "bytes": 80763
         },
         {
           "msg": "M3",
           "direction": "S->C",
           "chain_index": 0,
           "modulus_bits": 40,
-          "bytes": 94337
+          "bytes": 94360
         }
       ],
-      "online_up_bytes": 350038,
-      "online_down_bytes": 521903,
-      "online_total_bytes": 871941,
-      "M0_key_bytes": 47744607,
+      "online_up_bytes": 347833,
+      "online_down_bytes": 522072,
+      "online_total_bytes": 869905,
+      "M0_key_bytes": 47745708,
       "key_sizes": {
-        "public_key_bytes": 269384,
-        "galois_keys_bytes": 45576297,
-        "relin_keys_bytes": 1901489,
+        "public_key_bytes": 269885,
+        "galois_keys_bytes": 45574743,
+        "relin_keys_bytes": 1903082,
         "galois_key_count": 24,
         "compr": "zstd",
         "seeded": 1,
-        "public_context_bytes": 47744607
+        "public_context_bytes": 47745708
       },
       "plan": {
         "data_primes": [
@@ -5584,8 +5525,7 @@
           "hyb0": 4398046511120.0,
           "hyb1": 4398046511168.0,
           "out": 64.0,
-          "argmax": 4398046511168.0,
-          "dummy": 4398046511104.0
+          "argmax": 4398046511168.0
         },
         "chain_index": {
           "logits": {
@@ -5600,7 +5540,7 @@
           }
         }
       },
-      "online_reduction_vs_baseline": 5.863,
+      "online_reduction_vs_baseline": 5.877,
       "M0_reduction_vs_baseline": 3.867
     }
   ]

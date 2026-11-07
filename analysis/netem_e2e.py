@@ -47,6 +47,7 @@ import itertools
 import json
 import shlex
 import subprocess
+import sys
 import time
 from datetime import datetime, timezone
 from pathlib import Path
@@ -116,6 +117,9 @@ def run_point(args, x, rtt, bw, loss, jitter) -> dict:
         "schedule": res.get("schedule"),
         "wire": res.get("wire"),
         "mpc_runtime": res.get("mpc_runtime"),
+        "deployment_compliant": res.get("deployment_compliant"),
+        "protocol_failures": res.get("protocol_failures"),
+        "profile_name": res.get("profile_name"),
         "keygen_s": res["timings"].get("keygen_s"),
         "context_upload_s": res["timings"].get("context_upload_s"),
     }
@@ -299,6 +303,10 @@ def main() -> int:
         "device": args.device, "dataset": args.dataset, "schedule": args.schedule,
         "topology": "client egress netem (delay = full RTT), wired",
         "delay_mult": delay_mult(args.iface),
+        "python_runtime": f"{sys.version_info[0]}.{sys.version_info[1]}",
+        "deployment_compliant": points[0].get("deployment_compliant") if points else None,
+        "protocol_failures": points[0].get("protocol_failures") if points else None,
+        "mpc_runtime": points[0].get("mpc_runtime") if points else None,
         "tcp_slow_start_after_idle": slow_start_after_idle(),
         "warmup_discarded": args.warmup, "repeat": args.repeat,
         "measured": True,

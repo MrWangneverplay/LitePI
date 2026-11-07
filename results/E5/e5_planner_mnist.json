@@ -1,4 +1,5 @@
 {
+  "git_sha": "a8c5db6d05ff940abd624949d7acc51202558149-dirty",
   "arch": "mnist",
   "acc_min": 0.975,
   "rtt_ms": 50.0,
@@ -7,13 +8,18 @@
   "wire": "baseline",
   "r_h": 6.025,
   "r_h_scope": "end-to-end",
+  "schedules_trained": [
+    "00",
+    "01",
+    "10",
+    "11"
+  ],
   "basis": {
-    "accuracy": "measured E1 canonical schedule means",
+    "accuracy": "one retrained model per schedule (mean test accuracy)",
     "client_cost": "cost_model (E1 SEAL+SCI fit)",
-    "server_cost": "E1 forward_s mean per (dataset, schedule)",
-    "adaptive_executable": "same as adaptive (no conv after a nonlinear layer)",
+    "server_cost": "measured forward_s per (arch, schedule); untried = unknown",
     "E_client": "unmeasured (E6)",
-    "M_client": "E2 HE-only peak; hybrid increment unmeasured"
+    "M_client": "E2/client_only/desktop: fit over K_h=[0, 2]"
   },
   "strategies": {
     "all_p2": {
@@ -26,8 +32,8 @@
       "T_client_ms": 10.205,
       "T_server_ms": 4739.3,
       "L_e2e_ms": 4849.5,
-      "S_online_bytes": 1704178,
-      "M_client_mb": 812.9,
+      "S_online_bytes": 1179890,
+      "M_client_mb": 117.9,
       "E_client_mJ": null,
       "objective_ms": 110.205,
       "depth_ok": true,
@@ -45,8 +51,8 @@
       "T_client_ms": 48.514,
       "T_server_ms": 7132.0,
       "L_e2e_ms": 7883.0,
-      "S_online_bytes": 5112534,
-      "M_client_mb": null,
+      "S_online_bytes": 5357838,
+      "M_client_mb": 117.6,
       "E_client_mJ": null,
       "objective_ms": 751.014,
       "depth_ok": true,
@@ -64,8 +70,8 @@
       "T_client_ms": 10.205,
       "T_server_ms": 4739.3,
       "L_e2e_ms": 4849.5,
-      "S_online_bytes": 1704178,
-      "M_client_mb": 812.9,
+      "S_online_bytes": 1179890,
+      "M_client_mb": 117.9,
       "E_client_mJ": null,
       "objective_ms": 110.205,
       "depth_ok": true,
@@ -83,8 +89,8 @@
       "T_client_ms": 10.205,
       "T_server_ms": 4739.3,
       "L_e2e_ms": 4849.5,
-      "S_online_bytes": 1704178,
-      "M_client_mb": 812.9,
+      "S_online_bytes": 1179890,
+      "M_client_mb": 117.9,
       "E_client_mJ": null,
       "objective_ms": 110.205,
       "depth_ok": true,
@@ -102,27 +108,8 @@
       "T_client_ms": 10.205,
       "T_server_ms": 4739.3,
       "L_e2e_ms": 4849.5,
-      "S_online_bytes": 1704178,
-      "M_client_mb": 812.9,
-      "E_client_mJ": null,
-      "objective_ms": 110.205,
-      "depth_ok": true,
-      "meets_acc_min": true,
-      "on_pareto_front": true,
-      "dominated_by_adaptive": false
-    },
-    "adaptive_executable": {
-      "schedule": "00",
-      "naming": "conv1=P2 fc1=P2",
-      "accuracy": 0.9797,
-      "mpc_elements": 0,
-      "hybrid_layers": 0,
-      "R_online": 2.0,
-      "T_client_ms": 10.205,
-      "T_server_ms": 4739.3,
-      "L_e2e_ms": 4849.5,
-      "S_online_bytes": 1704178,
-      "M_client_mb": 812.9,
+      "S_online_bytes": 1179890,
+      "M_client_mb": 117.9,
       "E_client_mJ": null,
       "objective_ms": 110.205,
       "depth_ok": true,
@@ -135,7 +122,7 @@
       "T_client_ms": 33.3342,
       "R_online": 9.23,
       "L_e2e_ms": 7067.0,
-      "S_online_bytes": 3749191.6,
+      "S_online_bytes": 3716095,
       "mpc_elements": 230.4,
       "draws": [
         "10",
@@ -159,8 +146,8 @@
       "T_client_ms": 10.205,
       "T_server_ms": 4739.3,
       "L_e2e_ms": 4849.5,
-      "S_online_bytes": 1704178,
-      "M_client_mb": 812.9,
+      "S_online_bytes": 1179890,
+      "M_client_mb": 117.9,
       "E_client_mJ": null,
       "objective_ms": 110.205,
       "depth_ok": true
@@ -168,9 +155,9 @@
   ],
   "schedule_space": 4,
   "planner_cost": {
-    "solve_ms": 0.061,
+    "solve_ms": 0.0777,
     "evaluations": 4,
-    "layer_sensitivity_evals": 0
+    "retrained_models": 4
   },
   "measure_list": [
     {

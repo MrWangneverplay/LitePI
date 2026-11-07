@@ -162,8 +162,19 @@ def check_export(npz: Path, net: MidConvNet, schedule, test_loader, device) -> f
     model = from_npz(npz, schedule)
     images, _ = next(iter(test_loader))
     images = images[:8]
-    with torch.no_grad():
-        want = net(prepare_rgb(images.to(device))).cpu().numpy()
+    # cuDNN/cuBLAS run float32 convs and matmuls in TF32 by default, which
+    # rounds the products to 10-bit mantissas: the same exported graph then
+    # differs from the float64 reference by ~6e-3 while the graph itself is
+    # exact.  The check compares full float32, so TF32 is off for it only.
+    prev = (torch.backends.cudnn.allow_tf32, torch.backends.cuda.matmul.allow_tf32)
+    torch.backends.cudnn.allow_tf32 = False
+    torch.backends.cuda.matmul.allow_tf32 = False
+    try:
+        with torch.no_grad():
+            want = net(prepare_rgb(images.to(device))).cpu().numpy()
+    finally:
+        torch.backends.cudnn.allow_tf32 = prev[0]
+        torch.backends.cuda.matmul.allow_tf32 = prev[1]
     mean = np.array(CIFAR_MEAN).reshape(3, 1, 1)
     std = np.array(CIFAR_STD).reshape(3, 1, 1)
     worst = 0.0

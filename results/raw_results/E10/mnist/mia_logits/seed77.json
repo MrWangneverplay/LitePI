@@ -3,18 +3,26 @@
   "dataset": "mnist",
   "method": "mia_logits",
   "seed": 77,
-  "git_sha": "427d9e7585b7c96e41ada20728403edbbe78731d",
-  "timestamp_utc": "2026-10-29T10:22:32+00:00",
+  "git_sha": "a8c5db6d05ff940abd624949d7acc51202558149",
+  "timestamp_utc": "2026-11-01T04:37:36+00:00",
   "membership_inference": {
-    "auc": 0.582452384138454,
+    "auc": 0.5307555555555555,
     "auc_ci": [
-      0.5162050046835274,
-      0.6483362326597975
+      0.4830625,
+      0.5776711111111111
     ],
     "ci_level": 0.95,
     "n_boot": 1000,
-    "auc_dir_free": 0.582452384138454,
-    "ci_contains_0.5": false,
+    "auc_dir_free": 0.5307555555555555,
+    "ci_contains_0.5": true,
+    "null_auc_mean": 0.49880650000000004,
+    "null_auc_ci": [
+      0.47038416666666666,
+      0.5288897222222222
+    ],
+    "n_perm": 200,
+    "p_value": 0.01990049751243781,
+    "auc_minus_null": 0.031949055555555494,
     "n_member": 300,
     "n_non_member": 300,
     "dim": 10,
@@ -22,5 +30,14 @@
   },
   "output_mode": "full_logits",
   "member_train_acc": 0.9833333333333333,
-  "non_member_test_acc": 0.9866666666666667
+  "non_member_test_acc": 0.9833333333333333,
+  "sampling": {
+    "method": "class-stratified random, matched per-class counts; attack train/eval sets drawn disjointly",
+    "per_class": 30,
+    "classes": 10,
+    "n_member": 300,
+    "n_non_member": 300,
+    "member_pool": 20000,
+    "non_member_pool": 10000
+  }
 }

@@ -1,0 +1,8 @@
+kind,schedule,seed,runs,n_samples,acc_mean_pct,acc_sample_sd_pct,agreement,wall_s_mean,wall_s_min,wall_s_max,max_abs_err_mean,max_abs_err_min,max_abs_err_max,threads,mask_exact,wire,up_bytes_client,down_bytes_client,up_sci_bytes,down_sci_bytes,server_bytes_received,server_bytes_sent,source
+plaintext_train_eval,0000,73-75,3,,78.69,0.42,,,,,,,,,,,,,,,results/raw_results/E1/cifar10/mid/s0000/
+plaintext_train_eval,0100,73-75,3,,83.07,0.28,,,,,,,,,,,,,,,results/raw_results/E1/cifar10/mid/s0100/
+plaintext_train_eval,0110,73-75,3,,83.59,0.17,,,,,,,,,,,,,,,results/raw_results/E1/cifar10/mid/s0110/
+plaintext_train_eval,1110,73-75,3,,84.06,0.08,,,,,,,,,,,,,,,results/raw_results/E1/cifar10/mid/s1110/
+plaintext_train_eval,1111,73-75,3,,83.14,0.24,,,,,,,,,,,,,,,results/raw_results/E1/cifar10/mid/s1111/
+ciphertext_protocol,0000,73-75,3,,,,"infeasible: scale out of bounds (depth 9 > budget 6)",,,,,,,,,,,,,,results/raw_results/E1/cifar10/mid/_infeasible_s0000/
+ciphertext_protocol,0100,73,1,64,84.375,,1.0000,21.77,21.66,21.96,4.31E-02,1.59E-02,1.298E-01,8,true,baseline,12819868,1204193,2725888,415744,196237780,786708,results/raw_results/E1/cifar10/mid/s0100_cipher_maskv3/seed73.json

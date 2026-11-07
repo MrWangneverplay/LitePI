@@ -87,6 +87,12 @@ def measure(dataset: str, bits: str, profile_name: str, cache: dict) -> dict:
                          "bytes": len(blob)})
         elif kind == "rescale":
             level -= tag
+        elif kind == "nl":
+            # ("nl", k) is a marker that nonlinear layer k starts here; it
+            # carries no ciphertext of its own (protocol_trace added it after
+            # this driver was written, and it used to fall into the decrypt
+            # branch below with an int tag).
+            continue
         else:  # decrypt point: the server sends at the current level
             n = dims["out"] if tag == "out" else dims[tag[1]]
             ct = ctx.encrypt_at(rng.uniform(-1, 1, n), level)

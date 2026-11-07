@@ -1,6 +1,5 @@
 {
-  "rtt_ms": 50.0,
-  "bandwidth_mbps": 50.0,
+  "git_sha": "a8c5db6d05ff940abd624949d7acc51202558149-dirty",
   "wire": "baseline",
   "rows": [
     {
@@ -8,6 +7,8 @@
       "cpu": "Intel Core Ultra 5 125H (WSL2)",
       "arch": "mnist",
       "acc_min": 0.975,
+      "rtt_ms": 5.0,
+      "bandwidth_mbps": 1000.0,
       "memory_budget_mb": 7680,
       "chosen": {
         "schedule": "00",
@@ -18,51 +19,55 @@
         "R_online": 2.0,
         "T_client_ms": 10.205,
         "T_server_ms": 4739.3,
-        "L_e2e_ms": 5122.1,
-        "S_online_bytes": 1704178,
-        "M_client_mb": 812.9,
+        "L_e2e_ms": 4768.9,
+        "S_online_bytes": 1179890,
+        "M_client_mb": 117.9,
         "E_client_mJ": null,
-        "objective_ms": 382.873,
+        "objective_ms": 29.644,
         "depth_ok": true
       },
-      "chosen_without_memory_budget": {
-        "schedule": "00",
-        "naming": "conv1=P2 fc1=P2",
-        "accuracy": 0.9797,
-        "mpc_elements": 0,
-        "hybrid_layers": 0,
-        "R_online": 2.0,
-        "T_client_ms": 10.205,
-        "T_server_ms": 4739.3,
-        "L_e2e_ms": 5122.1,
-        "S_online_bytes": 1704178,
-        "M_client_mb": 812.9,
-        "E_client_mJ": null,
-        "objective_ms": 382.873,
-        "depth_ok": true
+      "speed_breakeven": {
+        "from": "00",
+        "to": "00",
+        "at": null,
+        "changed": false
       },
-      "excluded_by_memory": [
-        "01",
-        "10",
-        "11"
-      ],
-      "memory_increment_measured": false,
+      "bandwidth_breakeven": {
+        "from": "00",
+        "to": "00",
+        "at": null,
+        "changed": false
+      },
+      "rtt_breakeven": {
+        "from": "00",
+        "to": "00",
+        "at": null,
+        "changed": false
+      },
+      "memory_breakeven": {
+        "from": "00",
+        "to": null,
+        "at": 64,
+        "changed": true
+      },
+      "memory_mb": 117.88999999999997,
       "cost_provenance": {
         "client_crypto": "E1 SEAL per_sample, n=3840 (desktop, SCI)",
         "mpc_fit": "mpc_ms = 9.659*K_h + 0.00374*elements (lstsq over 2880 hybrid samples)",
-        "server": "E1 forward_s mean per (dataset, schedule) (desktop: MNIST on host 99, CIFAR/UCI on container 101); pooled linear-in-K_h fallback for fast/VGG is a model value.  forward_s includes the server's wait for the client inside each hybrid layer",
+        "server": "E1 forward_s mean per (dataset, schedule) (desktop: MNIST on host 99, CIFAR/UCI on container 101); schedules without a run have no server time.  forward_s includes the server's wait for the client inside each hybrid layer",
         "r_h": "r_h_netem_mnist.json (scope: end-to-end)",
         "bytes": "E4 wire_bytes, profile baseline",
-        "ot_bytes": "unmeasured: SCI bytes_sent() not recorded in E1/E2 yet",
-        "memory": "E2: K_h=[0] only; hybrid increment unmeasured"
-      },
-      "T_client_per_cpu_score": null
+        "ot_bytes": "SCI bytes over 269740 ReLU elements",
+        "memory": "E2/client_only/desktop: fit over K_h=[0, 2]"
+      }
     },
     {
       "device": "desktop",
       "cpu": "Intel Core Ultra 5 125H (WSL2)",
       "arch": "cifar10",
       "acc_min": 0.59,
+      "rtt_ms": 5.0,
+      "bandwidth_mbps": 1000.0,
       "memory_budget_mb": 7680,
       "chosen": {
         "schedule": "00",
@@ -73,50 +78,55 @@
         "R_online": 2.0,
         "T_client_ms": 10.205,
         "T_server_ms": 17954.3,
-        "L_e2e_ms": 18337.1,
-        "S_online_bytes": 1704178,
-        "M_client_mb": 812.9,
+        "L_e2e_ms": 17983.9,
+        "S_online_bytes": 1179890,
+        "M_client_mb": 117.9,
         "E_client_mJ": null,
-        "objective_ms": 382.873,
+        "objective_ms": 29.644,
         "depth_ok": true
       },
-      "chosen_without_memory_budget": {
-        "schedule": "00",
-        "naming": "conv1=P2 fc1=P2",
-        "accuracy": 0.6059,
-        "mpc_elements": 0,
-        "hybrid_layers": 0,
-        "R_online": 2.0,
-        "T_client_ms": 10.205,
-        "T_server_ms": 17954.3,
-        "L_e2e_ms": 18337.1,
-        "S_online_bytes": 1704178,
-        "M_client_mb": 812.9,
-        "E_client_mJ": null,
-        "objective_ms": 382.873,
-        "depth_ok": true
+      "speed_breakeven": {
+        "from": "00",
+        "to": "00",
+        "at": null,
+        "changed": false
       },
-      "excluded_by_memory": [
-        "01",
-        "10"
-      ],
-      "memory_increment_measured": false,
+      "bandwidth_breakeven": {
+        "from": "00",
+        "to": "00",
+        "at": null,
+        "changed": false
+      },
+      "rtt_breakeven": {
+        "from": "00",
+        "to": "00",
+        "at": null,
+        "changed": false
+      },
+      "memory_breakeven": {
+        "from": "00",
+        "to": null,
+        "at": 64,
+        "changed": true
+      },
+      "memory_mb": 117.88999999999997,
       "cost_provenance": {
         "client_crypto": "E1 SEAL per_sample, n=3840 (desktop, SCI)",
         "mpc_fit": "mpc_ms = 9.659*K_h + 0.00374*elements (lstsq over 2880 hybrid samples)",
-        "server": "E1 forward_s mean per (dataset, schedule) (desktop: MNIST on host 99, CIFAR/UCI on container 101); pooled linear-in-K_h fallback for fast/VGG is a model value.  forward_s includes the server's wait for the client inside each hybrid layer",
+        "server": "E1 forward_s mean per (dataset, schedule) (desktop: MNIST on host 99, CIFAR/UCI on container 101); schedules without a run have no server time.  forward_s includes the server's wait for the client inside each hybrid layer",
         "r_h": "r_h_netem_mnist.json (scope: end-to-end)",
         "bytes": "E4 wire_bytes, profile baseline",
-        "ot_bytes": "unmeasured: SCI bytes_sent() not recorded in E1/E2 yet",
-        "memory": "E2: K_h=[0] only; hybrid increment unmeasured"
-      },
-      "T_client_per_cpu_score": null
+        "ot_bytes": "SCI bytes over 269740 ReLU elements",
+        "memory": "E2/client_only/desktop: fit over K_h=[0, 2]"
+      }
     },
     {
       "device": "desktop",
       "cpu": "Intel Core Ultra 5 125H (WSL2)",
       "arch": "uci_har",
       "acc_min": 0.89,
+      "rtt_ms": 5.0,
+      "bandwidth_mbps": 1000.0,
       "memory_budget_mb": 7680,
       "chosen": {
         "schedule": "00",
@@ -127,164 +137,114 @@
         "R_online": 2.0,
         "T_client_ms": 10.205,
         "T_server_ms": 14521.1,
-        "L_e2e_ms": 14903.9,
-        "S_online_bytes": 1704178,
-        "M_client_mb": 812.9,
+        "L_e2e_ms": 14550.7,
+        "S_online_bytes": 1179890,
+        "M_client_mb": 117.9,
         "E_client_mJ": null,
-        "objective_ms": 382.873,
+        "objective_ms": 29.644,
         "depth_ok": true
       },
-      "chosen_without_memory_budget": {
-        "schedule": "00",
-        "naming": "conv1=P2 fc1=P2",
-        "accuracy": 0.9034,
-        "mpc_elements": 0,
-        "hybrid_layers": 0,
-        "R_online": 2.0,
-        "T_client_ms": 10.205,
-        "T_server_ms": 14521.1,
-        "L_e2e_ms": 14903.9,
-        "S_online_bytes": 1704178,
-        "M_client_mb": 812.9,
-        "E_client_mJ": null,
-        "objective_ms": 382.873,
-        "depth_ok": true
+      "speed_breakeven": {
+        "from": "00",
+        "to": "00",
+        "at": null,
+        "changed": false
       },
-      "excluded_by_memory": [
-        "10",
-        "11"
-      ],
-      "memory_increment_measured": false,
+      "bandwidth_breakeven": {
+        "from": "00",
+        "to": "00",
+        "at": null,
+        "changed": false
+      },
+      "rtt_breakeven": {
+        "from": "00",
+        "to": "00",
+        "at": null,
+        "changed": false
+      },
+      "memory_breakeven": {
+        "from": "00",
+        "to": null,
+        "at": 64,
+        "changed": true
+      },
+      "memory_mb": 117.88999999999997,
       "cost_provenance": {
         "client_crypto": "E1 SEAL per_sample, n=3840 (desktop, SCI)",
         "mpc_fit": "mpc_ms = 9.659*K_h + 0.00374*elements (lstsq over 2880 hybrid samples)",
-        "server": "E1 forward_s mean per (dataset, schedule) (desktop: MNIST on host 99, CIFAR/UCI on container 101); pooled linear-in-K_h fallback for fast/VGG is a model value.  forward_s includes the server's wait for the client inside each hybrid layer",
+        "server": "E1 forward_s mean per (dataset, schedule) (desktop: MNIST on host 99, CIFAR/UCI on container 101); schedules without a run have no server time.  forward_s includes the server's wait for the client inside each hybrid layer",
         "r_h": "r_h_netem_mnist.json (scope: end-to-end)",
         "bytes": "E4 wire_bytes, profile baseline",
-        "ot_bytes": "unmeasured: SCI bytes_sent() not recorded in E1/E2 yet",
-        "memory": "E2: K_h=[0] only; hybrid increment unmeasured"
-      },
-      "T_client_per_cpu_score": null
+        "ot_bytes": "SCI bytes over 269740 ReLU elements",
+        "memory": "E2/client_only/desktop: fit over K_h=[0, 2]"
+      }
     },
     {
       "device": "desktop",
       "cpu": "Intel Core Ultra 5 125H (WSL2)",
-      "arch": "fast",
-      "acc_min": 0.84,
+      "arch": "conv3",
+      "acc_min": 0.82,
+      "rtt_ms": 5.0,
+      "bandwidth_mbps": 1000.0,
       "memory_budget_mb": 7680,
-      "chosen": null,
-      "chosen_without_memory_budget": {
-        "schedule": "00111",
-        "naming": "conv1=P2 conv2=P2 conv3=ReLU conv4=ReLU fc1=ReLU",
-        "accuracy": 0.8459,
-        "mpc_elements": 8448,
-        "hybrid_layers": 3,
-        "R_online": 20.075000000000003,
-        "T_client_ms": 97.506,
-        "T_server_ms": 21804.4,
-        "L_e2e_ms": 23996.3,
-        "S_online_bytes": 6816712,
-        "M_client_mb": null,
-        "E_client_mJ": null,
-        "objective_ms": 2191.93,
-        "depth_ok": true
-      },
-      "excluded_by_memory": [
-        "00111",
-        "01011",
-        "01101",
-        "01110",
-        "01111",
-        "10011",
-        "10101",
-        "10110",
-        "10111",
-        "11001",
-        "11010",
-        "11011",
-        "11100",
-        "11101",
-        "11110",
-        "11111"
-      ],
-      "memory_increment_measured": false,
-      "cost_provenance": {
-        "client_crypto": "E1 SEAL per_sample, n=3840 (desktop, SCI)",
-        "mpc_fit": "mpc_ms = 9.659*K_h + 0.00374*elements (lstsq over 2880 hybrid samples)",
-        "server": "E1 forward_s mean per (dataset, schedule) (desktop: MNIST on host 99, CIFAR/UCI on container 101); pooled linear-in-K_h fallback for fast/VGG is a model value.  forward_s includes the server's wait for the client inside each hybrid layer",
-        "r_h": "r_h_netem_mnist.json (scope: end-to-end)",
-        "bytes": "E4 wire_bytes, profile baseline",
-        "ot_bytes": "unmeasured: SCI bytes_sent() not recorded in E1/E2 yet",
-        "memory": "E2: K_h=[0] only; hybrid increment unmeasured"
-      },
-      "T_client_per_cpu_score": null
-    },
-    {
-      "device": "desktop",
-      "cpu": "Intel Core Ultra 5 125H (WSL2)",
-      "arch": "vgg",
-      "acc_min": 0.84,
-      "memory_budget_mb": 7680,
-      "chosen": null,
-      "chosen_without_memory_budget": {
-        "schedule": "00100",
-        "naming": "conv1=P2 conv2=P2 conv3=ReLU conv4=P2 fc1=P2",
-        "accuracy": 0.8555,
-        "mpc_elements": 16384,
+      "chosen": {
+        "schedule": "0100",
+        "naming": "conv1=P2 conv2=ReLU conv3=P2 fc1=P2",
+        "accuracy": 0.830667,
+        "mpc_elements": 4096,
         "hybrid_layers": 1,
         "R_online": 8.025,
-        "T_client_ms": 90.112,
-        "T_server_ms": 15622.1,
-        "L_e2e_ms": 16658.8,
-        "S_online_bytes": 3408356,
-        "M_client_mb": null,
+        "T_client_ms": 96.008,
+        "T_server_ms": 21171.4,
+        "L_e2e_ms": 21419.7,
+        "S_online_bytes": 14022320,
+        "M_client_mb": 117.8,
         "E_client_mJ": null,
-        "objective_ms": 1036.699,
+        "objective_ms": 248.311,
         "depth_ok": true
       },
-      "excluded_by_memory": [
-        "00100",
-        "00101",
-        "00110",
-        "00111",
-        "01001",
-        "01010",
-        "01011",
-        "01100",
-        "01101",
-        "01110",
-        "01111",
-        "10010",
-        "10011",
-        "10100",
-        "10101",
-        "10110",
-        "10111",
-        "11001",
-        "11010",
-        "11011",
-        "11100",
-        "11101",
-        "11110",
-        "11111"
-      ],
-      "memory_increment_measured": false,
+      "speed_breakeven": {
+        "from": "0100",
+        "to": "0100",
+        "at": null,
+        "changed": false
+      },
+      "bandwidth_breakeven": {
+        "from": "0100",
+        "to": "0100",
+        "at": null,
+        "changed": false
+      },
+      "rtt_breakeven": {
+        "from": "0100",
+        "to": "0100",
+        "at": null,
+        "changed": false
+      },
+      "memory_breakeven": {
+        "from": "0100",
+        "to": null,
+        "at": 64,
+        "changed": true
+      },
+      "memory_mb": 117.76333333333329,
       "cost_provenance": {
         "client_crypto": "E1 SEAL per_sample, n=3840 (desktop, SCI)",
         "mpc_fit": "mpc_ms = 9.659*K_h + 0.00374*elements (lstsq over 2880 hybrid samples)",
-        "server": "E1 forward_s mean per (dataset, schedule) (desktop: MNIST on host 99, CIFAR/UCI on container 101); pooled linear-in-K_h fallback for fast/VGG is a model value.  forward_s includes the server's wait for the client inside each hybrid layer",
+        "server": "E1 forward_s mean per (dataset, schedule) (desktop: MNIST on host 99, CIFAR/UCI on container 101); schedules without a run have no server time.  forward_s includes the server's wait for the client inside each hybrid layer",
         "r_h": "r_h_netem_mnist.json (scope: end-to-end)",
         "bytes": "E4 wire_bytes, profile baseline",
-        "ot_bytes": "unmeasured: SCI bytes_sent() not recorded in E1/E2 yet",
-        "memory": "E2: K_h=[0] only; hybrid increment unmeasured"
-      },
-      "T_client_per_cpu_score": null
+        "ot_bytes": "SCI bytes over 269740 ReLU elements",
+        "memory": "E2/client_only/desktop: fit over K_h=[0, 2]"
+      }
     },
     {
       "device": "pi5",
       "cpu": "Raspberry Pi 5, Cortex-A76 @2.4GHz",
       "arch": "mnist",
       "acc_min": 0.975,
+      "rtt_ms": 20.0,
+      "bandwidth_mbps": 35.0,
       "memory_budget_mb": 4096,
       "chosen": {
         "schedule": "00",
@@ -295,52 +255,56 @@
         "R_online": 2.0,
         "T_client_ms": 41.95,
         "T_server_ms": 4739.3,
-        "L_e2e_ms": 5153.9,
-        "S_online_bytes": 1704178,
+        "L_e2e_ms": 5090.9,
+        "S_online_bytes": 1179890,
         "M_client_mb": 573.3,
         "E_client_mJ": null,
-        "objective_ms": 414.618,
+        "objective_ms": 351.639,
         "depth_ok": true
       },
-      "chosen_without_memory_budget": {
-        "schedule": "00",
-        "naming": "conv1=P2 fc1=P2",
-        "accuracy": 0.9797,
-        "mpc_elements": 0,
-        "hybrid_layers": 0,
-        "R_online": 2.0,
-        "T_client_ms": 41.95,
-        "T_server_ms": 4739.3,
-        "L_e2e_ms": 5153.9,
-        "S_online_bytes": 1704178,
-        "M_client_mb": 573.3,
-        "E_client_mJ": null,
-        "objective_ms": 414.618,
-        "depth_ok": true
+      "speed_breakeven": {
+        "from": "00",
+        "to": "00",
+        "at": null,
+        "changed": false
       },
-      "excluded_by_memory": [
-        "01",
-        "10",
-        "11"
-      ],
-      "memory_increment_measured": false,
+      "bandwidth_breakeven": {
+        "from": "00",
+        "to": "00",
+        "at": null,
+        "changed": false
+      },
+      "rtt_breakeven": {
+        "from": "00",
+        "to": "00",
+        "at": null,
+        "changed": false
+      },
+      "memory_breakeven": {
+        "from": "00",
+        "to": null,
+        "at": 512,
+        "changed": true
+      },
+      "memory_mb": 573.3427083333333,
       "cost_provenance": {
         "client_crypto": "E1 SEAL per_sample, n=3840 (desktop, SCI)",
         "mpc_fit": "mpc_ms = 9.659*K_h + 0.00374*elements (lstsq over 2880 hybrid samples)",
-        "server": "E1 forward_s mean per (dataset, schedule) (desktop: MNIST on host 99, CIFAR/UCI on container 101); pooled linear-in-K_h fallback for fast/VGG is a model value.  forward_s includes the server's wait for the client inside each hybrid layer",
+        "server": "E1 forward_s mean per (dataset, schedule) (desktop: MNIST on host 99, CIFAR/UCI on container 101); schedules without a run have no server time.  forward_s includes the server's wait for the client inside each hybrid layer",
         "device_scale": "pi5/desktop T_enc ratio 4.02 (E2 HE-only); MPC scaled-from-desktop until hybrid runs on pi5 exist",
         "r_h": "r_h_netem_mnist.json (scope: end-to-end)",
         "bytes": "E4 wire_bytes, profile baseline",
-        "ot_bytes": "unmeasured: SCI bytes_sent() not recorded in E1/E2 yet",
+        "ot_bytes": "SCI bytes over 269740 ReLU elements",
         "memory": "E2_pi5: K_h=[0] only; hybrid increment unmeasured"
-      },
-      "T_client_per_cpu_score": null
+      }
     },
     {
       "device": "pi5",
       "cpu": "Raspberry Pi 5, Cortex-A76 @2.4GHz",
       "arch": "cifar10",
       "acc_min": 0.59,
+      "rtt_ms": 20.0,
+      "bandwidth_mbps": 35.0,
       "memory_budget_mb": 4096,
       "chosen": {
         "schedule": "00",
@@ -351,51 +315,56 @@
         "R_online": 2.0,
         "T_client_ms": 41.95,
         "T_server_ms": 17954.3,
-        "L_e2e_ms": 18368.9,
-        "S_online_bytes": 1704178,
+        "L_e2e_ms": 18305.9,
+        "S_online_bytes": 1179890,
         "M_client_mb": 573.3,
         "E_client_mJ": null,
-        "objective_ms": 414.618,
+        "objective_ms": 351.639,
         "depth_ok": true
       },
-      "chosen_without_memory_budget": {
-        "schedule": "00",
-        "naming": "conv1=P2 fc1=P2",
-        "accuracy": 0.6059,
-        "mpc_elements": 0,
-        "hybrid_layers": 0,
-        "R_online": 2.0,
-        "T_client_ms": 41.95,
-        "T_server_ms": 17954.3,
-        "L_e2e_ms": 18368.9,
-        "S_online_bytes": 1704178,
-        "M_client_mb": 573.3,
-        "E_client_mJ": null,
-        "objective_ms": 414.618,
-        "depth_ok": true
+      "speed_breakeven": {
+        "from": "00",
+        "to": "00",
+        "at": null,
+        "changed": false
       },
-      "excluded_by_memory": [
-        "01",
-        "10"
-      ],
-      "memory_increment_measured": false,
+      "bandwidth_breakeven": {
+        "from": "00",
+        "to": "00",
+        "at": null,
+        "changed": false
+      },
+      "rtt_breakeven": {
+        "from": "00",
+        "to": "00",
+        "at": null,
+        "changed": false
+      },
+      "memory_breakeven": {
+        "from": "00",
+        "to": null,
+        "at": 512,
+        "changed": true
+      },
+      "memory_mb": 573.3427083333333,
       "cost_provenance": {
         "client_crypto": "E1 SEAL per_sample, n=3840 (desktop, SCI)",
         "mpc_fit": "mpc_ms = 9.659*K_h + 0.00374*elements (lstsq over 2880 hybrid samples)",
-        "server": "E1 forward_s mean per (dataset, schedule) (desktop: MNIST on host 99, CIFAR/UCI on container 101); pooled linear-in-K_h fallback for fast/VGG is a model value.  forward_s includes the server's wait for the client inside each hybrid layer",
+        "server": "E1 forward_s mean per (dataset, schedule) (desktop: MNIST on host 99, CIFAR/UCI on container 101); schedules without a run have no server time.  forward_s includes the server's wait for the client inside each hybrid layer",
         "device_scale": "pi5/desktop T_enc ratio 4.02 (E2 HE-only); MPC scaled-from-desktop until hybrid runs on pi5 exist",
         "r_h": "r_h_netem_mnist.json (scope: end-to-end)",
         "bytes": "E4 wire_bytes, profile baseline",
-        "ot_bytes": "unmeasured: SCI bytes_sent() not recorded in E1/E2 yet",
+        "ot_bytes": "SCI bytes over 269740 ReLU elements",
         "memory": "E2_pi5: K_h=[0] only; hybrid increment unmeasured"
-      },
-      "T_client_per_cpu_score": null
+      }
     },
     {
       "device": "pi5",
       "cpu": "Raspberry Pi 5, Cortex-A76 @2.4GHz",
       "arch": "uci_har",
       "acc_min": 0.89,
+      "rtt_ms": 20.0,
+      "bandwidth_mbps": 35.0,
       "memory_budget_mb": 4096,
       "chosen": {
         "schedule": "00",
@@ -406,164 +375,96 @@
         "R_online": 2.0,
         "T_client_ms": 41.95,
         "T_server_ms": 14521.1,
-        "L_e2e_ms": 14935.7,
-        "S_online_bytes": 1704178,
+        "L_e2e_ms": 14872.7,
+        "S_online_bytes": 1179890,
         "M_client_mb": 573.3,
         "E_client_mJ": null,
-        "objective_ms": 414.618,
+        "objective_ms": 351.639,
         "depth_ok": true
       },
-      "chosen_without_memory_budget": {
-        "schedule": "00",
-        "naming": "conv1=P2 fc1=P2",
-        "accuracy": 0.9034,
-        "mpc_elements": 0,
-        "hybrid_layers": 0,
-        "R_online": 2.0,
-        "T_client_ms": 41.95,
-        "T_server_ms": 14521.1,
-        "L_e2e_ms": 14935.7,
-        "S_online_bytes": 1704178,
-        "M_client_mb": 573.3,
-        "E_client_mJ": null,
-        "objective_ms": 414.618,
-        "depth_ok": true
+      "speed_breakeven": {
+        "from": "00",
+        "to": "00",
+        "at": null,
+        "changed": false
       },
-      "excluded_by_memory": [
-        "10",
-        "11"
-      ],
-      "memory_increment_measured": false,
+      "bandwidth_breakeven": {
+        "from": "00",
+        "to": "00",
+        "at": null,
+        "changed": false
+      },
+      "rtt_breakeven": {
+        "from": "00",
+        "to": "00",
+        "at": null,
+        "changed": false
+      },
+      "memory_breakeven": {
+        "from": "00",
+        "to": null,
+        "at": 512,
+        "changed": true
+      },
+      "memory_mb": 573.3427083333333,
       "cost_provenance": {
         "client_crypto": "E1 SEAL per_sample, n=3840 (desktop, SCI)",
         "mpc_fit": "mpc_ms = 9.659*K_h + 0.00374*elements (lstsq over 2880 hybrid samples)",
-        "server": "E1 forward_s mean per (dataset, schedule) (desktop: MNIST on host 99, CIFAR/UCI on container 101); pooled linear-in-K_h fallback for fast/VGG is a model value.  forward_s includes the server's wait for the client inside each hybrid layer",
+        "server": "E1 forward_s mean per (dataset, schedule) (desktop: MNIST on host 99, CIFAR/UCI on container 101); schedules without a run have no server time.  forward_s includes the server's wait for the client inside each hybrid layer",
         "device_scale": "pi5/desktop T_enc ratio 4.02 (E2 HE-only); MPC scaled-from-desktop until hybrid runs on pi5 exist",
         "r_h": "r_h_netem_mnist.json (scope: end-to-end)",
         "bytes": "E4 wire_bytes, profile baseline",
-        "ot_bytes": "unmeasured: SCI bytes_sent() not recorded in E1/E2 yet",
+        "ot_bytes": "SCI bytes over 269740 ReLU elements",
         "memory": "E2_pi5: K_h=[0] only; hybrid increment unmeasured"
-      },
-      "T_client_per_cpu_score": null
+      }
     },
     {
       "device": "pi5",
       "cpu": "Raspberry Pi 5, Cortex-A76 @2.4GHz",
-      "arch": "fast",
-      "acc_min": 0.84,
+      "arch": "conv3",
+      "acc_min": 0.82,
+      "rtt_ms": 20.0,
+      "bandwidth_mbps": 35.0,
       "memory_budget_mb": 4096,
       "chosen": null,
-      "chosen_without_memory_budget": {
-        "schedule": "00111",
-        "naming": "conv1=P2 conv2=P2 conv3=ReLU conv4=ReLU fc1=ReLU",
-        "accuracy": 0.8459,
-        "mpc_elements": 8448,
-        "hybrid_layers": 3,
-        "R_online": 20.075000000000003,
-        "T_client_ms": 395.678,
-        "T_server_ms": 21804.4,
-        "L_e2e_ms": 24294.5,
-        "S_online_bytes": 6816712,
-        "M_client_mb": null,
-        "E_client_mJ": null,
-        "objective_ms": 2490.102,
-        "depth_ok": true
+      "speed_breakeven": {
+        "from": "0100",
+        "to": "0100",
+        "at": null,
+        "changed": false
       },
-      "excluded_by_memory": [
-        "00111",
-        "01011",
-        "01101",
-        "01110",
-        "01111",
-        "10011",
-        "10101",
-        "10110",
-        "10111",
-        "11001",
-        "11010",
-        "11011",
-        "11100",
-        "11101",
-        "11110",
-        "11111"
-      ],
-      "memory_increment_measured": false,
+      "bandwidth_breakeven": {
+        "from": "0100",
+        "to": "0100",
+        "at": null,
+        "changed": false
+      },
+      "rtt_breakeven": {
+        "from": "0100",
+        "to": "0100",
+        "at": null,
+        "changed": false
+      },
+      "memory_breakeven": {
+        "from": null,
+        "to": null,
+        "at": null,
+        "changed": false
+      },
+      "memory_mb": 573.3427083333333,
       "cost_provenance": {
         "client_crypto": "E1 SEAL per_sample, n=3840 (desktop, SCI)",
         "mpc_fit": "mpc_ms = 9.659*K_h + 0.00374*elements (lstsq over 2880 hybrid samples)",
-        "server": "E1 forward_s mean per (dataset, schedule) (desktop: MNIST on host 99, CIFAR/UCI on container 101); pooled linear-in-K_h fallback for fast/VGG is a model value.  forward_s includes the server's wait for the client inside each hybrid layer",
+        "server": "E1 forward_s mean per (dataset, schedule) (desktop: MNIST on host 99, CIFAR/UCI on container 101); schedules without a run have no server time.  forward_s includes the server's wait for the client inside each hybrid layer",
         "device_scale": "pi5/desktop T_enc ratio 4.02 (E2 HE-only); MPC scaled-from-desktop until hybrid runs on pi5 exist",
         "r_h": "r_h_netem_mnist.json (scope: end-to-end)",
         "bytes": "E4 wire_bytes, profile baseline",
-        "ot_bytes": "unmeasured: SCI bytes_sent() not recorded in E1/E2 yet",
+        "ot_bytes": "SCI bytes over 269740 ReLU elements",
         "memory": "E2_pi5: K_h=[0] only; hybrid increment unmeasured"
-      },
-      "T_client_per_cpu_score": null
-    },
-    {
-      "device": "pi5",
-      "cpu": "Raspberry Pi 5, Cortex-A76 @2.4GHz",
-      "arch": "vgg",
-      "acc_min": 0.84,
-      "memory_budget_mb": 4096,
-      "chosen": null,
-      "chosen_without_memory_budget": {
-        "schedule": "00100",
-        "naming": "conv1=P2 conv2=P2 conv3=ReLU conv4=P2 fc1=P2",
-        "accuracy": 0.8555,
-        "mpc_elements": 16384,
-        "hybrid_layers": 1,
-        "R_online": 8.025,
-        "T_client_ms": 364.106,
-        "T_server_ms": 15622.1,
-        "L_e2e_ms": 16932.8,
-        "S_online_bytes": 3408356,
-        "M_client_mb": null,
-        "E_client_mJ": null,
-        "objective_ms": 1310.693,
-        "depth_ok": true
-      },
-      "excluded_by_memory": [
-        "00100",
-        "00101",
-        "00110",
-        "00111",
-        "01001",
-        "01010",
-        "01011",
-        "01100",
-        "01101",
-        "01110",
-        "01111",
-        "10010",
-        "10011",
-        "10100",
-        "10101",
-        "10110",
-        "10111",
-        "11001",
-        "11010",
-        "11011",
-        "11100",
-        "11101",
-        "11110",
-        "11111"
-      ],
-      "memory_increment_measured": false,
-      "cost_provenance": {
-        "client_crypto": "E1 SEAL per_sample, n=3840 (desktop, SCI)",
-        "mpc_fit": "mpc_ms = 9.659*K_h + 0.00374*elements (lstsq over 2880 hybrid samples)",
-        "server": "E1 forward_s mean per (dataset, schedule) (desktop: MNIST on host 99, CIFAR/UCI on container 101); pooled linear-in-K_h fallback for fast/VGG is a model value.  forward_s includes the server's wait for the client inside each hybrid layer",
-        "device_scale": "pi5/desktop T_enc ratio 4.02 (E2 HE-only); MPC scaled-from-desktop until hybrid runs on pi5 exist",
-        "r_h": "r_h_netem_mnist.json (scope: end-to-end)",
-        "bytes": "E4 wire_bytes, profile baseline",
-        "ot_bytes": "unmeasured: SCI bytes_sent() not recorded in E1/E2 yet",
-        "memory": "E2_pi5: K_h=[0] only; hybrid increment unmeasured"
-      },
-      "T_client_per_cpu_score": null
+      }
     }
   ],
-  "skipped_devices": {
+  "skipped": {
     "pi4": "no measurements (no E2 records for device 'pi4')"
   }
 }

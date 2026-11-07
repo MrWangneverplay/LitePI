@@ -1,0 +1,29 @@
+{
+  "exp_id": "E10",
+  "dataset": "cifar10",
+  "method": "mask_fresh_v3_layer1",
+  "seed": 74,
+  "git_sha": "a8c5db6d05ff940abd624949d7acc51202558149",
+  "timestamp_utc": "2026-11-01T04:33:26+00:00",
+  "leakage": {
+    "Q": 200,
+    "dim": 1200,
+    "mask_rule": "M2-v3-exact",
+    "mask_policy": "fresh",
+    "mask_domain_R": 9.44473296573929e+21,
+    "log2_mask_half_width": 73.0,
+    "activation_bound_B": 8.0,
+    "sigma": 70.0,
+    "sd_bound_per_element": 3.087108828959203e-22,
+    "mse": 5.980983574784273e+43,
+    "true_difference_energy": 1.030995488166809,
+    "relative_error": 5.801173374113336e+43,
+    "recovery_correlation": 0.0005353136877323762,
+    "recovery_snr_db": -437.6351584500485,
+    "single_query_correlation": 0.002580670355446356,
+    "single_query_sign_accuracy": 0.5007208333333333
+  },
+  "layer": "layer1",
+  "mask_policy": "fresh",
+  "mask_rule": "v3"
+}

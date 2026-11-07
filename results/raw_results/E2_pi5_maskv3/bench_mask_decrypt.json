@@ -1,0 +1,157 @@
+{
+  "experiment": "E2",
+  "tier": "client decrypt under M2 v3",
+  "tag": "pi5",
+  "device": {
+    "hostname": "wypi5",
+    "machine": "aarch64",
+    "python": "3.13.5"
+  },
+  "seal_version": "4.1.2",
+  "profile": {
+    "poly_modulus_degree": 8192,
+    "k_ring": 44,
+    "f": 8,
+    "mask_bits": 70,
+    "drops": 3,
+    "reps": 20,
+    "warmup": 3
+  },
+  "rows": [
+    {
+      "slots": 256,
+      "mask_bits": 70,
+      "drops": 3,
+      "modulus_bits": 103,
+      "scale_log2": 22.703236478249913,
+      "decrypt_double": {
+        "n": 20,
+        "mean_ms": 2.9762139500007834,
+        "std_ms": 0.025749935993787196,
+        "min_ms": 2.960325999993074,
+        "max_ms": 3.063010000005306
+      },
+      "decrypt_ring": {
+        "n": 20,
+        "mean_ms": 6.207969899998034,
+        "std_ms": 0.006999322634725855,
+        "min_ms": 6.199778999985028,
+        "max_ms": 6.224870999972154
+      },
+      "ratio_ring_over_double": 2.0858614347924815,
+      "share_err_lsb": 2
+    },
+    {
+      "slots": 64,
+      "mask_bits": 70,
+      "drops": 3,
+      "modulus_bits": 103,
+      "scale_log2": 22.703236478249913,
+      "decrypt_double": {
+        "n": 20,
+        "mean_ms": 2.9993121999950745,
+        "std_ms": 0.09636276614554322,
+        "min_ms": 2.9510479999999006,
+        "max_ms": 3.2816010000260576
+      },
+      "decrypt_ring": {
+        "n": 20,
+        "mean_ms": 6.122419800004764,
+        "std_ms": 0.01092151311291902,
+        "min_ms": 6.112927000003765,
+        "max_ms": 6.154668000021957
+      },
+      "ratio_ring_over_double": 2.0412745962273675,
+      "share_err_lsb": 1
+    },
+    {
+      "slots": 1200,
+      "mask_bits": 70,
+      "drops": 3,
+      "modulus_bits": 103,
+      "scale_log2": 22.703236478249913,
+      "decrypt_double": {
+        "n": 20,
+        "mean_ms": 2.967130300004328,
+        "std_ms": 0.004228470051111815,
+        "min_ms": 2.9604000000063024,
+        "max_ms": 2.9798250000112603
+      },
+      "decrypt_ring": {
+        "n": 20,
+        "mean_ms": 6.663996450004106,
+        "std_ms": 0.18079031629393025,
+        "min_ms": 6.556811999985257,
+        "max_ms": 7.2085650000417445
+      },
+      "ratio_ring_over_double": 2.245939940687602,
+      "share_err_lsb": 2
+    },
+    {
+      "slots": 128,
+      "mask_bits": 70,
+      "drops": 3,
+      "modulus_bits": 103,
+      "scale_log2": 22.703236478249913,
+      "decrypt_double": {
+        "n": 20,
+        "mean_ms": 2.96605235001266,
+        "std_ms": 0.011223461370625637,
+        "min_ms": 2.9579179999927874,
+        "max_ms": 3.008825999927467
+      },
+      "decrypt_ring": {
+        "n": 20,
+        "mean_ms": 6.151994150008022,
+        "std_ms": 0.015421624514345379,
+        "min_ms": 6.138964999991003,
+        "max_ms": 6.213870999999926
+      },
+      "ratio_ring_over_double": 2.0741353907599653,
+      "share_err_lsb": 1
+    },
+    {
+      "slots": 756,
+      "mask_bits": 70,
+      "drops": 3,
+      "modulus_bits": 103,
+      "scale_log2": 22.703236478249913,
+      "decrypt_double": {
+        "n": 20,
+        "mean_ms": 2.969324149989916,
+        "std_ms": 0.005637684309177159,
+        "min_ms": 2.9626419999431164,
+        "max_ms": 2.9903450000574594
+      },
+      "decrypt_ring": {
+        "n": 20,
+        "mean_ms": 6.477948150001112,
+        "std_ms": 0.16351008748054702,
+        "min_ms": 6.3951310000902595,
+        "max_ms": 7.026071000041156
+      },
+      "ratio_ring_over_double": 2.1816237711949067,
+      "share_err_lsb": 1
+    }
+  ],
+  "output_logits": {
+    "slots": 10,
+    "drops": 5,
+    "modulus_bits": 61,
+    "decrypt_double": {
+      "n": 20,
+      "mean_ms": 1.4679421999971964,
+      "std_ms": 0.007589426602951414,
+      "min_ms": 1.4603209999677347,
+      "max_ms": 1.4973019999615644
+    },
+    "decrypt_dd": {
+      "n": 20,
+      "mean_ms": 4.1608639500168465,
+      "std_ms": 0.003784442437128509,
+      "min_ms": 4.155927000056181,
+      "max_ms": 4.169408999928237
+    }
+  },
+  "note": "decrypt_ring includes ring_to_float, as in pi_client.ciphertext_loop; decrypt_double is the legacy path and stays in use for s=00 output"
+}

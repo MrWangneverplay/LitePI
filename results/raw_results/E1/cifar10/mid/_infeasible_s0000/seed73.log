@@ -1,0 +1,15 @@
+connected
+Traceback (most recent call last):
+  File "/root/wzy/analysis/eval_deep_accuracy.py", line 121, in <module>
+    raise SystemExit(main())
+  File "/root/wzy/analysis/eval_deep_accuracy.py", line 83, in main
+    res = pi_client.run_client("127.0.0.1", args.port, raw.reshape(-1), "seal",
+  File "/root/wzy/analysis/pi_client.py", line 384, in run_client
+    output_kind, output_value = _query_once(
+  File "/root/wzy/analysis/pi_client.py", line 314, in _query_once
+    return client_query(be, ctx, wire, spec, x, timings, sci_session,
+  File "/root/wzy/analysis/deep_net.py", line 456, in client_query
+    _, payload = wire.recv(b"CTXT")
+  File "/root/wzy/analysis/pi_proto.py", line 109, in recv
+    raise ProtocolError(payload.decode("utf-8", "replace"))
+pi_proto.ProtocolError: ValueError: scale out of bounds

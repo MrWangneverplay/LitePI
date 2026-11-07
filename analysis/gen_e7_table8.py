@@ -71,6 +71,9 @@ def load_schedules(root: Path) -> dict:
         out.setdefault(tag, []).append(rec)
     table = {}
     for tag, recs in out.items():
+        recs = [rec for rec in recs if rec.get("rows")]
+        if not recs:
+            continue
         rows = [r for rec in recs for r in rec["rows"]]
         accs = [json.loads(Path(p).read_text(encoding="utf-8"))["test_acc"]
                 for p in glob.glob(str(base / f"s{tag}" / "seed*.json"))]
@@ -120,7 +123,7 @@ def planner_rows(table: dict, acc_floor: float, rtt_ms: float, mbps: float) -> l
     hybrid_all = "1" * MODEL_B_LAYERS
     fixed = table.get(hybrid_all)
     rows.append(row(
-        "wo_planner", "measured", {"schedule": full, **a},
+        "wo_planner", "measured" if fixed else "pending", {"schedule": full, **a},
         {"all_p2": f"{'0' * MODEL_B_LAYERS} is not deployable: depth "
                    f"{P.required_depth((0,) * MODEL_B_LAYERS, P.MODEL_B_LAYERS)}",
          "all_hybrid": {"schedule": hybrid_all, **fixed} if fixed else None},
@@ -128,7 +131,8 @@ def planner_rows(table: dict, acc_floor: float, rtt_ms: float, mbps: float) -> l
           if fixed["accuracy"] is not None else None,
           "bytes_x": fixed["bytes"] / a["bytes"],
           "rounds_delta": fixed["rounds"] - a["rounds"]} if fixed else None),
-        "real ciphertext runs of model B"))
+        "real ciphertext runs of model B" if fixed
+        else f"pending: no ciphertext run of s{hybrid_all} yet"))
     return rows
 
 
@@ -136,9 +140,15 @@ def memory_row(path: Path) -> dict:
     if not path.is_file():
         return row("wo_stream_keys", "pending", None, None, None, str(path))
     rows = json.loads(path.read_text(encoding="utf-8"))["rows"]
-    mean = lambda mode: float(np.mean([r["client_peak_rss_mb"] for r in rows
-                                       if r["mode"] == mode]))
-    full, off = mean("streamed"), mean("oneshot")
+    vals = lambda mode: [r["client_peak_rss_mb"] for r in rows if r["mode"] == mode]
+    streamed, oneshot = vals("streamed"), vals("oneshot")
+    if not streamed or not oneshot:
+        missing = "oneshot" if not oneshot else "streamed"
+        return row("wo_stream_keys", "pending",
+                   {"client_peak_mb": float(np.mean(streamed)) if streamed else None},
+                   None, None,
+                   f"measure_client_memory.py --modes oneshot,streamed ({missing} missing)")
+    full, off = float(np.mean(streamed)), float(np.mean(oneshot))
     return row("wo_stream_keys", "measured", {"client_peak_mb": full},
                {"client_peak_mb": off}, {"memory_x": off / full},
                "measure_client_memory.py, client process only")

@@ -1,4 +1,5 @@
 {
+  "git_sha": "a8c5db6d05ff940abd624949d7acc51202558149-dirty",
   "arch": "cifar10",
   "acc_min": 0.59,
   "rtt_ms": 50.0,
@@ -7,13 +8,18 @@
   "wire": "baseline",
   "r_h": 6.025,
   "r_h_scope": "end-to-end",
+  "schedules_trained": [
+    "00",
+    "01",
+    "10",
+    "11"
+  ],
   "basis": {
-    "accuracy": "measured E1 canonical schedule means",
+    "accuracy": "one retrained model per schedule (mean test accuracy)",
     "client_cost": "cost_model (E1 SEAL+SCI fit)",
-    "server_cost": "E1 forward_s mean per (dataset, schedule)",
-    "adaptive_executable": "same as adaptive (no conv after a nonlinear layer)",
+    "server_cost": "measured forward_s per (arch, schedule); untried = unknown",
     "E_client": "unmeasured (E6)",
-    "M_client": "E2 HE-only peak; hybrid increment unmeasured"
+    "M_client": "E2/client_only/desktop: fit over K_h=[0, 2]"
   },
   "strategies": {
     "all_p2": {
@@ -26,8 +32,8 @@
       "T_client_ms": 10.205,
       "T_server_ms": 17954.3,
       "L_e2e_ms": 18064.5,
-      "S_online_bytes": 1704178,
-      "M_client_mb": 812.9,
+      "S_online_bytes": 1179890,
+      "M_client_mb": 117.9,
       "E_client_mJ": null,
       "objective_ms": 110.205,
       "depth_ok": true,
@@ -45,8 +51,8 @@
       "T_client_ms": 52.289,
       "T_server_ms": 28316.5,
       "L_e2e_ms": 29071.3,
-      "S_online_bytes": 5112534,
-      "M_client_mb": null,
+      "S_online_bytes": 6130545,
+      "M_client_mb": 117.6,
       "E_client_mJ": null,
       "objective_ms": 754.789,
       "depth_ok": true,
@@ -64,8 +70,8 @@
       "T_client_ms": 10.205,
       "T_server_ms": 17954.3,
       "L_e2e_ms": 18064.5,
-      "S_online_bytes": 1704178,
-      "M_client_mb": 812.9,
+      "S_online_bytes": 1179890,
+      "M_client_mb": 117.9,
       "E_client_mJ": null,
       "objective_ms": 110.205,
       "depth_ok": true,
@@ -83,8 +89,8 @@
       "T_client_ms": 10.205,
       "T_server_ms": 17954.3,
       "L_e2e_ms": 18064.5,
-      "S_online_bytes": 1704178,
-      "M_client_mb": 812.9,
+      "S_online_bytes": 1179890,
+      "M_client_mb": 117.9,
       "E_client_mJ": null,
       "objective_ms": 110.205,
       "depth_ok": true,
@@ -102,27 +108,8 @@
       "T_client_ms": 10.205,
       "T_server_ms": 17954.3,
       "L_e2e_ms": 18064.5,
-      "S_online_bytes": 1704178,
-      "M_client_mb": 812.9,
-      "E_client_mJ": null,
-      "objective_ms": 110.205,
-      "depth_ok": true,
-      "meets_acc_min": true,
-      "on_pareto_front": true,
-      "dominated_by_adaptive": false
-    },
-    "adaptive_executable": {
-      "schedule": "00",
-      "naming": "conv1=P2 fc1=P2",
-      "accuracy": 0.6059,
-      "mpc_elements": 0,
-      "hybrid_layers": 0,
-      "R_online": 2.0,
-      "T_client_ms": 10.205,
-      "T_server_ms": 17954.3,
-      "L_e2e_ms": 18064.5,
-      "S_online_bytes": 1704178,
-      "M_client_mb": 812.9,
+      "S_online_bytes": 1179890,
+      "M_client_mb": 117.9,
       "E_client_mJ": null,
       "objective_ms": 110.205,
       "depth_ok": true,
@@ -135,7 +122,7 @@
       "T_client_ms": 36.2582,
       "R_online": 9.23,
       "L_e2e_ms": 26517.26,
-      "S_online_bytes": 3749191.6,
+      "S_online_bytes": 4314636.8,
       "mpc_elements": 1011.2,
       "draws": [
         "10",
@@ -159,8 +146,8 @@
       "T_client_ms": 10.205,
       "T_server_ms": 17954.3,
       "L_e2e_ms": 18064.5,
-      "S_online_bytes": 1704178,
-      "M_client_mb": 812.9,
+      "S_online_bytes": 1179890,
+      "M_client_mb": 117.9,
       "E_client_mJ": null,
       "objective_ms": 110.205,
       "depth_ok": true
@@ -175,8 +162,8 @@
       "T_client_ms": 33.254,
       "T_server_ms": 27547.0,
       "L_e2e_ms": 27981.5,
-      "S_online_bytes": 3408356,
-      "M_client_mb": null,
+      "S_online_bytes": 4066102,
+      "M_client_mb": 117.8,
       "E_client_mJ": null,
       "objective_ms": 434.504,
       "depth_ok": true
@@ -184,9 +171,9 @@
   ],
   "schedule_space": 4,
   "planner_cost": {
-    "solve_ms": 0.0603,
+    "solve_ms": 0.0707,
     "evaluations": 4,
-    "layer_sensitivity_evals": 0
+    "retrained_models": 4
   },
   "measure_list": [
     {

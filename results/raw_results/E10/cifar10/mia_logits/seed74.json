@@ -3,24 +3,41 @@
   "dataset": "cifar10",
   "method": "mia_logits",
   "seed": 74,
-  "git_sha": "427d9e7585b7c96e41ada20728403edbbe78731d",
-  "timestamp_utc": "2026-10-29T10:20:12+00:00",
+  "git_sha": "a8c5db6d05ff940abd624949d7acc51202558149",
+  "timestamp_utc": "2026-11-01T04:33:41+00:00",
   "membership_inference": {
-    "auc": 0.6500824016747584,
+    "auc": 0.6692444444444444,
     "auc_ci": [
-      0.5849628078927442,
-      0.7142276513295621
+      0.6238883333333334,
+      0.7088119444444444
     ],
     "ci_level": 0.95,
     "n_boot": 1000,
-    "auc_dir_free": 0.6500824016747584,
+    "auc_dir_free": 0.6692444444444444,
     "ci_contains_0.5": false,
+    "null_auc_mean": 0.5028348333333333,
+    "null_auc_ci": [
+      0.37703,
+      0.6413566666666667
+    ],
+    "n_perm": 200,
+    "p_value": 0.004975124378109453,
+    "auc_minus_null": 0.16640961111111108,
     "n_member": 300,
     "n_non_member": 300,
     "dim": 10,
     "auc_ties": "average ranks (fixed 2026-10-29; earlier index-only AUCs were biased below 0.5)"
   },
   "output_mode": "full_logits",
-  "member_train_acc": 0.54,
-  "non_member_test_acc": 0.61
+  "member_train_acc": 0.6133333333333333,
+  "non_member_test_acc": 0.59,
+  "sampling": {
+    "method": "class-stratified random, matched per-class counts; attack train/eval sets drawn disjointly",
+    "per_class": 30,
+    "classes": 10,
+    "n_member": 300,
+    "n_non_member": 300,
+    "member_pool": 20000,
+    "non_member_pool": 10000
+  }
 }

@@ -7,75 +7,71 @@
     "t_reenc_ms": 5.6222972222222225,
     "t_mpc_fixed_ms": 9.659232063985021,
     "t_mpc_per_elem_ms": 0.0037446329941113183,
-    "t_server_base_ms": 12530.900953298607,
-    "t_server_per_hybrid_ms": 3091.1628354166705,
+    "t_server_base_ms": 12530.900953298611,
+    "t_server_per_hybrid_ms": 3091.1628354166687,
     "bytes_m1": 917625,
     "bytes_m3": 786553,
     "bytes_down_hybrid": 786553,
     "bytes_up_hybrid": 917625,
-    "bytes_per_elem_ot": null,
+    "bytes_per_elem_ot": 766.5752798991622,
     "bytes_keys": 184634972,
     "r_h": 6.025,
     "r_h_scope": "end-to-end",
-    "mem_base_mb": 812.86953125,
-    "mem_per_hybrid_mb": null,
+    "mem_base_mb": 117.88999999999997,
+    "mem_per_hybrid_mb": -0.12666666666667828,
     "provenance": {
       "client_crypto": "E1 SEAL per_sample, n=3840 (desktop, SCI)",
       "mpc_fit": "mpc_ms = 9.659*K_h + 0.00374*elements (lstsq over 2880 hybrid samples)",
-      "server": "E1 forward_s mean per (dataset, schedule) (desktop: MNIST on host 99, CIFAR/UCI on container 101); pooled linear-in-K_h fallback for fast/VGG is a model value.  forward_s includes the server's wait for the client inside each hybrid layer",
+      "server": "E1 forward_s mean per (dataset, schedule) (desktop: MNIST on host 99, CIFAR/UCI on container 101); schedules without a run have no server time.  forward_s includes the server's wait for the client inside each hybrid layer",
       "r_h": "r_h_netem_mnist.json (scope: end-to-end)",
       "bytes": "E4 wire_bytes, profile baseline",
-      "ot_bytes": "unmeasured: SCI bytes_sent() not recorded in E1/E2 yet",
-      "memory": "E2: K_h=[0] only; hybrid increment unmeasured"
+      "ot_bytes": "SCI bytes over 269740 ReLU elements",
+      "memory": "E2/client_only/desktop: fit over K_h=[0, 2]"
     },
     "t_server_table_ms": {
       "cifar10": {
         "00": 17954.254225,
         "01": 19139.989978125,
         "10": 27547.001265625,
-        "11": 28316.507675,
-        "_linear": [
-          18058.311560937487,
-          5181.126725000014
-        ],
-        "_n": {
-          "00": 320,
-          "01": 320,
-          "10": 320,
-          "11": 320
-        }
+        "11": 28316.507675
       },
       "mnist": {
         "00": 4739.270084375,
         "01": 5335.38240625,
         "10": 6797.842353125,
-        "11": 7132.03169375,
-        "_linear": [
-          4804.750829687498,
-          1196.380804687503
-        ],
-        "_n": {
-          "00": 320,
-          "01": 320,
-          "10": 320,
-          "11": 320
-        }
+        "11": 7132.03169375
       },
       "uci_har": {
         "00": 14521.06668125,
         "01": 15674.160359375,
         "10": 20750.453846875,
-        "11": 20313.028634375,
-        "_linear": [
-          14918.696403906233,
-          2895.980976562512
-        ],
-        "_n": {
-          "00": 320,
-          "01": 320,
-          "10": 320,
-          "11": 320
-        }
+        "11": 20313.028634375
+      },
+      "conv3": {
+        "0100": 21171.42378125
+      }
+    },
+    "wire_bytes_table": {
+      "mnist": {
+        "00": 1179890,
+        "01": 3146212,
+        "10": 3146212,
+        "11": 5112534
+      },
+      "cifar10": {
+        "00": 1179890,
+        "01": 3146212,
+        "10": 3146212,
+        "11": 5112534
+      },
+      "uci_har": {
+        "00": 1179890,
+        "01": 3146212,
+        "10": 3146212,
+        "11": 5112534
+      },
+      "conv3": {
+        "0100": 10882428.546875
       }
     }
   },
@@ -85,27 +81,22 @@
     "mnist": {
       "adaptive": "00",
       "pareto_size": 1,
-      "solve_ms": 0.061
+      "solve_ms": 0.0777
     },
     "cifar10": {
       "adaptive": "00",
       "pareto_size": 2,
-      "solve_ms": 0.0603
+      "solve_ms": 0.0707
     },
     "uci_har": {
       "adaptive": "00",
       "pareto_size": 2,
-      "solve_ms": 0.0422
+      "solve_ms": 0.0739
     },
-    "fast": {
-      "adaptive": "00111",
-      "pareto_size": 7,
-      "solve_ms": 0.1431
-    },
-    "vgg": {
-      "adaptive": "00100",
-      "pareto_size": 5,
-      "solve_ms": 0.1267
+    "conv3": {
+      "adaptive": "0100",
+      "pareto_size": 1,
+      "solve_ms": 0.1776
     }
   }
 }

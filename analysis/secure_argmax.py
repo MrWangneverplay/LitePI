@@ -51,11 +51,17 @@ def run_party_argmax(ctx: Ctx, shares, k: int, f: int,
     mask = 1 << k
     champion_score = q[0]
     champion_index = 0
+    # d_drelu_batch yields 1 iff the reconstructed value is non-negative.
+    # Strict "champion > challenger" therefore needs delta - 1 >= 0, and the
+    # -1 must be contributed by exactly one party: folding it into both
+    # shares asks for a two-LSB lead and drops genuine one-LSB winners.
+    offset = 1 if ctx.party == 0 else 0
     for i in range(1, n):
-        # Shared bit w=1 iff current champion strictly exceeds challenger i.
+        # Tie rule: delta == 0 keeps w=0 and the challenger (higher index)
+        # wins, so the tournament returns the last maximal class.
         w = d_drelu_batch(
             ctx,
-            [(champion_score - q[i] - 1) % mask],
+            [(champion_score - q[i] - offset) % mask],
             k_compare,
         )[0]
         challenger_index = i if ctx.party == 0 else 0
@@ -115,5 +121,47 @@ def self_test() -> int:
     return 0 if failures == 0 else 1
 
 
+def lsb_regression() -> int:
+    """Two-class case where the winner leads by exactly one LSB.
+
+    Both parties used to subtract the strict-greater offset, so the test
+    reconstructed ``delta - 2`` instead of ``delta - 1`` and rejected a
+    genuine one-LSB lead.  Quantized values are exact multiples of 1/256.
+    """
+    k, f, k_compare = 44, 8, 6
+    winner = 0
+    truth = [256 / 256.0, 255 / 256.0]
+    server_shares = [100 / 256.0, 0.0]
+    client_shares = [truth[i] - server_shares[i] for i in range(2)]
+    srv = socket.create_server(("127.0.0.1", 0))
+    port = srv.getsockname()[1]
+    holder: dict = {}
+
+    def server_side() -> None:
+        conn, _ = srv.accept()
+        with conn:
+            ctx = Ctx(0, Chan(conn))
+            holder["share"] = run_party_argmax(
+                ctx, server_shares, k, f, k_compare,
+            )
+
+    thread = threading.Thread(target=server_side, daemon=True)
+    thread.start()
+    with socket.create_connection(("127.0.0.1", port)) as conn:
+        client_share = run_party_argmax(
+            Ctx(1, Chan(conn)), client_shares, k, f, k_compare,
+        )
+    thread.join(timeout=60)
+    srv.close()
+    got = combine_index_share(client_share, holder["share"], k)
+    ok = got == winner
+    print(f"{'PASS' if ok else 'FAIL'}  1-LSB gap winner={winner} got={got}")
+    return 0 if ok else 1
+
+
 if __name__ == "__main__":
+    import sys
+
+    if "--lsb" in sys.argv:
+        raise SystemExit(lsb_regression())
     raise SystemExit(self_test())

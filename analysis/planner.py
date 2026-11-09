@@ -487,11 +487,30 @@ def greedy(layers, profile: Profile, acc_min: float):
     return _repair_depth(bits, layers, profile)
 
 
-def feasible_schedules(layers, profile: Profile, acc_min: float):
+def _budget_ok(sch: Schedule, budget: Budget) -> bool:
+    """Apply every deployment budget to a candidate before ranking it."""
+    if budget.max_mpc_elements is not None \
+            and sch.mpc_elements > budget.max_mpc_elements:
+        return False
+    if budget.max_rtts is not None and sch.rtts > budget.max_rtts:
+        return False
+    if budget.max_time_ms is not None and sch.time_ms > budget.max_time_ms:
+        return False
+    if budget.max_memory_mb is not None \
+            and sch.memory_mb is not None \
+            and sch.memory_mb > budget.max_memory_mb:
+        return False
+    return True
+
+
+def feasible_schedules(layers, profile: Profile, acc_min: float,
+                       budget: Budget | None = None):
+    budget = budget or Budget()
     out = []
     for bits in itertools.product((0, 1), repeat=len(layers)):
         sch = evaluate(bits, layers, profile)
-        if sch.depth_ok and sch.memory_ok and sch.acc >= acc_min:
+        if sch.depth_ok and sch.memory_ok and sch.acc >= acc_min \
+                and _budget_ok(sch, budget):
             out.append(sch)
     return out
 
@@ -512,8 +531,12 @@ def random_schedules(layers, profile: Profile, acc_min: float,
     return out
 
 
-def constrained(layers, profile: Profile, acc_min: float):
-    feasible = feasible_schedules(layers, profile, acc_min)
+def constrained(layers, profile: Profile, acc_min: float,
+                budget: Budget | None = None):
+    # The budget must gate the candidate set, not the winner: selecting the
+    # minimum-cost schedule first and only then checking the budget reports
+    # infeasible even when another candidate satisfies every constraint.
+    feasible = feasible_schedules(layers, profile, acc_min, budget)
     if not feasible:
         return None
     if profile.objective == "server":
@@ -534,6 +557,88 @@ def pareto_front(schedules):
                          and s.acc >= o.acc)]
         front.append(s)
     return front
+
+
+def budget_regression() -> int:
+    """Budget must gate candidates before ranking.
+
+    Artificially shaped costs reproduce the audited counterexample: the
+    fastest schedule spends 1000 MPC elements while a slightly slower one
+    spends 20.  With ``max_mpc_elements=500`` the old choose-then-check path
+    returned the 1000-element schedule and reported infeasible.
+    """
+    class _Cost:
+        r_h = 1.0
+        r_h_scope = "test"
+        device = "fake"
+        wire = "fake"
+        provenance = "regression"
+
+        def rounds(self, k_h, output_mode="logits"):
+            return 2 + k_h
+
+        def online_bytes(self, k_h, mpc):
+            return 0
+
+        def client_ms(self, k_h, mpc):
+            return {0: 0.0, 1: 100.0, 2: 110.0, 3: 200.0}[int(k_h)]
+
+        def server_ms(self, k_h):
+            return 0.0
+
+        def memory_mb(self, k_h):
+            return 100.0
+
+    layers = (
+        Layer("small_conv", 10, linear_depth=1, p2_depth=2),
+        Layer("wide_conv", 1000, linear_depth=1, p2_depth=1),
+        Layer("small_fc", 10, linear_depth=1, p2_depth=2),
+    )
+    profile = Profile(
+        depth_budget=3,
+        base_acc=0.90,
+        p2_penalty_coeff=0.0,
+        cost=_Cost(),
+        objective="client",
+    )
+    acc_min = 0.85
+    budget = Budget(max_mpc_elements=500)
+
+    # Independent exhaustive oracle: an explicit MPC ceiling applied to every
+    # candidate before the minimum is taken.
+    oracle = []
+    for bits in itertools.product((0, 1), repeat=len(layers)):
+        sch = evaluate(bits, layers, profile)
+        if not (sch.depth_ok and sch.memory_ok and sch.acc >= acc_min):
+            continue
+        if sch.mpc_elements > budget.max_mpc_elements:
+            continue
+        oracle.append(sch)
+    oracle_best = min(oracle, key=lambda s: (s.time_ms, s.mpc_elements, s.rtts))
+
+    chosen = constrained(layers, profile, acc_min, budget)
+    if chosen is None:
+        print("FAIL  constrained() returned None although 101 is feasible")
+        return 1
+    plan = plan_result(list(chosen.bits), layers, profile, budget=budget)
+    # Old behaviour witness: the unconstrained winner is the fastest overall
+    # and is rejected by the post-hoc budget check in plan_result().
+    unconstrained = constrained(layers, profile, acc_min)
+    old_ok = plan_result(list(unconstrained.bits), layers, profile,
+                         budget=budget)["feasible"]
+    ok = (
+        tuple(chosen.bits) == tuple(oracle_best.bits) == (1, 0, 1)
+        and chosen.mpc_elements == 20
+        and plan["feasible"]
+        and not old_ok
+    )
+    print(
+        f"{'PASS' if ok else 'FAIL'}  chosen={chosen.bits} "
+        f"oracle={oracle_best.bits} mpc={chosen.mpc_elements} "
+        f"time={chosen.time_ms:.1f}ms feasible={plan['feasible']} "
+        f"old_path_feasible={old_ok}"
+    )
+    return 0 if ok else 1
 
 
 def main() -> int:
@@ -566,7 +671,11 @@ def main() -> int:
     ap.add_argument("--bandwidth-mbps", type=float, default=None)
     ap.add_argument("--objective", choices=["client", "server", "e2e"],
                     default="client")
+    ap.add_argument("--self-test", action="store_true",
+                    help="run the budget regression and exit")
     args = ap.parse_args()
+    if args.self_test:
+        return budget_regression()
     cost = load_cost(args.cost_model)
 
     if args.arch in CANONICAL_MODELS:
@@ -615,7 +724,7 @@ def main() -> int:
           f"objective={args.objective}")
 
     if args.pareto:
-        feasible = feasible_schedules(layers, profile, args.acc_min)
+        feasible = feasible_schedules(layers, profile, args.acc_min, budget)
         front = pareto_front(feasible)
         print(f"feasible={len(feasible)} pareto={len(front)}")
         for s in front:
@@ -629,9 +738,9 @@ def main() -> int:
     elif args.strategy == "greedy":
         bits = greedy(layers, profile, args.acc_min)
     else:
-        sch = constrained(layers, profile, args.acc_min)
+        sch = constrained(layers, profile, args.acc_min, budget)
         if sch is None:
-            print("infeasible: no schedule meets the accuracy/depth constraints")
+            print("infeasible: no schedule meets the accuracy/depth/budget constraints")
             return 1
         bits = list(sch.bits)
 

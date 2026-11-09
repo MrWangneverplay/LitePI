@@ -590,9 +590,9 @@ def budget_regression() -> int:
             return 100.0
 
     layers = (
-        Layer("small_conv", 10, linear_depth=1, p2_depth=2),
+        Layer("small_conv", 10, linear_depth=1, p2_depth=1),
         Layer("wide_conv", 1000, linear_depth=1, p2_depth=1),
-        Layer("small_fc", 10, linear_depth=1, p2_depth=2),
+        Layer("small_fc", 10, linear_depth=1, p2_depth=1),
     )
     profile = Profile(
         depth_budget=3,

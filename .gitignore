@@ -15,11 +15,34 @@ venv/
 
 # 第三方源码与编译产物（体积大、可复现，不进仓库）
 third_party/
-sci/
+# SCI 仅放行已核查的项目源码；其余文件及子目录默认忽略。
+/sci/*
+!/sci/litepi_sci.cpp
+!/sci/CMakeLists.txt
+!/sci/build.sh
+!/sci/test_import.py
+!/sci/test_relu.py
+!/sci/test_sci_relu_batch.py
 seal/seal4/
 seal/seal4_py310/
+
+# 构建目录与二进制产物。
+build/
+cmake-build*/
+CMakeFiles/
+CMakeCache.txt
 *.so
+*.so.*
 *.a
+*.o
+*.obj
+*.dll
+*.dylib
+*.pyd
+*.exe
+*.lib
+*.bin
+*.out
 
 # 临时调试脚本
 _tmp_*.sh

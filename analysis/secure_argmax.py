@@ -43,7 +43,15 @@ def _select_shared(ctx: Ctx, a_vec, b_vec, w_vec, k: int) -> list[int]:
 
 def run_party_argmax(ctx: Ctx, shares, k: int, f: int,
                      k_compare: int) -> int:
-    """Return this party's additive ring share of the winning class index."""
+    """Return a share of the first maximal class in the quantized logits.
+
+    Ties keep the earlier index, matching numpy.argmax.  The caller must
+    ensure every reconstructed score difference fits the signed k_compare
+    window; individual shares need not fit that window.  Quantization of
+    separate floating-point shares can still perturb sub-LSB margins.
+    """
+    if not (1 <= k_compare <= k) or f < 0:
+        raise ValueError("require 1 <= k_compare <= k and f >= 0")
     q = [_quantize(v, k, f) for v in shares]
     n = len(q)
     if n < 2:
@@ -52,10 +60,12 @@ def run_party_argmax(ctx: Ctx, shares, k: int, f: int,
     champion_score = q[0]
     champion_index = 0
     for i in range(1, n):
-        # Shared bit w=1 iff current champion strictly exceeds challenger i.
+        # DReLU(diff) is 1 when champion >= challenger, including a tie.
+        # Do not subtract a public constant from both additive shares:
+        # that would shift the reconstructed comparison by twice the amount.
         w = d_drelu_batch(
             ctx,
-            [(champion_score - q[i] - 1) % mask],
+            [(champion_score - q[i]) % mask],
             k_compare,
         )[0]
         challenger_index = i if ctx.party == 0 else 0
@@ -76,11 +86,25 @@ def combine_index_share(client_share: int, server_share: int, k: int) -> int:
 def self_test() -> int:
     k, f, k_compare = 44, 8, 14
     failures = 0
+    cases = []
     for winner in range(6):
         truth = [-3.5, -1.0, 0.25, 2.75, -2.0, 1.5]
         truth[winner] += 10.0
+        cases.append((f"6-class winner={winner}", truth, winner))
+    lsb = 2.0 ** -f
+    cases.extend([
+        ("1 LSB champion", [lsb, 0.0], 0),
+        ("1 LSB challenger", [0.0, lsb], 1),
+        ("equal pair keeps first", [1.0, 1.0], 0),
+        ("equal maxima keep first", [-1.0, 2.0, 2.0], 1),
+        ("all equal keep first", [0.0] * 6, 0),
+        ("negative 1 LSB", [-lsb, -2 * lsb], 0),
+    ])
+    for name, truth, winner in cases:
+        # Exactly representable shares isolate comparison from quantization.
         server_shares = [
-            value / 3.0 - 0.125 for value in truth
+            round((value / 3.0 - 0.125) * (2.0 ** f)) / (2.0 ** f)
+            for value in truth
         ]
         client_shares = [
             value - share for value, share in zip(truth, server_shares)
@@ -109,7 +133,7 @@ def self_test() -> int:
         ok = got == winner
         failures += not ok
         print(
-            f"{'PASS' if ok else 'FAIL'}  6-class winner={winner} got={got}"
+            f"{'PASS' if ok else 'FAIL'}  {name} expected={winner} got={got}"
         )
     print("ALL PASS" if failures == 0 else f"{failures} FAILURE(S)")
     return 0 if failures == 0 else 1

@@ -39,6 +39,7 @@ import argparse
 import glob
 import itertools
 import json
+import math
 from dataclasses import dataclass
 from pathlib import Path
 
@@ -78,6 +79,12 @@ class Budget:
     max_mpc_elements: int | None = None
     max_rounds: float | None = None
     max_time_ms: float | None = None
+
+    def __post_init__(self) -> None:
+        for name in ("max_mpc_elements", "max_rounds", "max_time_ms"):
+            value = getattr(self, name)
+            if value is not None and (not math.isfinite(value) or value < 0):
+                raise ValueError(f"{name} must be finite and non-negative")
 
 
 @dataclass(frozen=True)
@@ -129,6 +136,8 @@ def packing_plan(bits, layers, profile: Profile, ckks: CKKSPlan | None) -> dict:
                    for layer, bit in zip(layers, bits)],
     }
 
+
+DEFAULT_ACC_MIN = {"mnist": 0.975, "cifar10": 0.59, "uci_har": 0.89, "conv3": 0.82}
 
 # Canonical models from 实验方案 §3.2.1, measured five-seed E1 means
 # (results/raw_results/E1/<dataset>/hybrid_s*/).
@@ -316,12 +325,36 @@ def greedy(layers, profile: Profile, acc_min: float) -> list[int]:
     return _repair_depth(bits, layers, profile)
 
 
-def feasible_schedules(layers, profile: Profile, acc_min: float) -> list[Schedule]:
+def _schedule_constraints(sch: Schedule, budget: Budget,
+                          acc_min: float | None = None) -> dict:
+    """Use the same feasibility checks during search and when reporting a plan.
+
+    max_time_ms bounds the selected objective, not necessarily end-to-end
+    latency.  Unknown objective costs or communication are never feasible.
+    """
+    return {
+        "accuracy_known": sch.acc is not None and math.isfinite(sch.acc),
+        "accuracy": (sch.acc is not None and math.isfinite(sch.acc)
+                     and (acc_min is None or sch.acc >= acc_min)),
+        "cost_known": all(value is not None and math.isfinite(value) and value >= 0
+                          for value in (sch.time_ms, sch.bytes, sch.rounds)),
+        "depth": sch.depth_ok,
+        "memory": sch.memory_ok,
+        "mpc_elements": (budget.max_mpc_elements is None
+                         or sch.mpc_elements <= budget.max_mpc_elements),
+        "rounds": budget.max_rounds is None or sch.rounds <= budget.max_rounds,
+        "time": budget.max_time_ms is None or (
+            sch.time_ms is not None and sch.time_ms <= budget.max_time_ms),
+    }
+
+
+def feasible_schedules(layers, profile: Profile, acc_min: float,
+                       budget: Budget | None = None) -> list[Schedule]:
+    budget = budget or Budget()
     out = []
     for bits in itertools.product((0, 1), repeat=len(layers)):
         sch = evaluate(bits, layers, profile)
-        if (sch.depth_ok and sch.memory_ok and sch.time_ms is not None
-                and sch.acc is not None and sch.acc >= acc_min):
+        if all(_schedule_constraints(sch, budget, acc_min).values()):
             out.append(sch)
     return out
 
@@ -338,8 +371,9 @@ def random_schedules(layers, profile: Profile, draws: int = 5, seed: int = 0):
                      layers, profile) for _ in range(draws)]
 
 
-def constrained(layers, profile: Profile, acc_min: float) -> Schedule | None:
-    feasible = feasible_schedules(layers, profile, acc_min)
+def constrained(layers, profile: Profile, acc_min: float,
+                budget: Budget | None = None) -> Schedule | None:
+    feasible = feasible_schedules(layers, profile, acc_min, budget)
     if not feasible:
         return None
     if profile.objective == "server":
@@ -362,22 +396,14 @@ def pareto_front(schedules) -> list[Schedule]:
     return front
 
 
-def plan_result(bits, layers, profile: Profile, budget: Budget | None = None) -> dict:
+def plan_result(bits, layers, profile: Profile, budget: Budget | None = None,
+                acc_min: float | None = None) -> dict:
     """The documented planner interface: inputs -> (s, p, packing)."""
     budget = budget or Budget()
     sch = evaluate(bits, layers, profile)
     ckks = choose_ckks_plan(bits, layers)
     cm = profile.cost
-    constraints = {
-        "accuracy_known": sch.acc is not None,
-        "depth": sch.depth_ok,
-        "memory": sch.memory_ok,
-        "mpc_elements": (budget.max_mpc_elements is None
-                         or sch.mpc_elements <= budget.max_mpc_elements),
-        "rounds": budget.max_rounds is None or sch.rounds <= budget.max_rounds,
-        "time": budget.max_time_ms is None or (
-            sch.time_ms is not None and sch.time_ms <= budget.max_time_ms),
-    }
+    constraints = _schedule_constraints(sch, budget, acc_min)
     return {
         "s": list(sch.bits),
         "accuracy": sch.acc,
@@ -442,7 +468,7 @@ def main() -> int:
                       output_mode=args.output_mode, objective=args.objective,
                       max_memory_mb=args.max_memory_mb, arch=args.arch)
     budget = Budget(args.max_mpc_elements, args.max_rounds,
-                    args.max_time_s * 1000 if args.max_time_s else None)
+                    args.max_time_s * 1000 if args.max_time_s is not None else None)
     if not args.json:
         print(f"arch={args.arch} acc_min={args.acc_min:.2%} rtt={args.rtt_ms}ms "
               f"depth_budget={profile.depth_budget} trained={len(accuracies)} "
@@ -450,7 +476,7 @@ def main() -> int:
               f"objective={args.objective}")
 
     if args.pareto:
-        feasible = feasible_schedules(layers, profile, args.acc_min)
+        feasible = feasible_schedules(layers, profile, args.acc_min, budget)
         front = pareto_front(feasible)
         print(f"feasible={len(feasible)} pareto={len(front)}")
         for s in front:
@@ -463,13 +489,13 @@ def main() -> int:
     elif args.strategy == "greedy":
         bits = greedy(layers, profile, args.acc_min)
     else:
-        sch = constrained(layers, profile, args.acc_min)
+        sch = constrained(layers, profile, args.acc_min, budget)
         if sch is None:
             print("infeasible: no measured schedule meets the constraints")
             return 1
         bits = list(sch.bits)
 
-    plan = plan_result(bits, layers, profile, budget)
+    plan = plan_result(bits, layers, profile, budget, args.acc_min)
     ok = plan["feasible"] and plan["accuracy"] is not None and plan["accuracy"] >= args.acc_min
     if args.json:
         print(json.dumps(plan, indent=2, ensure_ascii=False))

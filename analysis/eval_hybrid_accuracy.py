@@ -37,19 +37,28 @@ Usage (analysis directory):
         --seed 73 --samples 32 --backend seal
 
 Output: results/raw_results/E1/<dataset>/hybrid_s<tag>_acc<out_suffix>/seed<seed>.json
-where <out_suffix> is `--out-tag` (default `_<backend>`).
+where <out_suffix> is `--out-tag` (default `_<backend>..._v2`).
+Schema v2 records paired logits/predictions, original sample IDs, margins,
+checkpoint/data/source/native-module hashes and full resume configuration.
+Use the same --sample-seed across training seeds and schedules for paired E1.
+Legacy records are kept untouched and cannot be silently resumed as v2.
 """
 
 from __future__ import annotations
 
 import argparse
+import hashlib
 import json
+import math
+import os
 import socket
 import subprocess
 import sys
 import threading
+import tempfile
 import time
 from datetime import datetime, timezone
+from importlib.machinery import EXTENSION_SUFFIXES
 from pathlib import Path
 
 import numpy as np
@@ -72,16 +81,179 @@ from secure_relu_net import run_party_batch
 from sci_relu import SCI_AVAILABLE, SciReLUSession, sci_bytes
 
 FLUSH_EVERY = 25
+SCHEMA_VERSION = 2
+CODE_ROOT = Path(__file__).resolve().parent.parent
+SETUP_KEYS = (
+    "mpc_runtime", "keygen_s", "context_upload_s", "context_up_bytes",
+    "sci_setup_up_bytes", "sci_setup_down_bytes", "sci_setup_s",
+    "setup_pending_server_sci_sessions", "queries", "sessions",
+)
 
 
 def git_sha(root: Path) -> str:
     try:
         out = subprocess.run(["git", "rev-parse", "HEAD"], cwd=str(root),
-                             capture_output=True, text=True, check=False,
-                             timeout=10)
-        return out.stdout.strip()[:12]
-    except Exception:
+                             capture_output=True, text=True, check=True, timeout=10)
+        status = subprocess.run(
+            ["git", "status", "--porcelain", "--", "analysis", "sci", "seal", "scripts"],
+            cwd=str(root), capture_output=True, text=True, check=True, timeout=10)
+        return out.stdout.strip() + ("-dirty" if status.stdout.strip() else "")
+    except (OSError, subprocess.SubprocessError):
         return "unknown"
+
+
+def file_sha256(path: Path) -> str:
+    digest = hashlib.sha256()
+    with path.open("rb") as stream:
+        for block in iter(lambda: stream.read(1024 * 1024), b""):
+            digest.update(block)
+    return digest.hexdigest()
+
+
+def prediction_evidence(label: int, plain_logits, cipher_logits) -> dict:
+    """Accuracy and fidelity are different questions; retain paired evidence."""
+    plain = [float(value) for value in plain_logits]
+    cipher = [float(value) for value in cipher_logits]
+    if len(plain) < 2 or len(plain) != len(cipher):
+        raise ValueError("paired logits must have the same class count >= 2")
+    if not all(math.isfinite(value) for value in plain + cipher):
+        raise ValueError("non-finite plaintext/ciphertext logits; refuse accuracy row")
+    if not 0 <= int(label) < len(plain):
+        raise ValueError("label outside the paired class range")
+    plain_pred = max(range(len(plain)), key=plain.__getitem__)
+    cipher_pred = max(range(len(cipher)), key=cipher.__getitem__)
+    plain_top = sorted(plain, reverse=True)
+    cipher_top = sorted(cipher, reverse=True)
+    errors = [abs(a - b) for a, b in zip(plain, cipher)]
+    peak = max(errors)
+    if not math.isfinite(peak):
+        raise ValueError("logit difference exceeds finite float range")
+    scale = max(1e-9, max(map(abs, plain)))
+    if not all(math.isfinite(value) for value in (
+            plain_top[0] - plain_top[1], cipher_top[0] - cipher_top[1], peak / scale)):
+        raise ValueError("non-finite logit margin or relative error")
+    return {
+        "label": int(label), "pred": cipher_pred,  # backwards-compatible alias
+        "plain_pred": plain_pred, "cipher_pred": cipher_pred,
+        "plain_correct": plain_pred == int(label),
+        "cipher_correct": cipher_pred == int(label),
+        "prediction_agrees": plain_pred == cipher_pred,
+        "plain_logits": plain, "cipher_logits": cipher,
+        "plain_margin": plain_top[0] - plain_top[1],
+        "cipher_margin": cipher_top[0] - cipher_top[1],
+        "max_abs_err": peak, "mean_abs_err": sum(value / len(errors) for value in errors),
+        "rmse": (peak * math.sqrt(sum((value / peak) ** 2 for value in errors) / len(errors))
+                 if peak else 0.0),
+        "rel_err": max(errors) / scale, "ref_max_abs": max(map(abs, plain)),
+    }
+
+
+def prediction_summary(rows: list[dict]) -> dict:
+    done = len(rows)
+    cipher_errors = sum(row.get("cipher_pred", row["pred"]) != row["label"] for row in rows)
+    paired = [row for row in rows if row.get("plain_pred") is not None]
+    mismatches = sum(row.get("cipher_pred", row["pred"]) != row["plain_pred"] for row in paired)
+    plain_errors = sum(row["plain_pred"] != row["label"] for row in paired)
+    return {
+        "classification_errors": cipher_errors,
+        "plain_classification_errors": plain_errors if paired else None,
+        "accuracy": (done - cipher_errors) / done if done else None,
+        "accuracy_pct": 100.0 * (done - cipher_errors) / done if done else None,
+        "plain_accuracy": (len(paired) - plain_errors) / len(paired) if paired else None,
+        "prediction_mismatches": mismatches if paired else None,
+        "prediction_agreement": (len(paired) - mismatches) / len(paired) if paired else None,
+        "agreement_samples": len(paired),
+        "agreement_complete": bool(done) and len(paired) == done,
+        "prediction_mismatches_definition": "cipher_pred != plain_pred on agreement_samples",
+    }
+
+
+def native_identity(backend) -> dict:
+    """Hash only the selected HE runtime and the protocol's SCI extension.
+
+    Unrelated imports (HAR also imports TenSEAL even under --backend seal)
+    must not change the identity of a SEAL run across datasets.
+    """
+    candidates = {}
+    module = getattr(backend, "seal", None) or getattr(backend, "ts", None)
+    if module is not None:
+        candidates[getattr(module, "__name__", "he_runtime")] = module
+        for value in vars(module).values():
+            filename = getattr(value, "__file__", None)
+            if filename and any(str(filename).endswith(suffix) for suffix in EXTENSION_SUFFIXES):
+                candidates[getattr(value, "__name__", "he_extension")] = value
+    sci = sys.modules.get("litepi_sci")
+    if sci is not None:
+        candidates["litepi_sci"] = sci
+    hashes = {}
+    for name, candidate in candidates.items():
+        filename = getattr(candidate, "__file__", None)
+        if filename and any(str(filename).endswith(suffix) for suffix in EXTENSION_SUFFIXES):
+            hashes[name] = file_sha256(Path(filename))
+    return hashes
+
+
+def run_identity(args, model, sample_ids, test_size: int, domains, backend) -> dict:
+    checkpoint = Path(model.checkpoint).resolve()
+    source_paths = sorted((CODE_ROOT / "analysis").glob("*.py"))
+    source_paths += sorted((CODE_ROOT / "model").glob("*.py"))
+    source_paths += sorted(CODE_ROOT.glob("*.py"))
+    source_paths += sorted((CODE_ROOT / "seal").glob("*.cpp"))
+    source_paths += sorted((CODE_ROOT / "seal").glob("*.h"))
+    sci_source = CODE_ROOT / "sci" / "litepi_sci.cpp"
+    if sci_source.exists():
+        source_paths.append(sci_source)
+    sources = {str(path.relative_to(CODE_ROOT)): file_sha256(path) for path in source_paths}
+    # Hash the actually imported SCI extension, not a guessed ABI-specific file.
+    extension = getattr(sys.modules.get("litepi_sci"), "__file__", None)
+    native_modules = native_identity(backend)
+    if args.backend != "stub" and not any(name != "litepi_sci" for name in native_modules):
+        raise ValueError("cannot identify the selected HE native extension; refuse untraceable run")
+    return {
+        "schema_version": SCHEMA_VERSION,
+        "dataset": args.dataset, "schedule": "".join(map(str, args.schedule)),
+        "training_seed": args.seed, "sample_seed": args.sample_seed,
+        "sampler": "numpy.default_rng.permutation", "numpy_version": np.__version__,
+        "sample_order_sha256": hashlib.sha256(json.dumps(
+            [int(value) for value in sample_ids], separators=(",", ":")).encode()).hexdigest(),
+        "test_set_size": test_size,
+        "checkpoint_sha256": file_sha256(checkpoint),
+        "backend": args.backend, "wire": WIRE_PROFILES[args.wire].to_dict(),
+        "mask_exact": bool(args.mask_exact),
+        "mask_domains": {str(k): v.to_dict() for k, v in sorted(domains.items())} if domains else None,
+        "params": {"poly_modulus_degree": POLY_MODULUS_DEGREE,
+                   "coeff_mod_bit_sizes": list(COEFF_MOD_BIT_SIZES),
+                   "global_scale_bits": GLOBAL_SCALE_BITS,
+                   "f": F, "k_ring": K_RING, "k_compare": K_COMPARE},
+        "source_sha256": sources,
+        "sci_extension_sha256": file_sha256(Path(extension)) if extension else None,
+        "native_module_sha256": native_modules,
+        "python_runtime": sys.version,
+    }
+
+
+def validate_resume(previous: dict, identity: dict, sample_ids, n: int) -> None:
+    if previous.get("schema_version") != SCHEMA_VERSION:
+        raise ValueError("legacy schema cannot be resumed; use a new v2 output tag")
+    old = previous.get("run_identity") or {}
+    changed = [key for key in sorted(set(old) | set(identity)) if old.get(key) != identity.get(key)]
+    if changed:
+        raise ValueError("resume configuration mismatch: " + ", ".join(changed))
+    rows = previous.get("per_sample")
+    if not isinstance(rows, list) or len(rows) > n:
+        raise ValueError("invalid per_sample list or requested samples smaller than saved prefix")
+    if previous.get("n_samples") != len(rows):
+        raise ValueError("n_samples disagrees with saved rows")
+    for index, row in enumerate(rows):
+        if row.get("index") != index or row.get("sample_id") != int(sample_ids[index]):
+            raise ValueError(f"resume sample order mismatch at index {index}")
+        if not all(key in row for key in ("label", "plain_logits", "cipher_logits",
+                                          "plain_pred", "cipher_pred", "pred",
+                                          "prepared_input_sha256")):
+            raise ValueError(f"missing paired evidence at index {index}")
+        evidence = prediction_evidence(row["label"], row["plain_logits"], row["cipher_logits"])
+        if any(row[key] != evidence[key] for key in ("plain_pred", "cipher_pred", "pred")):
+            raise ValueError(f"inconsistent predictions at index {index}")
 
 
 def _prepare(model, dataset: str, sample) -> np.ndarray:
@@ -169,6 +341,7 @@ def session_eval(be, model, test, dataset: str, rows: list[dict], n: int,
     conn = socket.create_connection(("127.0.0.1", port), timeout=timeout)
     conn.settimeout(timeout)
     wire = Wire(conn, party=1)
+    state["sessions"] = int(state.get("sessions", 0) or 0) + 1
     try:
         spec = wire.recv_json(b"SPEC")
         adopt_wire(be, spec)
@@ -179,7 +352,14 @@ def session_eval(be, model, test, dataset: str, rows: list[dict], n: int,
                     "server offered an SCI port but litepi_sci is not built "
                     "for this interpreter"
                 )
-            sci_session = SciReLUSession(2, int(spec["sci_port"]), "127.0.0.1")
+            state["setup_pending_server_sci_sessions"] = int(
+                state.get("setup_pending_server_sci_sessions", 0) or 0) + 1
+            sci_t0 = time.perf_counter()
+            try:
+                sci_session = SciReLUSession(2, int(spec["sci_port"]), "127.0.0.1")
+            finally:
+                state["sci_setup_s"] = float(state.get("sci_setup_s", 0.0) or 0.0) + (
+                    time.perf_counter() - sci_t0)
         state["sci_setup_up_bytes"] = (int(state.get("sci_setup_up_bytes", 0) or 0)
                                        + sci_bytes(sci_session))
         if not any(model.schedule):
@@ -206,23 +386,22 @@ def session_eval(be, model, test, dataset: str, rows: list[dict], n: int,
         wire.recv(b"REDY")
 
         t0 = time.perf_counter()
-        ctx = be.new_context()
-        keygen_s = time.perf_counter() - t0
+        try:
+            ctx = be.new_context()
+        finally:
+            # Record each stage immediately, even if the next stage fails.
+            state["keygen_s"] = float(state.get("keygen_s", 0.0) or 0.0) + (
+                time.perf_counter() - t0)
         t0 = time.perf_counter()
         bytes_before = wire.cc.sent
-        wire.send(b"CTXT", upload_context(be, ctx))
-        wire.recv(b"REDY")
-        context_upload_s = time.perf_counter() - t0
-        state.update({
-            "keygen_s": round(float(state.get("keygen_s", 0.0) or 0.0)
-                              + keygen_s, 4),
-            "context_upload_s": round(
-                float(state.get("context_upload_s", 0.0) or 0.0)
-                + context_upload_s, 4),
-            "context_up_bytes": int(state.get("context_up_bytes", 0) or 0)
-            + int(wire.cc.sent - bytes_before),
-            "sessions": int(state.get("sessions", 0) or 0) + 1,
-        })
+        try:
+            wire.send(b"CTXT", upload_context(be, ctx))
+            wire.recv(b"REDY")
+        finally:
+            state["context_upload_s"] = float(state.get("context_upload_s", 0.0) or 0.0) + (
+                time.perf_counter() - t0)
+            state["context_up_bytes"] = int(state.get("context_up_bytes", 0) or 0) + (
+                int(wire.cc.sent - bytes_before))
 
         for index in range(start, n):
             if index > start:
@@ -250,6 +429,9 @@ def session_eval(be, model, test, dataset: str, rows: list[dict], n: int,
                 state["sci_setup_down_bytes"] = (
                     int(state.get("sci_setup_down_bytes", 0) or 0)
                     + int(stats.get("sci_setup_bytes_sent", 0)))
+                if sci_session is not None and "sci_setup_bytes_sent" in stats:
+                    state["setup_pending_server_sci_sessions"] = max(0, int(
+                        state.get("setup_pending_server_sci_sessions", 0) or 0) - 1)
 
             if got.size < model.spec.classes:
                 raise ProtocolError(
@@ -257,15 +439,14 @@ def session_eval(be, model, test, dataset: str, rows: list[dict], n: int,
                     f"{model.spec.classes}"
                 )
             logits = got[: model.spec.classes]
-            err = float(np.max(np.abs(logits - ref)))
-            scale = max(1e-9, float(np.max(np.abs(ref))))
+            evidence = prediction_evidence(label, ref, logits)
+            err = evidence["max_abs_err"]
             row = {
                 "index": int(index),
-                "label": int(label),
-                "pred": int(np.argmax(logits)),
-                "max_abs_err": round(err, 8),
-                "rel_err": round(err / scale, 10),
-                "ref_max_abs": round(float(np.max(np.abs(ref))), 6),
+                "sample_id": int(state["sample_ids"][index]),
+                "prepared_input_sha256": hashlib.sha256(
+                    np.asarray(prepared, dtype="<f8").tobytes(order="C")).hexdigest(),
+                **evidence,
                 "wall_s": round(wall_s, 4),
                 "forward_s": float(stats["timings"]["forward_s"]),
                 "mpc_s": float(stats["timings"]["mpc_s"]),
@@ -282,6 +463,7 @@ def session_eval(be, model, test, dataset: str, rows: list[dict], n: int,
                 "mpc_runtime": runtime,
             }
             rows.append(row)
+            state["queries"] = int(state.get("queries", 0) or 0) + 1
             done = len(rows)
             acc = sum(1 for r in rows if r["pred"] == r["label"]) / done
             print(f"  {done}/{n} idx={index} pred={row['pred']} "
@@ -291,7 +473,6 @@ def session_eval(be, model, test, dataset: str, rows: list[dict], n: int,
             if done % FLUSH_EVERY == 0 and done < n:
                 flush_cb()
 
-        state["queries"] = int(state.get("queries", 0) or 0) + (n - start)
         # DONE closes the persistent session; the server's last STAT was
         # already consumed after the final BYE.
         wire.send(b"DONE")
@@ -330,8 +511,21 @@ def build_payload(args, rows: list[dict], n: int, model, test_size: int,
     done = len(rows)
     keygen = float(state.get("keygen_s", 0.0) or 0.0)
     ctx_up = float(state.get("context_upload_s", 0.0) or 0.0)
+    sci_setup = float(state.get("sci_setup_s", 0.0) or 0.0)
     return {
         "experiment": "E1",
+        "schema_version": SCHEMA_VERSION,
+        "run_identity": state["run_identity"],
+        "checkpoint_sha256": state["run_identity"]["checkpoint_sha256"],
+        "sampling": {"sample_seed": args.sample_seed,
+                     "sample_id_definition": "index in unshuffled load_test_set output",
+                     "sample_order_sha256": state["run_identity"]["sample_order_sha256"]},
+        "wire": WIRE_PROFILES[args.wire].to_dict(),
+        "mask_exact": bool(args.mask_exact),
+        "mask_domains": state["run_identity"]["mask_domains"],
+        "setup": {key: state.get(key) for key in SETUP_KEYS},
+        "measured": args.backend != "stub" and done > 0,
+        "evidence_kind": "simulation" if args.backend == "stub" else "protocol_evaluation",
         "tier": "Hybrid ciphertext accuracy",
         "dataset": args.dataset,
         "schedule": "".join(str(b) for b in args.schedule),
@@ -342,10 +536,7 @@ def build_payload(args, rows: list[dict], n: int, model, test_size: int,
         "n_samples": done,
         "target_samples": n,
         "test_set_size": test_size,
-        "accuracy": (sum(1 for r in rows if r["pred"] == r["label"]) / done
-                     if done else 0.0),
-        "accuracy_pct": (100.0 * sum(1 for r in rows if r["pred"] == r["label"])
-                         / done if done else 0.0),
+        **prediction_summary(rows),
         "mpc_runtime": state.get("mpc_runtime"),
         "checkpoint": str(getattr(model, "checkpoint", "")),
         "max_abs_err": {
@@ -356,13 +547,14 @@ def build_payload(args, rows: list[dict], n: int, model, test_size: int,
             "mean": float(np.mean(rels)) if rels else None,
             "max": float(np.max(rels)) if rels else None,
         },
-        "prediction_mismatches": sum(1 for r in rows if r["pred"] != r["label"]),
         "timing_s": {
             "keygen": round(keygen, 4),
             "context_upload": round(ctx_up, 4),
+            "sci_setup": round(sci_setup, 4),
             "amortized_setup_s_per_sample": (
-                round((keygen + ctx_up) / done, 4) if done else None
+                round((keygen + ctx_up + sci_setup) / done, 4) if done else None
             ),
+            "setup_timing_scope": "client keygen/context-upload/SCI-setup stage walls; includes failed attempts",
             "wall_mean": float(np.mean(walls)) if walls else None,
             "wall_max": float(np.max(walls)) if walls else None,
             "forward_mean": float(np.mean(fwds)) if fwds else None,
@@ -383,6 +575,8 @@ def build_payload(args, rows: list[dict], n: int, model, test_size: int,
             "context_up_bytes": state.get("context_up_bytes"),
             "sci_setup_up_bytes": state.get("sci_setup_up_bytes"),
             "sci_setup_down_bytes": state.get("sci_setup_down_bytes"),
+            "setup_bytes_complete": not int(state.get("setup_pending_server_sci_sessions", 0) or 0),
+            "setup_pending_server_sci_sessions": int(state.get("setup_pending_server_sci_sessions", 0) or 0),
             "note": "S_up/S_down 为单次查询的客户端上下行字节，含密文（wire）和 SCI，"
                     "不含一次性上下文上传和 SCI 基础 OT（sci_setup）",
         },
@@ -397,6 +591,7 @@ def build_payload(args, rows: list[dict], n: int, model, test_size: int,
             "poly_modulus_degree": POLY_MODULUS_DEGREE,
             "coeff_mod_bit_sizes": list(COEFF_MOD_BIT_SIZES),
             "global_scale_bits": GLOBAL_SCALE_BITS,
+            "f": F, "k_ring": K_RING, "k_compare": K_COMPARE,
         },
         "per_sample": rows,
     }
@@ -408,8 +603,20 @@ def write_record(path: Path, payload: dict, root: Path) -> None:
                   timespec="seconds")}
     record.update(payload)
     path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_text(json.dumps(record, indent=2, ensure_ascii=False) + "\n",
-                    encoding="utf-8")
+    # Atomic replacement keeps an interrupted flush from truncating the saved prefix.
+    temporary = None
+    try:
+        with tempfile.NamedTemporaryFile(mode="w", encoding="utf-8", dir=path.parent,
+                                         prefix=path.name + ".", suffix=".tmp",
+                                         delete=False) as stream:
+            temporary = Path(stream.name)
+            stream.write(json.dumps(record, indent=2, ensure_ascii=False, allow_nan=False) + "\n")
+            stream.flush()
+            os.fsync(stream.fileno())
+        os.replace(temporary, path)
+    finally:
+        if temporary is not None and temporary.exists():
+            temporary.unlink()
 
 
 def main() -> int:
@@ -420,7 +627,9 @@ def main() -> int:
                     choices=["mnist", "cifar10", "uci_har"])
     ap.add_argument("--schedule", default="11",
                     help="两位调度，如 11 / 10 / 01")
-    ap.add_argument("--seed", type=int, default=73)
+    ap.add_argument("--seed", type=int, default=73, help="模型训练种子")
+    ap.add_argument("--sample-seed", type=int, default=0,
+                    help="独立抽样种子；所有训练种子和调度使用相同值以配对样本")
     ap.add_argument("--samples", type=int, default=32,
                     help="测试样本数，0 表示全测试集")
     ap.add_argument("--checkpoint", default=None)
@@ -431,11 +640,13 @@ def main() -> int:
     ap.add_argument("--wire", choices=sorted(WIRE_PROFILES), default="baseline",
                     help="E4 线格式；非 baseline 时结果目录自动加 _wire<名字> 后缀")
     ap.add_argument("--out-tag", default=None,
-                    help="目录后缀，默认 _<backend>")
+                    help="目录后缀，默认 _<backend>..._v2；不覆盖已有记录")
     ap.add_argument("--resume", action="store_true",
                     help="从已落盘的 per_sample 续跑")
     ap.add_argument("--timeout", type=float, default=600.0)
     args = ap.parse_args()
+    if args.samples < 0 or args.sample_seed < 0 or args.timeout <= 0:
+        ap.error("samples/sample-seed 必须非负，timeout 必须为正")
 
     if len(args.schedule) != 2 or set(args.schedule) - set("01"):
         sys.exit("--schedule 必须是两位 0/1 字符串，如 11")
@@ -448,18 +659,26 @@ def main() -> int:
         Path(args.checkpoint) if args.checkpoint else None,
     )
     test = load_test_set(root, args.dataset)
-    # 顺序取前 N 个样本会踩到数据集未 shuffle 的坑（UCI-HAR 测试集按类别
-    # 聚集，前 64 个只有 3 个类别，明文精度被压到 64%）。用 seed 做确定性
-    # shuffle，保证 5 个种子覆盖不同样本、分布均衡，且 --resume 可复现。
-    _order_rng = np.random.default_rng(args.seed)
-    test = [test[i] for i in _order_rng.permutation(len(test))]
+    # Independent sampling makes each schedule/checkpoint see the same prefix.
+    # Random permutation avoids a class-ordered prefix, but is not stratification.
+    sample_ids = [int(index) for index in np.random.default_rng(args.sample_seed).permutation(len(test))]
+    test_digest = hashlib.sha256()
+    for sample, label in test:
+        array = np.asarray(sample, dtype="<f8")
+        test_digest.update(json.dumps([int(label), list(array.shape)], separators=(",", ":")).encode())
+        test_digest.update(array.tobytes(order="C"))
+    test = [test[index] for index in sample_ids]
     n = len(test) if args.samples == 0 else min(args.samples, len(test))
+    if not n:
+        raise SystemExit("empty test set; no protocol evaluation performed")
 
     suffix = args.out_tag if args.out_tag is not None else f"_{args.backend}"
     if args.out_tag is None and args.wire != "baseline":
         suffix += f"_wire{args.wire}"
     if args.out_tag is None and args.mask_exact:
         suffix += "_maskv3"
+    if args.out_tag is None:
+        suffix += "_v2"
     out_path = (root / "results" / "raw_results" / "E1" / args.dataset
                 / f"hybrid_s{tag}_acc{suffix}" / f"seed{args.seed}.json")
 
@@ -478,51 +697,50 @@ def main() -> int:
             expected_dims=model.client_spec()["nonlinear_dims"],
         )
 
+    effective_domains = (widen_domains(domains, keep=(model.output_layer_id(),))
+                         if domains and args.mask_exact else domains)
+    be = make_backend(args.backend)  # load the selected native module before hashing its identity
+    identity = run_identity(args, model, sample_ids, len(test), effective_domains, be)
+    identity["test_set_sha256"] = test_digest.hexdigest()
     rows: list[dict] = []
-    state: dict = {"mpc_runtime": None}
-    if args.resume and out_path.exists():
+    state: dict = {"mpc_runtime": None, "sample_ids": sample_ids, "run_identity": identity}
+    if out_path.exists() and not args.resume:
+        raise SystemExit(f"refuse to overwrite {out_path}; use --resume or a new --out-tag")
+    if args.resume:
+        if not out_path.exists():
+            raise SystemExit(f"resume record does not exist: {out_path}")
         prev = json.loads(out_path.read_text(encoding="utf-8"))
-        # 续跑前必须确认磁盘上那份是同一个配置，否则两个配置的样本会混进同一份 JSON。
-        if (prev.get("dataset") != args.dataset
-                or prev.get("schedule") != tag
-                or int(prev.get("seed", -1)) != args.seed
-                or prev.get("backend") != args.backend):
-            raise SystemExit(
-                f"refuse to resume {out_path}: on disk "
-                f"{prev.get('dataset')}/{prev.get('schedule')}/"
-                f"{prev.get('seed')}/{prev.get('backend')} != "
-                f"{args.dataset}/{tag}/{args.seed}/{args.backend}"
-            )
-        rows = prev.get("per_sample", [])
-        state.update(prev.get("setup") or {})
+        try:
+            validate_resume(prev, identity, sample_ids, n)
+        except ValueError as exc:
+            raise SystemExit(f"refuse to resume {out_path}: {exc}") from exc
+        rows = prev["per_sample"]
+        for index, row in enumerate(rows):
+            sample, label = test[index]
+            prepared = _prepare(model, args.dataset, sample)
+            digest = hashlib.sha256(np.asarray(prepared, dtype="<f8").tobytes(order="C")).hexdigest()
+            if row["label"] != int(label) or row["prepared_input_sha256"] != digest:
+                raise SystemExit(f"refuse to resume {out_path}: input/label mismatch at index {index}")
+        state.update({key: value for key, value in (prev.get("setup") or {}).items()
+                      if key in SETUP_KEYS})
         print(f"resume: {len(rows)} samples already on disk", flush=True)
 
     def flush() -> None:
         write_record(out_path, build_payload(
-            args, rows, n, model, len(test), state, True), root)
+            args, rows, n, model, len(test), state, True), CODE_ROOT)
 
     if len(rows) < n:
-        be = make_backend(args.backend)
-        session_eval(be, model, test, args.dataset, rows, n,
-                     args.timeout, domains, state, flush, wire=args.wire,
-                     mask_exact=args.mask_exact)
+        try:
+            session_eval(be, model, test, args.dataset, rows, n,
+                         args.timeout, domains, state, flush, wire=args.wire,
+                         mask_exact=args.mask_exact)
+        except (Exception, KeyboardInterrupt):
+            # Keep the last successful sample prefix and accumulated setup costs.
+            flush()
+            raise
 
     payload = build_payload(args, rows, n, model, len(test), state, False)
-    payload["setup"] = {k: state.get(k) for k in (
-        "mpc_runtime", "keygen_s", "context_upload_s", "context_up_bytes",
-        "queries", "sessions",
-    )}
-    payload["wire"] = WIRE_PROFILES[args.wire].to_dict()
-    payload["mask_exact"] = bool(args.mask_exact)
-    if domains and args.mask_exact:
-        # 服务端把每个 hybrid 层都换成 rule v3（σ=70，输出层除外）；磁盘上
-        # 的 mask_domains 是 v2 导出，直接写进去会和实际跑的域对不上。
-        domains = widen_domains(domains, keep=(model.output_layer_id(),))
-    payload["mask_domains"] = (
-        {str(k): v.to_dict() for k, v in sorted(domains.items())}
-        if domains else None
-    )
-    write_record(out_path, payload, root)
+    write_record(out_path, payload, CODE_ROOT)
     print(f"accuracy {sum(1 for r in rows if r['pred'] == r['label'])}/"
           f"{len(rows)} = {payload['accuracy']:.4f}  "
           f"mpc_runtime={payload['mpc_runtime']}  "

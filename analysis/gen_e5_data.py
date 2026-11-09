@@ -37,7 +37,7 @@ from cost_model import CostModel, fit
 from data_manifest import git_sha
 
 ARCHS = ["mnist", "cifar10", "uci_har", "conv3"]
-DEFAULT_ACC_MIN = {"mnist": 0.975, "cifar10": 0.59, "uci_har": 0.89, "conv3": 0.82}
+DEFAULT_ACC_MIN = P.DEFAULT_ACC_MIN
 
 
 def row(s: P.Schedule, layers) -> dict:

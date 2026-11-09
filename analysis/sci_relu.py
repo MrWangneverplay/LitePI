@@ -13,15 +13,24 @@ multiplexer.  There is no silent OT and no offline triple store.
 from __future__ import annotations
 
 import sys
+from importlib.machinery import EXTENSION_SUFFIXES
 from pathlib import Path
 
 import numpy as np
 
-# ``scripts/build.sh`` drops the pybind11 extension into <repo>/sci, which is
-# not on sys.path by default.
-_SCI_DIR = Path(__file__).resolve().parent.parent / "sci"
-if _SCI_DIR.is_dir() and str(_SCI_DIR) not in sys.path:
-    sys.path.insert(0, str(_SCI_DIR))
+# The unified build installs to analysis/. Prefer its compatible extension
+# over a stale legacy binary in sci/; use sci/ only as a backwards-compatible
+# fallback when analysis/ has no extension for this interpreter's ABI.
+_ANALYSIS_DIR = Path(__file__).resolve().parent
+_SCI_DIR = _ANALYSIS_DIR.parent / "sci"
+_has_current_extension = any(
+    (_ANALYSIS_DIR / f"litepi_sci{suffix}").is_file() for suffix in EXTENSION_SUFFIXES
+)
+_extension_dir = _ANALYSIS_DIR if _has_current_extension else _SCI_DIR
+if _extension_dir.is_dir():
+    if str(_extension_dir) in sys.path:
+        sys.path.remove(str(_extension_dir))
+    sys.path.insert(0, str(_extension_dir))
 
 try:
     import litepi_sci
@@ -65,7 +74,7 @@ class SciReLUSession:
 
     def __init__(self, party: int, port: int, address: str = "127.0.0.1"):
         if litepi_sci is None:
-            raise RuntimeError("litepi_sci module is not built (run scripts/build.sh)")
+            raise RuntimeError("litepi_sci module is not built (run scripts/build_litepi_sci.sh)")
         assert party in (1, 2), "SCI party must be 1 (ALICE/server) or 2 (BOB/client)"
         self.party = party
         self._sci = litepi_sci.SecureReLU(party, port, address)

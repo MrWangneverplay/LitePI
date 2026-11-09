@@ -1,5 +1,7 @@
 #!/usr/bin/env bash
 # 使用已有的本地 EzPC/SCI 源码构建并安装 SCI，不自动获取源码。
+# 已核对基线：mpc-msri/EzPC @ f24bf3e022dde3493cf0ffe3ebd92dd73936b734
+# Math-only 构建需先应用 scripts/sci_math_only.patch（跳过依赖 SEAL 的 LinearHE）。
 set -euo pipefail
 
 SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"

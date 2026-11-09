@@ -1,0 +1,71 @@
+--- a/SCI/src/CMakeLists.txt
++++ b/SCI/src/CMakeLists.txt
+@@ -1,21 +1,7 @@
+ # set(CMAKE_FIND_DEBUG_MODE 1)
+ include_directories(${CMAKE_CURRENT_LIST_DIR})
+ 
+-find_package(Eigen3 3.3 QUIET NO_MODULE PATHS "${PROJECT_SOURCE_DIR}/extern/eigen/build" NO_DEFAULT_PATH)
+-if (NOT Eigen3_FOUND)
+-    message(STATUS "Eigen 3.3 was not found: clone and install Eigen3 locally")
+-    if (NOT EXISTS "${PROJECT_SOURCE_DIR}/extern/eigen/CMakeLists.txt")
+-        find_package(Git REQUIRED)
+-        message(STATUS "initialize Git submodule: extern/eigen")
+-        execute_process(COMMAND git submodule update --init --recursive extern/eigen
+-                WORKING_DIRECTORY "${PROJECT_SOURCE_DIR}")
+-    endif ()
+-    execute_process(COMMAND ${CMAKE_COMMAND} -E make_directory build
+-        WORKING_DIRECTORY "${PROJECT_SOURCE_DIR}/extern/eigen/")
+-    execute_process(COMMAND ${CMAKE_COMMAND} -DCMAKE_INSTALL_PREFIX=${PROJECT_SOURCE_DIR}/build ..
+-        WORKING_DIRECTORY "${PROJECT_SOURCE_DIR}/extern/eigen/build")
+-    find_package(Eigen3 3.3 REQUIRED NO_MODULE PATHS "${PROJECT_SOURCE_DIR}/extern/eigen/build" NO_DEFAULT_PATH)
+-endif()
++find_package(Eigen3 3.3 REQUIRED NO_MODULE)
+ 
+ add_subdirectory(utils)
+ add_subdirectory(OT)
+@@ -23,7 +9,6 @@
+ add_subdirectory(Millionaire)
+ add_subdirectory(BuildingBlocks)
+ add_subdirectory(LinearOT)
+-add_subdirectory(LinearHE)
+ add_subdirectory(NonLinear)
+ add_subdirectory(Math)
+ add_subdirectory(FloatingPoint)
+@@ -46,29 +31,18 @@
+ 
+ add_library(SCI-OT library_fixed_uniform.cpp library_fixed.cpp
+     globals.cpp cleartext_library_fixed.cpp)
+-add_library(SCI-HE library_fixed_uniform.cpp globals.cpp)
+-add_library(SCI-SecfloatML library_float_common.cpp library_float_secfloat.cpp globals_float.cpp cleartext_library_float.cpp)
+-add_library(SCI-Beacon library_float_common.cpp library_float_beacon.cpp globals_float.cpp cleartext_library_float.cpp)
+ 
+ target_link_libraries(SCI-OT PUBLIC SCI-common SCI-LinearOT SCI-GC
+     SCI-Math SCI-BuildingBlocks SCI-FloatingPoint Eigen3::Eigen)
+-target_link_libraries(SCI-HE PUBLIC SCI-common SCI-LinearHE)
+-target_link_libraries(SCI-SecfloatML PUBLIC SCI-FloatingPoint) 
+-target_link_libraries(SCI-Beacon PUBLIC SCI-FloatingPoint) 
+ 
+ target_compile_definitions(SCI-OT PUBLIC SCI_OT=1)
+-target_compile_definitions(SCI-HE PUBLIC SCI_HE=1)
+ 
+ install(TARGETS
+         SCI-OT
+-        SCI-HE
+         SCI-common
+         SCI-FloatingPoint
+-	    SCI-SecfloatML
+-	    SCI-Beacon
+         SCI-BuildingBlocks
+         SCI-LinearOT
+-        SCI-LinearHE
+         SCI-NonLinear
+         SCI-Math
+         SCI-Millionaire
+@@ -94,7 +68,6 @@
+         NonLinear
+         BuildingBlocks
+         LinearOT
+-        LinearHE
+         Math
+         FloatingPoint
+         DESTINATION include

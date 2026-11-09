@@ -4,8 +4,8 @@
   "t_enc_input_ms": 6.93106875,
   "t_dec_ms": 3.2738667100694445,
   "t_reenc_ms": 5.6222972222222225,
-  "t_mpc_fixed_ms": 9.659232063985025,
-  "t_mpc_per_elem_ms": 0.0037446329941113183,
+  "t_mpc_fixed_ms": 9.659232063985023,
+  "t_mpc_per_elem_ms": 0.0037446329941113045,
   "t_server_base_ms": 12530.90095329861,
   "t_server_per_hybrid_ms": 3091.1628354166683,
   "bytes_m1": 917625,
@@ -25,6 +25,6 @@
     "r_h": "r_h_sci_cifar10.json (scope: control-plane)",
     "bytes": "E4 wire_bytes, profile baseline",
     "ot_bytes": "unmeasured: SCI bytes_sent() not recorded in E1/E2 yet",
-    "memory": "E2 M_client_peak_mb (HE-only); hybrid increment unmeasured"
+    "memory": "E2: K_h=[0] only; hybrid increment unmeasured"
   }
 }

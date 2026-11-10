@@ -47,6 +47,13 @@ from secure_relu_net import Chan, Ctx  # noqa: F401  (Ctx re-exported)
 from protocol_contract import collect as protocol_compliance
 
 MAX_TAG = 4
+MPC_CONTRACT = {
+    "version": 2,
+    "effective_compare_bits": K_RING,
+    "fractional_bits": F,
+    "argmax": "full-ring-signed-overflow-safe-first-max",
+    "sci_real_bridge_version": 1,
+}
 
 
 class ProtocolError(RuntimeError):
@@ -814,6 +821,12 @@ def _make_backend(name: str):
 # --------------------------------------------------------------- shared data
 
 def profile_info(backend: str, mask_domain_aligned: bool = False) -> dict:
+    """返回参数契约；Python 比较始终使用全 K_RING 位。
+
+    K_COMPARE 仅为 legacy hint，不证明秘密值的范围；14-bit、F=8 仅覆盖
+    [-32, 32)。未经值域证明不得截断比较位宽，也不得据 SIGMA 声称
+    finalize 对一般有符号输出具有统计安全性；此处不改变 SCI 实现。
+    """
     compliance = protocol_compliance()
     return {
         "backend": backend,
@@ -836,12 +849,16 @@ def profile_info(backend: str, mask_domain_aligned: bool = False) -> dict:
         "global_scale_bits": int(np.log2(GLOBAL_SCALE)),
         "k_ring": K_RING,
         "k_compare": K_COMPARE,
+        "mpc_contract": dict(MPC_CONTRACT),
         "f": F,
         "sigma": SIGMA,
     }
 
 
 def ots_per_relu() -> int:
-    """Base OTs for one slim secure ReLU: 2*k_compare-1 (27 at k_compare=14)."""
-    return 2 * K_COMPARE - 1
+    """Python 全环宽 ReLU 的 base OT 数；K_COMPARE 仅为 legacy hint。
+
+    1 个初始 carry + 2*(K_RING-2) 个 carry OT + 2 个 selects = 2*K_RING-1。
+    """
+    return 2 * K_RING - 1
 

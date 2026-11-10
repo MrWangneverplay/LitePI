@@ -34,6 +34,7 @@ from pi_proto import (
     F,
     K_COMPARE,
     K_RING,
+    MPC_CONTRACT,
     WIRE_PROFILES,
     ProtocolError,
     Wire,
@@ -130,6 +131,8 @@ def _plan_chain_index(spec: dict, key: str, output_mode: str = "logits"):
 
 def adopt_wire(be, spec: dict) -> None:
     """Use the wire profile the server announced in SPEC (before key upload)."""
+    if "profile" in spec and (spec["profile"].get("mpc_contract") != MPC_CONTRACT):
+        raise ProtocolError("MPC comparison/real-bridge contract mismatch; update both parties")
     if "wire" in spec:
         be.set_wire(WireProfile.from_dict(spec["wire"]))
 
@@ -244,6 +247,7 @@ def ciphertext_loop(be, ctx, wire: Wire, spec: dict, timings: dict,
             return "logits", share
         if kind == 2:
             t0 = time.perf_counter()
+            ots_before = mpc_ctx.ot_count
             client_share = run_party_argmax(
                 mpc_ctx, share.tolist(), K_RING, F, K_COMPARE,
             )
@@ -251,7 +255,7 @@ def ciphertext_loop(be, ctx, wire: Wire, spec: dict, timings: dict,
             if "mpc_elements" in timings:
                 timings["mpc_elements"] += int(share.size)
             if "base_ots" in timings:
-                timings["base_ots"] += (int(share.size) - 1) * max(K_COMPARE - 1, 1)
+                timings["base_ots"] += mpc_ctx.ot_count - ots_before
             idx_msg = wire.recv_json(b"IDXS")
             index = combine_index_share(
                 client_share, int(idx_msg["share"]), K_RING,
@@ -371,6 +375,7 @@ def run_client(host: str, port: int, x: np.ndarray, backend_name: str,
         wire.send_json(b"INIT", {
             "input_dim": int(x.size),
             "backend": backend_name,
+            "mpc_contract": dict(MPC_CONTRACT),
             "output_mode": output_mode,
         })
         wire.recv(b"REDY")
@@ -488,6 +493,7 @@ def run_reuse_session(host: str, port: int, x: np.ndarray, backend_name: str,
         wire.send_json(b"INIT", {
             "input_dim": int(x.size),
             "backend": backend_name,
+            "mpc_contract": dict(MPC_CONTRACT),
             "persistent": True,
             "reuse_context": False,
             "output_mode": output_mode,
@@ -501,6 +507,7 @@ def run_reuse_session(host: str, port: int, x: np.ndarray, backend_name: str,
                 wire.send_json(b"INIT", {
                     "input_dim": int(x.size),
                     "backend": backend_name,
+                    "mpc_contract": dict(MPC_CONTRACT),
                     "persistent": True,
                     "reuse_context": True,
                     "output_mode": output_mode,

@@ -61,6 +61,9 @@ def _r_h_status() -> tuple[bool, str, str]:
     "end-to-end") settles the protocol's r_h.
     """
     import json
+    import math
+    # Lazy import: pi_proto imports collect, but calls it only after loading.
+    from pi_proto import MPC_CONTRACT
     rounds = Path(__file__).resolve().parent.parent / "results" / "rounds"
     e2e, ctrl = [], []
     for f in sorted(rounds.glob("r_h_*.json")):
@@ -69,7 +72,9 @@ def _r_h_status() -> tuple[bool, str, str]:
         except (OSError, ValueError):
             continue
         r = d.get("r_h_measured")
-        if r is None:
+        if (d.get("mpc_contract") != MPC_CONTRACT or d.get("partial")
+                or d.get("error") or d.get("measured") is False
+                or not isinstance(r, (int, float)) or not math.isfinite(r) or r < 0):
             continue
         scope = d.get("scope") or ("end-to-end" if d.get("sci_internal_rounds_counted")
                                    else "control-plane")
@@ -82,14 +87,19 @@ def _r_h_status() -> tuple[bool, str, str]:
         return False, "r_h=1 on the main wire only (" + ", ".join(n for n, _ in ctrl) + ")", (
             "SCI's ReLU runs on its own socket and is not counted; CrypTFlow2 reports "
             "log l + 2 rounds per ReLU.  Run netem_e2e.py --mode e3 to measure r_h.")
-    return False, "unmeasured", "No results/rounds/r_h_*.json yet."
+    return False, "unmeasured for current MPC contract", (
+        "No valid current-contract end-to-end measurement; legacy rounds cannot "
+        "validate the full-width comparison/SCI real bridge. Re-measure netem/SCI.")
 
 
 def _module_available(name: str) -> bool:
     if name == "litepi_sci":
-        sci_dir = Path(__file__).resolve().parent.parent / "sci"
-        if sci_dir.is_dir() and str(sci_dir) not in sys.path:
-            sys.path.insert(0, str(sci_dir))
+        try:
+            from sci_relu import litepi_sci, require_real_bridge
+            require_real_bridge(litepi_sci)
+            return True
+        except (ImportError, RuntimeError, OSError):
+            return False
     return importlib.util.find_spec(name) is not None
 
 
@@ -133,7 +143,8 @@ def collect() -> dict[str, Any]:
             REQUIRED_MPC_BACKEND,
             "litepi_sci" if sci_available else REFERENCE_MPC_BACKEND,
             sci_available,
-            "The reference P-256 OT path is not the paper's silent-OT/VOLE path.",
+            "SCI/CrypTFlow2 with real bridge v1 is required; neither SCI nor the "
+            "Python reference implements silent OT/VOLE here.",
         ),
         ComplianceItem(
             "ckks_modulus_degree",
@@ -206,9 +217,9 @@ def collect() -> dict[str, Any]:
         ),
         ComplianceItem(
             "client_cost",
-            "s=00: 2 rounds; each hybrid: +r_h rounds (protocol target r_h=1)",
+            "current-contract end-to-end r_h estimate (including SCI real bridge)",
             r_h_actual if sci_available
-            else "python OT path (41 RTTs/hybrid layer)",
+            else "full-width Python reference OT path; end-to-end rounds unmeasured",
             sci_available,
             r_h_detail,
             pending=sci_available and not r_h_measured,
@@ -217,6 +228,7 @@ def collect() -> dict[str, Any]:
     failures = [i.name for i in items if not i.passed]
     pending = [i.name for i in items if i.passed and i.pending]
     return {
+        "compliance_scope": "runtime parameters/features only; not protocol correctness or security certification",
         "compliant": not failures,
         "failures": failures,
         "pending": pending,

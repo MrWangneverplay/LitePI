@@ -361,10 +361,17 @@ def d_xorbit_mult_batch(ctx: Ctx, x_vec, b_self_vec, b_other_vec, k: int,
 
 
 def d_secure_relu_batch(ctx: Ctx, sh_vec, k: int, k_compare: int):
-    """N secure ReLUs over one connection; returns this party's ring shares."""
+    """返回批量 ReLU 的环分享；k_compare 仅保留为 legacy hint。
+
+    未证明秘密值的值域时，低位截断不能保证符号正确，DReLU 始终使用全 k 位。
+    例如 14-bit、F=8 的有符号窗口仅为 [-32, 32)，本地份额不构成值域证明。
+    """
+    if type(k) is not int or k < 2:
+        raise ValueError("require integer k >= 2")
+    if type(k_compare) is not int or not 2 <= k_compare <= k:
+        raise ValueError("require integer 2 <= k_compare <= k")
     n = len(sh_vec)
-    mask = (1 << k_compare) - 1
-    b = d_drelu_batch(ctx, [s & mask for s in sh_vec], k_compare)
+    b = d_drelu_batch(ctx, sh_vec, k)
     zeros = [0] * n
     if ctx.party == 0:
         t1 = d_xorbit_mult_batch(ctx, sh_vec, b, b, k, self_party=0)
@@ -376,7 +383,12 @@ def d_secure_relu_batch(ctx: Ctx, sh_vec, k: int, k_compare: int):
 
 
 def d_finalize_batch(ctx: Ctx, ring_vec, k: int, f: int):
-    """Convert N ring shares to real additive shares (batched)."""
+    """将批量 ReLU 环输出转为实数加法分享。
+
+    仅在输出 y 和 client rho 都属于 [0, 2^(k-1)) 时，中心化可恢复
+    y-rho 并精确重构 y/2^f；浮点 bridge 参数由调用入口校验。
+    不适用于一般有符号输出，也不据此声称统计隐藏性。
+    """
     n = len(ring_vec)
     half = 1 << (k - 1)
     if ctx.party == 1:
@@ -393,7 +405,24 @@ def d_finalize_batch(ctx: Ctx, ring_vec, k: int, f: int):
     return out
 
 
+def validate_fixed_point(k: int, f: int, k_compare: int | None = None) -> None:
+    """仅校验公开参数，不读取秘密份额，也不构成秘密值域证明。
+
+    浮点 bridge 要求整数 2 <= k <= 53、0 <= f < k；k_compare 若提供，
+    必须为整数 2 <= k_compare <= k，但仅为 legacy hint，比较仍使用全 k 位。
+    """
+    if type(k) is not int or not 2 <= k <= 53:
+        raise ValueError("require integer 2 <= k <= 53 for the float bridge")
+    if type(f) is not int or not 0 <= f < k:
+        raise ValueError("require integer 0 <= f < k")
+    if k_compare is not None and (
+        type(k_compare) is not int or not 2 <= k_compare <= k
+    ):
+        raise ValueError("require integer 2 <= k_compare <= k")
+
+
 def run_party_batch(ctx: Ctx, shares, k: int, f: int, k_compare: int):
+    validate_fixed_point(k, f, k_compare)
     ring = [_quantize(s, k, f) for s in shares]
     out_ring = d_secure_relu_batch(ctx, ring, k, k_compare)
     return d_finalize_batch(ctx, out_ring, k, f)
@@ -531,16 +560,19 @@ def d_ot_mul_gilboa(ctx: Ctx, val: int, k: int) -> int:
 # ------------------------------------------------------------- the protocol
 
 def d_secure_relu(ctx: Ctx, sh: int, k: int, k_compare: int | None = None) -> int:
-    """This party's integer share of ReLU(z) mod 2^k.  sh = this party's share of z.
+    """返回 ReLU(z) mod 2^k 的本方分享；sh 为输入的本方环分享。
 
-    k is the ring width; k_compare (<= k) is the sign-comparison window, so the
-    AND-gate count scales with k_compare while the multiplication ring is k.
+    k_compare 仅为 legacy hint，不影响实际比较范围。14-bit、F=8 的窗口
+    仅覆盖 [-32, 32)，未经秘密值域证明必须回退到全 k 位 DReLU。
+    不检查本地秘密份额的范围，也不重构秘密输入。
     """
+    if type(k) is not int or k < 2:
+        raise ValueError("require integer k >= 2")
     if k_compare is None:
         k_compare = k
-    assert 1 <= k_compare <= k
-    mask = (1 << k_compare) - 1
-    b = d_drelu_slim(ctx, sh & mask, k_compare)  # this party's share of the sign bit
+    if type(k_compare) is not int or not 2 <= k_compare <= k:
+        raise ValueError("require integer 2 <= k_compare <= k")
+    b = d_drelu_slim(ctx, sh, k)  # 非负标志的本方 XOR 分享。
 
     # z * b = (s_c + s_s) * (b0 xor b1), via two single-OT "bit-selects".
     #   term1: s_s * b  -> party0 (server, holder of s_s) is the OT sender
@@ -567,13 +599,12 @@ def _quantize(share_float: float, k: int, f: int) -> int:
 
 
 def d_finalize(ctx: Ctx, ring: int, k: int, f: int) -> float:
-    """Turn mod-2^k output shares into REAL-additive shares (one extra message).
+    """将 ReLU 环输出转为实数加法分享（额外一条消息）。
 
-    Client (party1) draws rho uniform in [0, 2^(k-1)) and sends
-    t0 = (its_ring_share - rho) mod 2^k.  The server (party0) recovers
-    b = relu(z) - rho by centering (t0 + its_ring_share) mod 2^k.  rho + b equals
-    relu(z) exactly, and because rho ranges over 2^(k-k_compare) times the value
-    range, the server's share is statistically 2^-(k-k_compare)-close to uniform.
+    仅用于整数输出 y in [0, 2^(k-1))；client 在同一区间抽取 rho，发送
+    (its_ring_share-rho) mod 2^k。由于 y-rho 位于有符号环范围内，server
+    中心化后得到 y-rho，两份额精确重构 y/2^f；入口校验浮点 bridge 参数。
+    该论证不适用于一般有符号输出，也不保证统计隐藏性。
     """
     half = 1 << (k - 1)
     if ctx.party == 1:
@@ -588,6 +619,7 @@ def d_finalize(ctx: Ctx, ring: int, k: int, f: int) -> float:
 
 def run_party(ctx: Ctx, share_float: float, k: int, f: int,
               k_compare: int | None = None) -> float:
+    validate_fixed_point(k, f, k_compare)
     ring = _quantize(share_float, k, f)
     out_ring = d_secure_relu(ctx, ring, k, k_compare)
     return d_finalize(ctx, out_ring, k, f)

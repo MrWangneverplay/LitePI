@@ -2,16 +2,21 @@
 //
 // Exposes a two-party secure ReLU to Python. Each party (server/client)
 // holds an additive share of the input and receives an additive share of
-// the output. The protocol runs in constant rounds (r_h = 1) using
-// CrypTFlow2's millionaire protocol over OT extension.
+// the output. CrypTFlow2's millionaire protocol uses OT extension; constant
+// round complexity does NOT mean one end-to-end RTT. relu_real adds one
+// BOB-to-ALICE masked resharing message for the CKKS real-additive bridge.
 
 #include <pybind11/pybind11.h>
 #include <pybind11/stl.h>
 #include <pybind11/numpy.h>
 
 #include <cstdint>
+#include <cmath>
+#include <limits>
+#include <openssl/rand.h>
 #include <memory>
 #include <string>
+#include <stdexcept>
 #include <vector>
 
 #include "BuildingBlocks/aux-protocols.h"
@@ -45,6 +50,11 @@ public:
   // bw: bit-width of the fixed-point representation.
   py::array_t<uint64_t> relu(py::array_t<uint64_t> shares, int bw) {
     py::buffer_info buf = shares.request();
+    if (bw < 2 || bw > 64 || buf.ndim != 1 || buf.shape[0] <= 0 ||
+        buf.shape[0] > std::numeric_limits<int>::max() / 8 ||
+        buf.strides[0] != static_cast<py::ssize_t>(sizeof(uint64_t))) {
+      throw py::value_error("require nonempty contiguous uint64 vector and 2 <= bw <= 64");
+    }
     int n = static_cast<int>(buf.shape[0]);
 
     auto result = py::array_t<uint64_t>(n);
@@ -110,6 +120,57 @@ public:
     return result;
   }
 
+  // Return REAL-additive ReLU shares, not independently centered ring shares.
+  // For signed k-bit ReLU, 0 <= y < H=2^(k-1). BOB draws rho in [0,H),
+  // sends (y_BOB-rho) mod 2^k. ALICE centers the sum with y_ALICE to y-rho.
+  // Since -H < y-rho < H, the two real shares sum exactly to y/2^f.
+  // ALICE learns only a masked output, never rho or the unmasked activation.
+  // This is statistical masking, NOT a perfect OTP or a circuit-privacy proof;
+  // its hiding bound additionally requires an a priori bound on y.
+  py::array_t<double> relu_real(py::array_t<uint64_t> shares, int bw, int frac) {
+    if (bw < 2 || bw > 53 || frac < 0 || frac >= bw) {
+      throw py::value_error("real bridge requires 2 <= bw <= 53 and 0 <= frac < bw");
+    }
+    auto ring = relu(shares, bw);
+    auto rbuf = ring.request();
+    int n = static_cast<int>(rbuf.shape[0]);
+    auto *local = static_cast<uint64_t *>(rbuf.ptr);
+    auto result = py::array_t<double>(n);
+    auto obuf = result.request();
+    auto *out = static_cast<double *>(obuf.ptr);
+    const uint64_t half = uint64_t{1} << (bw - 1);
+    const uint64_t modulus = uint64_t{1} << bw;
+    const uint64_t mask = modulus - 1;
+    const double scale = std::ldexp(1.0, frac);
+    std::vector<uint64_t> message(n), rho(n);
+    {
+      py::gil_scoped_release release;
+      if (party_ == BOB) {
+        // OpenSSL's CSPRNG avoids unchecked CPU-specific seed instructions here.
+        if (RAND_bytes(reinterpret_cast<unsigned char *>(rho.data()), n * 8) != 1) {
+          throw std::runtime_error("CSPRNG failed during ReLU output resharing");
+        }
+        for (int i = 0; i < n; ++i) {
+          rho[i] &= half - 1;
+          message[i] = (local[i] - rho[i]) & mask;
+          out[i] = static_cast<double>(rho[i]) / scale;
+        }
+        iopack_->io->send_data(message.data(), n * 8);
+        iopack_->io->flush();
+      } else {
+        iopack_->io->recv_data(message.data(), n * 8);
+        for (int i = 0; i < n; ++i) {
+          const uint64_t value = (local[i] + message[i]) & mask;
+          const int64_t centered = value >= half
+              ? static_cast<int64_t>(value) - static_cast<int64_t>(modulus)
+              : static_cast<int64_t>(value);
+          out[i] = static_cast<double>(centered) / scale;
+        }
+      }
+    }
+    return result;
+  }
+
   // Communication bytes sent since construction (for profiling).
   uint64_t bytes_sent() { return iopack_->get_comm(); }
 
@@ -143,8 +204,12 @@ PYBIND11_MODULE(litepi_sci, m) {
            py::arg("shares"), py::arg("bw"))
       .def("mux", &SecureReLU::mux,
            py::arg("sel"), py::arg("x"), py::arg("bw_x"), py::arg("bw_y"))
+      .def("relu_real", &SecureReLU::relu_real,
+           py::arg("shares"), py::arg("bw"), py::arg("frac"))
       .def("bytes_sent", &SecureReLU::bytes_sent);
 
+  // Adapter checks this before constructing a session; old binaries fail closed.
+  m.attr("REAL_BRIDGE_VERSION") = 1;
   m.attr("ALICE") = 1;
   m.attr("BOB") = 2;
 }

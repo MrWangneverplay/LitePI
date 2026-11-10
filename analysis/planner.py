@@ -24,9 +24,9 @@ Inputs are measurements, never extrapolations:
   cost        cost_model.CostModel, including the ciphertext blocks of each
               message (Layer.down_blocks / up_blocks).
 
-A schedule whose accuracy, server time or SCI bytes were never measured has an
-unknown value and is excluded from the search.  A planner result therefore only
-covers the schedules that were trained and run.
+局部目标只使用 client crypto HE 或 server HE-only 成本，不是全 CPU。
+端到端延迟仅查同 context 的在线 wall baseline，缺测则为未知；绝不把
+client、forward elapsed 和完整 network 相加。未知目标成本依原预算规则排除。
 
 Run:
     python analysis/planner.py --arch conv3 --acc-min 0.82 --rtt-ms 50
@@ -65,10 +65,9 @@ class Profile:
     depth_budget: int = 6
     input_blocks: int = 1                # ciphertexts in M1
     output_mode: str = "logits"
-    # "client": client compute + client-visible network cost (rounds * RTT +
-    #           bytes / bandwidth), the client-aware target;
-    # "server": server compute only (E7 ablation w/o client-aware);
-    # "e2e":    client + server + network.
+    # client：crypto HE 局部资源成本，不是 client total CPU，不加 network。
+    # server：timing v2 HE-only 局部资源成本，不是全服务器 CPU。
+    # e2e：仅同 context 的在线 wall baseline，不能 client + server + network。
     objective: str = "client"
     max_memory_mb: float | None = None
     arch: str | None = None              # key of the measured server table
@@ -195,7 +194,7 @@ class Schedule:
     bits: tuple[int, ...]
     acc: float | None          # None: this schedule was never trained
     mpc_elements: int
-    rounds: float
+    rounds: float | None
     time_ms: float | None      # the planner objective (see Profile.objective)
     bytes: int | None
     depth_ok: bool
@@ -204,6 +203,8 @@ class Schedule:
     latency_ms: float | None = None
     memory_mb: float | None = None
     memory_ok: bool = True
+    timing_basis: str | None = None
+    latency_unknown: str | None = None
 
     @property
     def hybrid_layers(self) -> int:
@@ -231,21 +232,31 @@ def evaluate(bits, layers, profile: Profile) -> Schedule:
     nbytes = cm.online_bytes(k_h, mpc, profile.input_blocks, down, up, profile.arch, bits)
     client_ms = cm.client_ms(k_h, mpc, profile.input_blocks, down, up)
     server_ms = cm.server_ms(profile.arch, bits)
-    net_ms = None
-    if nbytes is not None:
-        net_ms = rounds * profile.rtt_ms + (
-            nbytes * 8 / (profile.bandwidth_mbps * 1e3) if profile.bandwidth_mbps else 0.0)
-    latency = (None if net_ms is None or server_ms is None
-               else client_ms + server_ms + net_ms)
-    objective = {"client": None if net_ms is None else client_ms + net_ms,
-                 "server": server_ms, "e2e": latency}[profile.objective]
+    online_latency = getattr(cm, "online_latency_ms", None)
+    latency = (online_latency(profile.arch, bits, cm.device, cm.wire,
+                              profile.rtt_ms, profile.bandwidth_mbps)
+               if callable(online_latency) and profile.output_mode == "logits" else None)
+    latency_unknown = None
+    if latency is None:
+        if not callable(online_latency):
+            latency_unknown = "cost 缺 online_latency_ms 接口；禁止旧 client + server + network 回退"
+        elif profile.output_mode != "logits":
+            latency_unknown = "缺此 output_mode 的在线 wall baseline"
+        elif profile.rtt_ms != 0 or profile.bandwidth_mbps is not None:
+            latency_unknown = "需要新增 network profile 实测/校准；不支持 RTT 或带宽增量推算"
+        else:
+            latency_unknown = "缺同 device/wire 的 timing v2 loopback TCP 在线 wall baseline/context；旧缓存不可作 e2e"
+    objective = {"client": client_ms, "server": server_ms, "e2e": latency}[profile.objective]
+    timing_basis = {"client": "client_local_crypto_includes_encrypt_serialization_for_nonbaseline_not_total_CPU",
+                    "server": "server_HE_only_local_resource_not_total_CPU",
+                    "e2e": "online_wall_baseline_same_context"}[profile.objective]
     acc = (profile.accuracies or {}).get("".join(map(str, bits)))
     mem = cm.memory_mb(k_h)
     mem_ok = (profile.max_memory_mb is None
               or (mem is not None and mem <= profile.max_memory_mb))
     return Schedule(bits, acc, mpc, rounds, objective, nbytes,
                     required_depth(bits, layers) <= profile.depth_budget,
-                    client_ms, server_ms, latency, mem, mem_ok)
+                    client_ms, server_ms, latency, mem, mem_ok, timing_basis, latency_unknown)
 
 
 def layer_sensitivity(layers, profile: Profile) -> list[float] | None:
@@ -342,7 +353,8 @@ def _schedule_constraints(sch: Schedule, budget: Budget,
         "memory": sch.memory_ok,
         "mpc_elements": (budget.max_mpc_elements is None
                          or sch.mpc_elements <= budget.max_mpc_elements),
-        "rounds": budget.max_rounds is None or sch.rounds <= budget.max_rounds,
+        "rounds": budget.max_rounds is None or (
+            sch.rounds is not None and sch.rounds <= budget.max_rounds),
         "time": budget.max_time_ms is None or (
             sch.time_ms is not None and sch.time_ms <= budget.max_time_ms),
     }
@@ -416,10 +428,18 @@ def plan_result(bits, layers, profile: Profile, budget: Budget | None = None,
         "client_ms": sch.client_ms,
         "server_ms": sch.server_ms,
         "latency_ms": sch.latency_ms,
+        "timing_basis": sch.timing_basis,
+        "latency_unknown": sch.latency_unknown,
+        "forward_elapsed_ms": (cm.forward_elapsed_ms(profile.arch, bits)
+                               if callable(getattr(cm, "forward_elapsed_ms", None)) else None),
+        "mpc_elapsed_ms": (cm.mpc_elapsed_ms(sch.hybrid_layers, sch.mpc_elements)
+                           if callable(getattr(cm, "mpc_elapsed_ms", None)) else None),
         "memory_mb": sch.memory_mb,
         "r_h": cm.r_h,
         "r_h_scope": cm.r_h_scope,
-        "cost_model": {"device": cm.device, "wire": cm.wire, "provenance": cm.provenance},
+        "cost_model": {"device": cm.device, "wire": cm.wire, "provenance": cm.provenance,
+                       "timing_semantics_version": getattr(cm, "timing_semantics_version", None),
+                       "online_wall_context": getattr(cm, "online_wall_context", {})},
         "p": None if ckks is None else {
             "name": ckks.name,
             "poly_modulus_degree": ckks.poly_modulus_degree,
@@ -462,6 +482,8 @@ def main() -> int:
 
     cost = (CostModel.load(args.cost_model) if args.cost_model
             else fit(args.root, args.device, args.wire))
+    if (cost.device, cost.wire) != (args.device, args.wire):
+        raise SystemExit("cost model device/wire 与请求不一致；禁止跨 context 使用在线 wall")
     layers, accuracies, input_blocks = arch_spec(args.arch, args.root)
     profile = Profile(cost=cost, accuracies=accuracies, rtt_ms=args.rtt_ms,
                       bandwidth_mbps=args.bandwidth_mbps, input_blocks=input_blocks,

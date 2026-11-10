@@ -1,4 +1,7 @@
-"""E3: RTT sensitivity of LitePI end-to-end latency.
+"""E3：旧混合 elapsed/client/network 估计已禁用，拒绝生成有效 RTT 曲线。
+
+须新增同设备/传输的 timing v2 wall baseline 与 network profile 实测/校准。
+以下旧模型仅保留作历史来源，e2e_ms/main 均 fail closed。
 
 Key law: online rounds  R_online(s) = 2 + K_h   (K_h = number of hybrid layers).
 Each extra hybrid layer costs exactly one network round trip, plus one client
@@ -52,7 +55,10 @@ T_SERVER_HYBRID_MS = 0.0
 R_H = 1.0
 R_H_SCOPE = "protocol-target"
 R_H_SOURCE = "LitePI 协议设计 §4.1"
-
+LEGACY_TIMING_ERROR = (
+    "拒绝旧 E3 e2e 估计：hybrid/forward elapsed 尚未拆分，包含 wire/MPC 等待，"
+    "不能再与 client/network 相加。需要同 device/transport 的 timing v2 在线 wall "
+    "baseline，以及新增 network profile 实测/校准后才支持 RTT/带宽敏感性输出。")
 SEEDS = (73, 74, 75, 76, 77)
 
 # E2 采样期间有评测进程并发的种子：T_enc / T_server 被放大，不能与空载种子并表
@@ -184,12 +190,7 @@ def rounds_for(k_h: int) -> float:
 
 
 def e2e_ms(m: dict, k_h: int, rtt_ms: float, bw_mbps: float) -> float:
-    rounds = rounds_for(k_h)
-    t_client = m["T_client"] + k_h * (m["T_dec"] + m["T_enc"])
-    t_server = m["T_server"] + k_h * T_SERVER_HYBRID_MS
-    nbytes = m["S_up"] + m["S_down"] + k_h * S_HYBRID_PER_LAYER_KB * 1024.0
-    t_trans = nbytes * 8.0 / (bw_mbps * 1e6) * 1000.0
-    return t_client + t_server + rounds * rtt_ms + t_trans
+    raise SystemExit(LEGACY_TIMING_ERROR)
 
 
 def marginal_cost_ms(m: dict, rtt_ms: float, bw_mbps: float) -> float:
@@ -219,6 +220,8 @@ def main() -> None:
     ap.add_argument("--r-h", type=float, default=None,
                     help="override the measured r_h (sensitivity, e.g. 7)")
     args = ap.parse_args()
+    # 在读取旧数据、打印曲线或写文件之前拒绝污染估计。
+    raise SystemExit(LEGACY_TIMING_ERROR)
 
     root = Path(args.root)
     datasets = [d.strip() for d in args.datasets.split(",") if d.strip()]

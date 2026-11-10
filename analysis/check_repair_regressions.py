@@ -49,6 +49,25 @@ def functions_from(filename, names, **bindings):
     return namespace
 
 
+VALIDATE_FIXED_POINT = functions_from(
+    "secure_relu_net.py", ["validate_fixed_point"])["validate_fixed_point"]
+_timing_nodes = [node for node in ast.parse(
+    (HERE / "pi_server.py").read_text(encoding="utf-8")).body
+    if isinstance(node, ast.Assign) and any(isinstance(target, ast.Name)
+        and target.id in ("TIMING_SEMANTICS_VERSION", "TIMING_CONTRACT")
+        for target in node.targets)]
+_timing_namespace = {}
+exec(compile(ast.Module(body=_timing_nodes, type_ignores=[]), "timing_contract", "exec"),
+     _timing_namespace)
+TIMING_CONTRACT = _timing_namespace["TIMING_CONTRACT"]
+_mpc_nodes = [node for node in ast.parse((HERE / "pi_proto.py").read_text(encoding="utf-8")).body
+              if isinstance(node, ast.Assign) and any(isinstance(target, ast.Name)
+                  and target.id == "MPC_CONTRACT" for target in node.targets)]
+_mpc_namespace = {"K_RING": 44, "F": 8}
+exec(compile(ast.Module(body=_mpc_nodes, type_ignores=[]), "mpc_contract", "exec"), _mpc_namespace)
+MPC_CONTRACT = _mpc_namespace["MPC_CONTRACT"]
+
+
 class IdealGates:
     """Test-only shared gates. Reconstructs secrets; never used by production."""
 
@@ -83,6 +102,14 @@ class IdealGates:
             return random_bits, [x ^ y for x, y in zip(bits, random_bits)]
         return self.exchange(ctx.party, "drelu", (width, values), compute)
 
+    def wand(self, ctx, a, b):
+        def compute(left, right):
+            truth = [(x ^ u) & (y ^ v) for x, y, u, v
+                     in zip(left[0], left[1], right[0], right[1])]
+            split = [self.rng.randrange(2) for _ in truth]
+            return split, [x ^ y for x, y in zip(truth, split)]
+        return self.exchange(ctx.party, "wand", (a, b), compute)
+
     def multiply(self, ctx, x, b_self, b_other, k, self_party):
         def compute(a, b):
             assert a[0:2] == b[0:2]
@@ -103,6 +130,8 @@ class IdealGates:
                                ["_quantize", "_select_shared", "run_party_argmax",
                                 "combine_index_share"],
                                d_drelu_batch=self.drelu,
+                               d_wand_batch=self.wand,
+                               validate_fixed_point=VALIDATE_FIXED_POINT,
                                d_xorbit_mult_batch=self.multiply)
         k, f = 44, 8
         rng = random.Random(split_seed)
@@ -153,8 +182,18 @@ class ArgmaxTests(unittest.TestCase):
                 self.assertEqual(IdealGates().argmax(units),
                                  max(range(2), key=units.__getitem__))
 
+    def test_full_ring_signed_overflow_and_old_window_exceedance(self):
+        half = 1 << 43
+        cases = [[33 * 256, 0], [-33 * 256, 0], [half - 1, -half],
+                 [-half, half - 1], [-half, -half + 1], [half - 1, half - 1]]
+        for values in cases:
+            with self.subTest(values=values):
+                self.assertEqual(IdealGates().argmax(values),
+                                 max(range(len(values)), key=values.__getitem__))
+
     def test_invalid_width(self):
-        funcs = functions_from("secure_argmax.py", ["run_party_argmax", "_quantize"])
+        funcs = functions_from("secure_argmax.py", ["run_party_argmax", "_quantize"],
+                               validate_fixed_point=VALIDATE_FIXED_POINT)
         for k, f, compare in ((44, 8, 0), (44, 8, 45), (44, -1, 14)):
             with self.assertRaises(ValueError):
                 funcs["run_party_argmax"](SimpleNamespace(party=0), [], k, f, compare)
@@ -234,7 +273,8 @@ class E1EvidenceTests(unittest.TestCase):
             np=SimpleNamespace(mean=statistics.mean, max=max, sum=sum),
             WIRE_PROFILES={"baseline": SimpleNamespace(to_dict=lambda: {"name": "baseline"})},
             POLY_MODULUS_DEGREE=8192, COEFF_MOD_BIT_SIZES=[40, 21, 40],
-            GLOBAL_SCALE_BITS=21, F=8, K_RING=44, K_COMPARE=14)
+            GLOBAL_SCALE_BITS=21, F=8, K_RING=44, K_COMPARE=14,
+            TIMING_CONTRACT=TIMING_CONTRACT)
         self.evidence = self.funcs["prediction_evidence"]
         self.identity = {"checkpoint_sha256": "checkpoint-A", "sample_order_sha256": "order-A",
                          "mask_domains": None, "wire": "baseline", "mask_exact": True,
@@ -331,7 +371,8 @@ class E9GroupingTests(unittest.TestCase):
                "delay_mult": 1.0, "bandwidth_mbps": 50, "wire": {"name": "baseline"},
                "rtt_ms": 50, "loss_pct": loss, "jitter_ms": 0,
                "wall_mean_ms": p95, "wall_p95_ms": p95, "measured": True,
-               "deployment_compliant": True, "protocol_failures": []}
+               "deployment_compliant": True, "protocol_failures": [],
+               "mpc_contract": dict(MPC_CONTRACT)}
         return {**row, **overrides}
 
     def test_baselines_cannot_cross_devices_bandwidth_or_topology(self):
@@ -383,8 +424,10 @@ class E9GroupingTests(unittest.TestCase):
 
 class PlannerCLITests(unittest.TestCase):
     def test_cli_zero_time_is_a_real_budget(self):
-        fake_module = SimpleNamespace(CostModel=SimpleNamespace(load=lambda _: FakeCost()),
-                                      fit=lambda *args: FakeCost())
+        cost = FakeCost()
+        cost.device, cost.wire = "desktop", "baseline"
+        fake_module = SimpleNamespace(CostModel=SimpleNamespace(load=lambda _: cost),
+                                      fit=lambda *args: cost)
         argv = ["planner.py", "--cost-model", "unit-test.json", "--arch", "mnist",
                 "--acc-min", "0.97", "--max-time-s", "0", "--json"]
         with patch.dict(sys.modules, {"cost_model": fake_module}), patch.object(sys, "argv", argv), \
@@ -591,6 +634,7 @@ class SessionAccountingTests(unittest.TestCase):
         backend = SimpleNamespace(name="seal", new_context=new_context)
         functions = functions_from(
             "eval_hybrid_accuracy.py", ["session_eval"],
+            MPC_CONTRACT=MPC_CONTRACT,
             make_backend=lambda _: backend, WIRE_PROFILES={"baseline": object()},
             socket=SimpleNamespace(create_server=lambda *a: Connection(),
                                    create_connection=lambda *a, **kw: Connection()),
@@ -646,6 +690,204 @@ class NativeProvenanceTests(unittest.TestCase):
                             sys=SimpleNamespace(modules={}), EXTENSION_SUFFIXES=[".so"], Path=Path,
                             file_sha256=lambda path: "a" * 64)
         self.assertEqual(fn["native_identity"](SimpleNamespace(ts=package)), {"_tenseal_cpp": "a" * 64})
+
+
+class FixedPointBridgeTests(unittest.TestCase):
+    def test_fractional_bits_mismatch_is_rejected_before_setup(self):
+        fn = functions_from("pi_client.py", ["adopt_wire"],
+                            MPC_CONTRACT=MPC_CONTRACT, ProtocolError=RuntimeError)["adopt_wire"]
+        contract = {**MPC_CONTRACT, "fractional_bits": 9}
+        with self.assertRaises(RuntimeError):
+            fn(None, {"profile": {"mpc_contract": contract}})
+        fn(None, {"profile": {"mpc_contract": MPC_CONTRACT}})
+
+    def test_relu_uses_full_width_with_legacy_hint(self):
+        seen = []
+        funcs = functions_from("secure_relu_net.py", ["d_secure_relu_batch"],
+            d_drelu_batch=lambda ctx, values, width: seen.append(width) or [1] * len(values),
+            d_xorbit_mult_batch=lambda ctx, x, *args, **kw: [0] * len(x))
+        funcs["d_secure_relu_batch"](SimpleNamespace(party=0), [33 * 256], 44, 14)
+        self.assertEqual(seen, [44])
+
+    def test_real_bridge_exact_at_edges_and_old_centering_counterexample(self):
+        from queue import Queue
+        channel = Queue()
+        funcs = functions_from("secure_relu_net.py", ["d_finalize_batch"],
+            secrets=SimpleNamespace(randbelow=lambda half: self.rho),
+            _pack=lambda items: items, _unpack=lambda value, n: value,
+            _enc=lambda value, k: value, _dec=lambda value, k: value)
+        k, f = 44, 8
+        half, mod = 1 << (k - 1), 1 << k
+        ctx_c = SimpleNamespace(party=1, chan=SimpleNamespace(send=channel.put))
+        ctx_s = SimpleNamespace(party=0, chan=SimpleNamespace(recv=channel.get))
+        for y in (0, 1, 33 * 256, half - 2, half - 1):
+            for rho in (0, 1, half // 2, half - 1):
+                for share in (0, half - 1, half, mod - 1):
+                    self.rho = rho
+                    c = funcs["d_finalize_batch"](ctx_c, [(y - share) % mod], k, f)[0]
+                    s = funcs["d_finalize_batch"](ctx_s, [share], k, f)[0]
+                    self.assertEqual(c + s, y / (1 << f))
+        # Old independent centering loses a modulus, even for a tiny valid y.
+        center = lambda x: x - mod if x >= half else x
+        self.assertEqual(center(half) + center(half + 1), 1 - mod)
+        self.assertNotEqual(center(half) + center(half + 1), 1)
+
+    def test_bridge_capability_and_parameter_fail_closed(self):
+        funcs = functions_from("sci_relu.py", ["require_real_bridge", "validate_ring_parameters"])
+        for module in (None, SimpleNamespace(), SimpleNamespace(REAL_BRIDGE_VERSION=1)):
+            with self.assertRaises(RuntimeError):
+                funcs["require_real_bridge"](module)
+        funcs["require_real_bridge"](SimpleNamespace(REAL_BRIDGE_VERSION=1,
+            SecureReLU=SimpleNamespace(relu_real=lambda *args: None)))
+        for f, k in ((8, 64), (-1, 44), (44, 44), (8, True), (False, 44)):
+            with self.assertRaises(ValueError):
+                funcs["validate_ring_parameters"](f, k)
+
+    def test_adapter_calls_real_bridge_not_centered_ring_output(self):
+        node = next(n for n in ast.parse((HERE / "sci_relu.py").read_text(encoding="utf-8")).body
+                    if isinstance(n, ast.ClassDef) and n.name == "SciReLUSession")
+        method = next(n for n in node.body if isinstance(n, ast.FunctionDef) and n.name == "relu")
+        namespace = {"np": SimpleNamespace(asarray=lambda values, **kw: values, float64=float),
+                     "quantize_to_ring": lambda values, f, k: values}
+        exec(compile(ast.Module(body=[method], type_ignores=[]), "adapter", "exec"), namespace)
+        calls = []
+        instance = SimpleNamespace(_sci=SimpleNamespace(
+            relu_real=lambda ring, k, f: calls.append((ring, k, f)) or [2.0]))
+        self.assertEqual(namespace["relu"](instance, [1.0], 8, 44), [2.0])
+        self.assertEqual(calls, [([1.0], 44, 8)])
+
+
+class TimingContractTests(unittest.TestCase):
+    def cost(self, **changes):
+        from dataclasses import dataclass, field, asdict
+        tree = ast.parse((HERE / "cost_model.py").read_text(encoding="utf-8"))
+        cls = next(n for n in tree.body if isinstance(n, ast.ClassDef) and n.name == "CostModel")
+        ns = {"__name__": __name__, "dataclass": dataclass, "field": field, "asdict": asdict,
+              "math": math, "Path": Path, "json": json}
+        module = ast.Module(body=[ast.ImportFrom(module="__future__",
+            names=[ast.alias(name="annotations")], level=0), cls], type_ignores=[])
+        ast.fix_missing_locations(module)
+        exec(compile(module, "cost_model", "exec"), ns)
+        params = {"device": "desktop", "wire": "baseline", "t_enc_input_ms": 1,
+            "t_dec_ms": 2, "t_reenc_ms": 3, "t_mpc_fixed_ms": 1000,
+            "t_mpc_per_elem_ms": 100, "t_server_base_ms": 900,
+            "t_server_per_hybrid_ms": 800, "bytes_m1": 0, "bytes_m3": 0,
+            "bytes_down_hybrid": 0, "bytes_up_hybrid": 0, "bytes_per_elem_ot": 0,
+            "bytes_keys": 0, "r_h": 1, "r_h_scope": "test-only",
+            "mem_base_mb": 1, "mem_per_hybrid_mb": 0,
+            "t_server_table_ms": {"mnist": {"1": 5000}}}
+        return ns["CostModel"](**(params | changes))
+
+    def test_legacy_forward_never_becomes_server_compute(self):
+        cm = self.cost()
+        self.assertEqual(cm.forward_elapsed_ms("mnist", (1,)), 5000)
+        self.assertIsNone(cm.server_ms("mnist", (1,)))
+        self.assertIsNone(cm.online_latency_ms("mnist", (1,), "desktop", "baseline", 0, None))
+        self.assertEqual(cm.client_ms(1, 20), 1 + 2 + 2 + 3)
+        self.assertEqual(cm.mpc_elapsed_ms(1, 20), 3000)
+
+    def test_wall_is_counted_once_and_wrong_context_is_unknown(self):
+        context = {"device": "desktop", "wire": "baseline", "transport": "loopback_tcp",
+                   "rtt_ms": 0, "bandwidth_mbps": None, "scope": "online_query_through_STAT"}
+        cm = self.cost(timing_semantics_version=2, server_he_table_ms={"mnist": {"1": 12}},
+                       online_wall_table_ms={"mnist": {"1": 70}}, online_wall_context=context)
+        profile = P.Profile(cm, {"1": 0.9}, rtt_ms=0, objective="e2e", arch="mnist")
+        sch = P.evaluate((1,), [P.Layer("hidden", 4)], profile)
+        self.assertEqual(sch.latency_ms, 70)
+        self.assertEqual(sch.time_ms, 70)
+        self.assertEqual(sch.server_ms, 12)
+        self.assertNotEqual(sch.latency_ms, sch.client_ms + sch.server_ms)
+        self.assertIsNone(cm.online_latency_ms("mnist", (1,), "pi5", "baseline", 0, None))
+        self.assertIsNone(cm.online_latency_ms("mnist", (1,), "desktop", "baseline", 1, None))
+        self.assertIsNone(cm.online_latency_ms("mnist", (1,), "desktop", "baseline", 0, 50))
+        self.assertIsNone(P.evaluate((1,), [P.Layer("hidden", 4)],
+                         P.Profile(cm, {"1": 0.9}, rtt_ms=50, objective="e2e", arch="mnist")).time_ms)
+
+    def test_server_he_timer_excludes_interactive_wait(self):
+        class Vec(list):
+            def __neg__(self): return Vec([-value for value in self])
+            def tolist(self): return list(self)
+        def run(wait):
+            clock = SimpleNamespace(value=0.0)
+            def elapsed(seconds, result):
+                clock.value += seconds
+                return result
+            be = SimpleNamespace(slot_count=lambda ct: 1,
+                encrypt_like=lambda *args: elapsed(3, "enc"),
+                add_cipher=lambda *args: elapsed(2, "sum"),
+                serialize=lambda ct: elapsed(5, b"cipher"),
+                deserialize=lambda *args: elapsed(5, "ct"))
+            wire = SimpleNamespace(send=lambda *args: elapsed(wait, None),
+                                   recv=lambda *args: elapsed(wait, (b"CTXT", b"\x00share")))
+            fn = functions_from("pi_server.py", ["hybrid_relu_server"],
+                time=SimpleNamespace(perf_counter=lambda: clock.value),
+                np=SimpleNamespace(asarray=lambda values, **kw: Vec(values), float64=float),
+                ProtocolError=RuntimeError, _obf_align=lambda be, wire, ct, tag: ct,
+                _shrink=lambda be, wire, ct, tag: ct, draw_mask=lambda n: Vec([0]),
+                _dbg=lambda *args: None, K_RING=44, K_COMPARE=14, F=8,
+                run_party_batch=lambda *args: elapsed(wait, Vec([0])), ots_per_relu=lambda: 87)
+            timings = {key: 0 for key in ("hybrid_wire_sends", "hybrid_wire_recvs", "mpc_s",
+                                          "mpc_elements", "base_ots")}
+            fn["hybrid_relu_server"](be, None, "ct", wire, None, timings)
+            return timings, clock.value
+        fast, fast_wall = run(1)
+        slow, slow_wall = run(100)
+        self.assertEqual(fast["server_he_compute_s"], 10)
+        self.assertEqual(slow["server_he_compute_s"], 10)
+        self.assertEqual(slow["mpc_s"], 100)
+        self.assertGreater(slow_wall, fast_wall)
+
+    def test_index_round_cost_remains_unknown_not_one_extra_round(self):
+        cm = self.cost()
+        self.assertIsNone(cm.rounds(1, "index"))
+        profile = P.Profile(cm, {"1": 0.9}, rtt_ms=0, output_mode="index", arch="mnist")
+        plan = P.plan_result((1,), [P.Layer("hidden", 4)], profile, P.Budget(max_rounds=1000))
+        self.assertIsNone(plan["rounds"])
+        self.assertFalse(plan["feasible"])
+
+    def test_argmax_and_python_ot_cannot_calibrate_sci_relu_rounds(self):
+        fn = functions_from("netem_e2e.py", ["validate_round_record"])["validate_round_record"]
+        record = {"mpc_contract": MPC_CONTRACT, "backend": "seal", "output_mode": "logits",
+                  "measured": True, "schedule": "11", "mpc_runtime": "litepi_sci",
+                  "points": [{"mpc_contract": MPC_CONTRACT, "mpc_runtime": "litepi_sci",
+                              "client_timings": [{"mpc_s": 1.0}]}]}
+        fn(record, MPC_CONTRACT)
+        for override in ({"output_mode": "index"}, {"mpc_runtime": "python"}, {"backend": "stub"}):
+            with self.assertRaises(ValueError):
+                fn(record | override, MPC_CONTRACT)
+
+    def test_contract_status_does_not_certify_legacy_rounds(self):
+        from tempfile import TemporaryDirectory
+        with TemporaryDirectory() as folder:
+            root = Path(folder)
+            rounds = root / "results" / "rounds"
+            rounds.mkdir(parents=True)
+            (rounds / "r_h_old.json").write_text(json.dumps(
+                {"r_h_measured": 6.025, "scope": "end-to-end"}), encoding="utf-8")
+            fn = functions_from("protocol_contract.py", ["_r_h_status"],
+                Path=Path, __file__=str(root / "analysis" / "protocol_contract.py"))["_r_h_status"]
+            with patch.dict(sys.modules, {"pi_proto": SimpleNamespace(MPC_CONTRACT=MPC_CONTRACT)}):
+                self.assertFalse(fn()[0])
+                (rounds / "r_h_new.json").write_text(json.dumps(
+                    {"r_h_measured": 7.1, "scope": "end-to-end", "mpc_contract": MPC_CONTRACT}), encoding="utf-8")
+                self.assertTrue(fn()[0])
+
+    def test_new_round_contract_never_reuses_old_round_measurement(self):
+        from tempfile import TemporaryDirectory
+        import glob
+        fn = functions_from("cost_model.py", ["load_r_h"],
+                            glob=glob, json=json, math=math, Path=Path)["load_r_h"]
+        with TemporaryDirectory() as folder:
+            root = Path(folder)
+            rounds = root / "results" / "rounds"
+            rounds.mkdir(parents=True)
+            (rounds / "r_h_legacy.json").write_text(json.dumps(
+                {"r_h_measured": 6.025, "scope": "end-to-end"}), encoding="utf-8")
+            with self.assertRaises(ValueError):
+                fn(root, MPC_CONTRACT)
+            (rounds / "r_h_new.json").write_text(json.dumps(
+                {"r_h_measured": 7.1, "scope": "end-to-end", "mpc_contract": MPC_CONTRACT}), encoding="utf-8")
+            self.assertEqual(fn(root, MPC_CONTRACT)[:2], (7.1, "end-to-end"))
 
 
 if __name__ == "__main__":

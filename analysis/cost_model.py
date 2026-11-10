@@ -38,7 +38,7 @@ class CostModel:
     t_reenc_ms: float             # per ②_k
     t_mpc_fixed_ms: float         # per hybrid layer
     t_mpc_per_elem_ms: float      # per ReLU element
-    # server (ms) per schedule bit pattern, desktop; fallback linear model
+    # 历史 server forward elapsed 拟合，仅展示；不是 compute，不作回退
     t_server_base_ms: float
     t_server_per_hybrid_ms: float
     # bytes per message (online) and per session (keys)
@@ -64,6 +64,10 @@ class CostModel:
     # M3 and of each ①_k depends on the schedule, so one per-message constant
     # overstates HE-only (1.70 MB instead of the measured 1.18 MB).
     wire_bytes_table: dict = field(default_factory=dict)
+    timing_semantics_version: int | None = None
+    server_he_table_ms: dict = field(default_factory=dict)
+    online_wall_table_ms: dict = field(default_factory=dict)
+    online_wall_context: dict = field(default_factory=dict)
 
     # ------------------------------------------------------------- helpers
     # Deep nets send several ciphertexts per message: input_blocks for M1,
@@ -71,18 +75,46 @@ class CostModel:
     # canonical one-ciphertext messages.
     def client_ms(self, hybrid_layers: int, elements: int, input_blocks: int = 1,
                   down_blocks: int | None = None, up_blocks: int | None = None) -> float:
+        """客户端局部加解密成本；非 baseline 含加密序列化，不含 MPC 或总 CPU。"""
         down = hybrid_layers if down_blocks is None else down_blocks
         up = hybrid_layers if up_blocks is None else up_blocks
         return (input_blocks * self.t_enc_input_ms + self.t_dec_ms
-                + down * self.t_dec_ms + up * self.t_reenc_ms
-                + hybrid_layers * self.t_mpc_fixed_ms
-                + elements * self.t_mpc_per_elem_ms)
+                + down * self.t_dec_ms + up * self.t_reenc_ms)
+
+    def mpc_elapsed_ms(self, hybrid_layers: int, elements: int) -> float:
+        """历史 MPC 交互 elapsed 拟合，仅展示，不能作为局部 CPU 或与 wall 相加。"""
+        return hybrid_layers * self.t_mpc_fixed_ms + elements * self.t_mpc_per_elem_ms
 
     def server_ms(self, arch: str | None, bits) -> float | None:
-        """Measured forward time of this schedule, None when it never ran."""
+        """仅 timing v2 的服务器局部 HE 成本；旧 forward 不作 compute 回退。"""
+        if self.timing_semantics_version != 2:
+            return None
+        table = (self.server_he_table_ms or {}).get(arch) if arch else None
+        value = (table or {}).get("".join(str(int(b)) for b in bits))
+        return (float(value) if isinstance(value, (int, float))
+                and math.isfinite(value) and value >= 0 else None)
+
+    def forward_elapsed_ms(self, arch: str | None, bits) -> float | None:
+        """历史服务器 forward elapsed，仅展示，包含 wire/MPC 等待。"""
         table = (self.t_server_table_ms or {}).get(arch) if arch else None
         value = (table or {}).get("".join(str(int(b)) for b in bits))
         return None if value is None else float(value)
+
+    def online_latency_ms(self, arch: str | None, bits, device: str, wire: str,
+                          rtt_ms: float, bandwidth_mbps: float | None) -> float | None:
+        """仅同设备/线格式的 loopback TCP 在线 wall baseline；不发明网络增量。"""
+        context = {"device": "desktop", "wire": self.wire, "transport": "loopback_tcp",
+                   "rtt_ms": 0, "bandwidth_mbps": None,
+                   "scope": "online_query_through_STAT"}
+        if (self.timing_semantics_version != 2 or device != self.device
+                or device != "desktop" or wire != self.wire
+                or rtt_ms != 0 or bandwidth_mbps is not None
+                or self.online_wall_context != context):
+            return None
+        table = (self.online_wall_table_ms or {}).get(arch) if arch else None
+        value = (table or {}).get("".join(str(int(b)) for b in bits))
+        return (float(value) if isinstance(value, (int, float))
+                and math.isfinite(value) and value >= 0 else None)
 
     def online_bytes(self, hybrid_layers: int, elements: int, input_blocks: int = 1,
                      down_blocks: int | None = None, up_blocks: int | None = None,
@@ -105,8 +137,12 @@ class CostModel:
         return int(input_blocks * self.bytes_m1 + self.bytes_m3
                    + down * self.bytes_down_hybrid + up * self.bytes_up_hybrid + ot)
 
-    def rounds(self, hybrid_layers: int, output_mode: str = "logits") -> float:
-        return 2 + hybrid_layers * self.r_h + int(output_mode == "index")
+    def rounds(self, hybrid_layers: int, output_mode: str = "logits") -> float | None:
+        # Argmax has its own interactive comparisons; one extra control-plane
+        # message is not a valid estimate of mode B's end-to-end rounds.
+        if output_mode != "logits":
+            return None
+        return 2 + hybrid_layers * self.r_h
 
     def memory_mb(self, hybrid_layers: int) -> float | None:
         if self.mem_per_hybrid_mb is None:
@@ -218,7 +254,20 @@ def validate_e1_records(records: list[dict], wire: str = "baseline",
                 paired_rows(d)  # validate actual saved logits, not just prediction field types
             except ValueError as exc:
                 raise ValueError(f"{source}: invalid paired evidence: {exc}") from exc
-        signature = ({key: identity[key] for key in protocol_keys} if version == 2 else
+        timing_contract = d.get("timing_contract")
+        if timing_contract is not None:
+            if (not isinstance(timing_contract, dict)
+                    or timing_contract.get("timing_semantics_version") != 2
+                    or d.get("timing_semantics_version") != 2
+                    or identity.get("timing_contract") != timing_contract):
+                raise ValueError(f"{source}: timing contract 顶层/身份/版本不一致")
+        elif identity.get("timing_contract") is not None:
+            raise ValueError(f"{source}: 顶层缺 timing contract")
+        if d.get("mpc_contract") != identity.get("mpc_contract"):
+            raise ValueError(f"{source}: MPC contract 顶层/身份不一致")
+        signature = ({**{key: identity[key] for key in protocol_keys},
+                      "mpc_contract": identity.get("mpc_contract"),
+                      "timing_contract": timing_contract} if version == 2 else
                      {"params": d.get("params"), "wire": record_wire,
                       "mask_exact": d.get("mask_exact"), "identity_unverified": True})
         if protocol is not None and signature != protocol:
@@ -254,8 +303,16 @@ def validate_e1_records(records: list[dict], wire: str = "baseline",
                         or sample.get("pred", sample["cipher_pred"]) != sample["cipher_pred"]):
                     raise ValueError(f"{source}: 行 {index} 缺有效配对样本身份/预测")
                 seen_ids.add(sample_id)
+            if sample.get("timing_semantics_version") not in (None, 2):
+                raise ValueError(f"{source}: 行 {index} 的 timing 版本无效")
+            for key in ("server_he_compute_s", "server_mpc_interactive_s", "client_mpc_interactive_s"):
+                value = sample.get(key)
+                if value is not None and (not isinstance(value, (int, float))
+                                          or not math.isfinite(value) or value < 0):
+                    raise ValueError(f"{source}: 行 {index} 的 {key} 无效")
             rows.append({**sample, "dataset": dataset, "schedule": tag,
-                         "k_h": k_h, "elements": elements, "_source": source})
+                         "k_h": k_h, "elements": elements, "_source": source,
+                         "_timing_contract": timing_contract if version == 2 else None})
         protocol, status = signature, current_status
         accepted.append(d)
     provenance = {"status": status, "protocol_identity": protocol,
@@ -404,11 +461,20 @@ def _e2_memory_by_kh(root: Path, folder: str) -> tuple[float | None, float | Non
     return float(base), float(slope), f"{folder}: fit over K_h={ks}"
 
 
-def load_r_h(root: Path) -> tuple[float, str, str]:
-    """返回 (r_h, scope, source)；优先端到端来源，协议目标回退明确标为未测。"""
+def load_r_h(root: Path, mpc_contract: dict | None = None) -> tuple[float, str, str]:
+    """返回 (r_h, scope, source)。
+
+    None 保留显式 legacy 的选择/未测目标回退；合同模式仅接受相同合同的
+    end-to-end 实测轮数，缺失时必须补测 netem/SCI，不能回退旧轮数或 1.0。
+    """
     best = None
-    for f in sorted(glob.glob(str(root / "results/rounds/r_h_*.json"))):
+    files = glob.glob(str(root / "results/rounds/r_h_*.json"))
+    files += glob.glob(str(root / "results/rounds/newr_h_netem_*_mpcv2.json"))
+    for f in sorted(files):
         d = json.loads(Path(f).read_text(encoding="utf-8"))
+        if mpc_contract is not None and (
+                d.get("mpc_contract") != mpc_contract or d.get("scope") != "end-to-end"):
+            continue
         r = d.get("r_h_measured")
         if (not isinstance(r, (int, float)) or not math.isfinite(r) or r < 0
                 or d.get("partial") or d.get("error") or d.get("measured") is False):
@@ -420,6 +486,10 @@ def load_r_h(root: Path) -> tuple[float, str, str]:
         if best is None or cand[0] > best[0] or (cand[0] == best[0] and cand[1] > best[1]):
             best = cand
     if best is None:
+        if mpc_contract is not None:
+            raise ValueError(f"缺少相同 mpc_contract={mpc_contract!r} 的有效 end-to-end 轮数；"
+                             "需要新的 netem/SCI 实测（包括 BOB->ALICE 重分享消息），"
+                             "旧 rounds 不能作为新协议实测，也不回退 r_h=1.0")
         return 1.0, "protocol-target", "LitePI 协议设计 §4.1 (r_h=1, not measured)"
     return best[1], best[2], best[3]
 
@@ -464,7 +534,8 @@ def fit(root: Path = ROOT, device: str = "desktop", wire: str = "baseline",
     dec = st.mean(r["decrypt_s"] / (1 + r["k_h"]) for r in rows) * 1e3
     reenc = st.mean(r["reencrypt_s"] / r["k_h"] for r in hyb) * 1e3
     A = np.array([[r["k_h"], r["elements"]] for r in hyb], dtype=float)
-    y = np.array([r["mpc_s"] * 1e3 for r in hyb])
+    y = np.array([(r["client_mpc_interactive_s"] if r.get("client_mpc_interactive_s") is not None
+                   else r["mpc_s"]) * 1e3 for r in hyb])
     if np.linalg.matrix_rank(A) < 2:
         raise SystemExit("完整 hybrid SCI 记录的 K_h/elements 不足以辨识两参数 MPC 模型")
     (mpc_fixed, mpc_elem), *_ = np.linalg.lstsq(A, y, rcond=None)
@@ -483,6 +554,23 @@ def fit(root: Path = ROOT, device: str = "desktop", wire: str = "baseline",
     server_table: dict[str, dict] = {}
     for ds, scheds in by_ds.items():
         server_table[ds] = {s: float(st.mean(v)) for s, v in sorted(scheds.items())}
+    # 追加独立局部 HE / 在线 wall 表；保留上面的历史 forward 展示表。
+    he_table, wall_table = {}, {}
+    wall_context = {"device": "desktop", "wire": wire, "transport": "loopback_tcp",
+                    "rtt_ms": 0, "bandwidth_mbps": None, "scope": "online_query_through_STAT"}
+    timing_groups = {}
+    for r in rows:
+        timing_groups.setdefault((r["dataset"], str(r["schedule"])), []).append(r)
+    for (ds, tag), samples in timing_groups.items():
+        if not all(r.get("timing_semantics_version") == 2
+                   and (r.get("_timing_contract") or {}).get("timing_semantics_version") == 2
+                   for r in samples):
+            continue
+        if all(r.get("server_he_compute_s") is not None for r in samples):
+            he_table.setdefault(ds, {})[tag] = st.mean(r["server_he_compute_s"] for r in samples) * 1e3
+        if device == "desktop" and all(
+                r["_timing_contract"].get("online_wall_context") == wall_context for r in samples):
+            wall_table.setdefault(ds, {})[tag] = st.mean(r["wall_s"] for r in samples) * 1e3
     mid_rows = _mid_rows(root)
     mid: dict[str, list[float]] = {}
     for r in mid_rows:
@@ -497,12 +585,16 @@ def fit(root: Path = ROOT, device: str = "desktop", wire: str = "baseline",
         "measured": False,
         "evidence_kind": "modeled_from_measured_records",
         "client_crypto": f"E1 {series['status']} 精确 suffix={series['e1_suffix']}，n={len(rows)} (desktop)",
-        "mpc_fit": f"mpc_ms = {mpc_fixed:.3f}*K_h + {mpc_elem:.5f}*elements "
-                   f"(lstsq over {len(hyb)} hybrid samples)",
-        "server": "同一 E1 系列 forward_s 按 (dataset, schedule) 均值；未运行调度无服务器时间。"
-                  "forward_s 包含服务器在 hybrid 层等待客户端的时间，不是纯服务器计算",
-        "timing_boundary": "这是从实测记录拟合的 model，不是端到端实测；forward_s 的客户端等待"
-                           "与 client/MPC 成本可能重叠，不能相加后声称端到端实测",
+        "mpc_fit": f"mpc_elapsed_ms = {mpc_fixed:.3f}*K_h + {mpc_elem:.5f}*elements "
+                   f"(lstsq over {len(hyb)} hybrid samples；新字段取 client interactive，legacy 取 server mpc_s；仅展示)",
+        "server": "timing v2 server_he_compute_s 按 (dataset, schedule) 均值；HE-only 局部成本，不是全服务器 CPU。"
+                  "旧 forward 表仅 forward_elapsed_ms 展示，含 wire/MPC 等待，不作 compute 回退",
+        "timing_boundary": "client_ms 为局部加解密成本（非 baseline 含加密序列化），不是 client total CPU；server_ms 仅局部 HE。"
+                           "forward_s 是 elapsed not compute；任何局部项或 MPC elapsed 均不与 wall/network 相加",
+        "online_wall": "仅 desktop 同 wire、transport=loopback TCP、rtt_ms=0、bandwidth_mbps=None 的"
+                       "online_query_through_STAT wall baseline；不使用 E2 device 缩放，不发明 RTT/带宽增量。"
+                       "RTT=0 表示此本机基准未附加链路延迟，不表示物理 TCP RTT 恰为零；其他 context 必须实测/校准",
+        "timing_contract": series["protocol_identity"].get("timing_contract"),
     }
     if mid:
         prov["conv3_server"] = "legacy 独立架构：eval_deep_accuracy.py 的 mid 记录；非本次 schema2 canonical 测量"
@@ -523,7 +615,7 @@ def fit(root: Path = ROOT, device: str = "desktop", wire: str = "baseline",
         prov["device_scale"] = (f"{device}/desktop T_enc ratio {scale:.2f} (E2 HE-only); "
                                 "MPC scaled-from-desktop until hybrid runs on "
                                 f"{device} exist")
-    r_h, scope, r_src = load_r_h(root)
+    r_h, scope, r_src = load_r_h(root, series["protocol_identity"].get("mpc_contract"))
     prov["r_h"] = f"{r_src} (scope: {scope})"
     wb = _wire_bytes(root, wire)
     if wb is None:
@@ -551,6 +643,9 @@ def fit(root: Path = ROOT, device: str = "desktop", wire: str = "baseline",
         r_h=r_h, r_h_scope=scope,
         mem_base_mb=float(mem or 0.0), mem_per_hybrid_mb=mem_hyb,
         provenance=prov, t_server_table_ms=server_table,
+        timing_semantics_version=2 if he_table or wall_table else None,
+        server_he_table_ms=he_table, online_wall_table_ms=wall_table,
+        online_wall_context=wall_context if wall_table else {},
     )
 
 

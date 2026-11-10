@@ -74,9 +74,9 @@ from params_pi import (
     K_RING,
     POLY_MODULUS_DEGREE,
 )
-from pi_proto import WIRE_PROFILES, ProtocolError, Wire, make_backend
+from pi_proto import MPC_CONTRACT, WIRE_PROFILES, ProtocolError, Wire, make_backend
 from pi_client import adopt_wire, ciphertext_loop, send_input, upload_context
-from pi_server import serve_connection
+from pi_server import TIMING_CONTRACT, serve_connection
 from secure_relu_net import run_party_batch
 from sci_relu import SCI_AVAILABLE, SciReLUSession, sci_bytes
 
@@ -211,6 +211,14 @@ def run_identity(args, model, sample_ids, test_size: int, domains, backend) -> d
         raise ValueError("cannot identify the selected HE native extension; refuse untraceable run")
     return {
         "schema_version": SCHEMA_VERSION,
+        "mpc_contract": dict(MPC_CONTRACT),
+        "timing_contract": {
+            **TIMING_CONTRACT,
+            "online_wall_context": {
+                "device": "desktop", "wire": args.wire, "transport": "loopback_tcp",
+                "rtt_ms": 0, "bandwidth_mbps": None, "scope": "online_query_through_STAT",
+            },
+        },
         "dataset": args.dataset, "schedule": "".join(map(str, args.schedule)),
         "training_seed": args.seed, "sample_seed": args.sample_seed,
         "sampler": "numpy.default_rng.permutation", "numpy_version": np.__version__,
@@ -380,6 +388,7 @@ def session_eval(be, model, test, dataset: str, rows: list[dict], n: int,
             "backend": be.name,
             "persistent": True,
             "reuse_context": False,
+            "mpc_contract": dict(MPC_CONTRACT),
             "output_mode": "logits",
         }
         wire.send_json(b"INIT", init)
@@ -441,6 +450,7 @@ def session_eval(be, model, test, dataset: str, rows: list[dict], n: int,
             logits = got[: model.spec.classes]
             evidence = prediction_evidence(label, ref, logits)
             err = evidence["max_abs_err"]
+            server_timings = stats.get("timings") or {}
             row = {
                 "index": int(index),
                 "sample_id": int(state["sample_ids"][index]),
@@ -448,11 +458,16 @@ def session_eval(be, model, test, dataset: str, rows: list[dict], n: int,
                     np.asarray(prepared, dtype="<f8").tobytes(order="C")).hexdigest(),
                 **evidence,
                 "wall_s": round(wall_s, 4),
-                "forward_s": float(stats["timings"]["forward_s"]),
-                "mpc_s": float(stats["timings"]["mpc_s"]),
-                "encrypt_s": round(q["encrypt_input_s"], 6),
-                "decrypt_s": round(q["decrypt_s"], 6),
-                "reencrypt_s": round(q["reencrypt_s"], 6),
+                "timing_semantics_version": stats.get("timing_semantics_version"),
+                "server_he_compute_s": server_timings.get("server_he_compute_s"),
+                "server_mpc_interactive_s": server_timings.get("mpc_s"),
+                "client_mpc_interactive_s": q.get("mpc_s"),
+                "forward_s": server_timings.get("forward_s"),
+                "forward_timing_scope": TIMING_CONTRACT["forward_s"],
+                "mpc_s": server_timings.get("mpc_s"),
+                "encrypt_s": round(q["encrypt_input_s"], 6) if q.get("encrypt_input_s") is not None else None,
+                "decrypt_s": round(q["decrypt_s"], 6) if q.get("decrypt_s") is not None else None,
+                "reencrypt_s": round(q["reencrypt_s"], 6) if q.get("reencrypt_s") is not None else None,
                 "up_bytes": up_wire + up_sci,
                 "down_bytes": down_wire + down_sci,
                 "up_wire_bytes": up_wire,
@@ -468,8 +483,8 @@ def session_eval(be, model, test, dataset: str, rows: list[dict], n: int,
             acc = sum(1 for r in rows if r["pred"] == r["label"]) / done
             print(f"  {done}/{n} idx={index} pred={row['pred']} "
                   f"label={row['label']} acc={acc:.4f} err={err:.2e} "
-                  f"wall={wall_s:.2f}s fwd={row['forward_s']:.2f}s "
-                  f"mpc={row['mpc_s']:.3f}s", flush=True)
+                  f"wall={wall_s:.2f}s fwd_elapsed={row['forward_s']}s "
+                  f"mpc_elapsed={row['mpc_s']}s", flush=True)
             if done % FLUSH_EVERY == 0 and done < n:
                 flush_cb()
 
@@ -499,11 +514,18 @@ def build_payload(args, rows: list[dict], n: int, model, test_size: int,
     errs = [r["max_abs_err"] for r in rows]
     rels = [r.get("rel_err", 0.0) for r in rows]
     walls = [r["wall_s"] for r in rows]
-    fwds = [r["forward_s"] for r in rows]
-    mpcs = [r["mpc_s"] for r in rows]
-    encs = [r["encrypt_s"] for r in rows]
-    decs = [r["decrypt_s"] for r in rows]
-    reencs = [r["reencrypt_s"] for r in rows]
+    def complete_timings(key):
+        values = [r.get(key) for r in rows]
+        return values if all(value is not None for value in values) else []
+
+    fwds = complete_timings("forward_s")
+    mpcs = complete_timings("mpc_s")
+    encs = complete_timings("encrypt_s")
+    decs = complete_timings("decrypt_s")
+    reencs = complete_timings("reencrypt_s")
+    he_compute = complete_timings("server_he_compute_s")
+    server_mpc = complete_timings("server_mpc_interactive_s")
+    client_mpc = complete_timings("client_mpc_interactive_s")
     # Rows from before the SCI accounting (--resume) have ciphertext bytes only.
     counted = [r for r in rows if "up_sci_bytes" in r]
     ups = [r["up_bytes"] for r in counted]
@@ -516,6 +538,9 @@ def build_payload(args, rows: list[dict], n: int, model, test_size: int,
         "experiment": "E1",
         "schema_version": SCHEMA_VERSION,
         "run_identity": state["run_identity"],
+        "mpc_contract": state["run_identity"].get("mpc_contract"),
+        "timing_semantics_version": (state["run_identity"].get("timing_contract") or {}).get("timing_semantics_version"),
+        "timing_contract": state["run_identity"].get("timing_contract"),
         "checkpoint_sha256": state["run_identity"]["checkpoint_sha256"],
         "sampling": {"sample_seed": args.sample_seed,
                      "sample_id_definition": "index in unshuffled load_test_set output",
@@ -560,10 +585,14 @@ def build_payload(args, rows: list[dict], n: int, model, test_size: int,
             "forward_mean": float(np.mean(fwds)) if fwds else None,
             "forward_max": float(np.max(fwds)) if fwds else None,
             "mpc_mean": float(np.mean(mpcs)) if mpcs else None,
+            "server_he_compute_mean": float(np.mean(he_compute)) if he_compute else None,
+            "server_mpc_interactive_mean": float(np.mean(server_mpc)) if server_mpc else None,
+            "client_mpc_interactive_mean": float(np.mean(client_mpc)) if client_mpc else None,
+            "forward_timing_scope": TIMING_CONTRACT["forward_s"],
             "encrypt_mean": float(np.mean(encs)) if encs else None,
             "decrypt_mean": float(np.mean(decs)) if decs else None,
             "reencrypt_mean": float(np.mean(reencs)) if reencs else None,
-            "online_total_s": round(float(np.sum(walls)), 3) if walls else 0.0,
+            "online_total_s": round(float(np.sum(walls)), 3) if walls else None,
         },
         "communication": {
             "S_up_bytes_mean": float(np.mean(ups)) if ups else None,

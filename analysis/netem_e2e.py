@@ -1,4 +1,4 @@
-"""E3 / E9 end-to-end under tc/netem, and the end-to-end r_h it implies.
+"""E3 / E9 tc/netem 端到端测量；r_h 仅绑定当前 MPC 合同（含 SCI 内部轮数）。
 
 E3 and E9 were analytic models (T = C + R*RTT ...).  This driver measures the
 same quantities on the wire: a LitePI server runs on the desktop
@@ -23,9 +23,13 @@ those RTTs to the hybrid layers.  fit_r_h therefore also fits the client's
 SCI time (timings["mpc_s"]) against RTT: that slope / K_h is the number of
 SCI round trips per layer, and r_h = 1 (the ①/② exchange) + that number.
 This decomposed value is what r_h_measured reports; the wall-time slope is
-kept as a cross-check.  Set tcp_slow_start_after_idle=0 on both hosts.  The fit is written to
-results/rounds/r_h_netem_<dataset>.json with scope "end-to-end", which
-cost_model.load_r_h prefers over the control-plane count.
+kept as a cross-check.  Set tcp_slow_start_after_idle=0 on both hosts.
+
+当前合同的端到端轮数写入 results/rounds/r_h_netem_<dataset>_mpcv2.json，
+scope 为 "end-to-end"；cost_model.load_r_h 的合同模式只接受相同 mpc_contract。
+SCI 新增 BOB->ALICE 重分享消息后，旧 rounds（如 6.025）不是新协议实测。
+原始记录使用独立 netem_<dataset>_s<schedule>_mpcv2 目录；只拟合各 record/point
+合同一致且等于当前 MPC_CONTRACT 的新目录，拒绝覆盖已有原始记录及轮数输出。
 
 Topology (实验方案 §2.1: 有线直连 + tc/netem): delay/jitter/loss/rate are
 applied on the client's egress only, so the configured delay is the full RTT.
@@ -117,6 +121,7 @@ def run_point(args, x, rtt, bw, loss, jitter) -> dict:
         "schedule": res.get("schedule"),
         "wire": res.get("wire"),
         "mpc_runtime": res.get("mpc_runtime"),
+        "mpc_contract": res.get("mpc_contract"),
         "deployment_compliant": res.get("deployment_compliant"),
         "protocol_failures": res.get("protocol_failures"),
         "profile_name": res.get("profile_name"),
@@ -127,7 +132,7 @@ def run_point(args, x, rtt, bw, loss, jitter) -> dict:
 
 def out_dir(root: Path, device: str, mode: str, dataset: str, schedule: str) -> Path:
     return (root / "results" / "raw_results" / ("E3" if mode == "e3" else "E9")
-            / device / f"netem_{dataset}_s{schedule}")
+            / device / f"netem_{dataset}_s{schedule}_mpcv2")
 
 
 def delay_mult(iface: str) -> float:
@@ -159,15 +164,51 @@ def slow_start_after_idle() -> int | None:
         return None
 
 
+def validate_round_record(record: dict, contract: dict) -> None:
+    """ReLU round calibration requires real SCI/logits, not argmax or Python OT."""
+    import math
+    if (record.get("mpc_contract") != contract or record.get("backend") != "seal"
+            or record.get("output_mode") != "logits" or record.get("measured") is not True
+            or record.get("partial") or record.get("error")
+            or record.get("deployment_compliant") is False or record.get("protocol_failures")):
+        raise ValueError("round fit requires matching-contract complete SEAL/logits records")
+    hybrid = "1" in str(record.get("schedule", ""))
+    if hybrid and record.get("mpc_runtime") != "litepi_sci":
+        raise ValueError("round fit requires SCI ReLU, not Python OT")
+    points = record.get("points")
+    if not isinstance(points, list) or not points:
+        raise ValueError("round fit requires measured points")
+    for point in points:
+        if (point.get("mpc_contract") != contract or point.get("deployment_compliant") is False
+                or point.get("protocol_failures") or point.get("error")
+                or (hybrid and point.get("mpc_runtime") != "litepi_sci")):
+            raise ValueError("invalid protocol/backend in round-fit point")
+        timings = point.get("client_timings")
+        if hybrid and (not isinstance(timings, list) or not timings or any(
+                not isinstance(t.get("mpc_s"), (int, float))
+                or not math.isfinite(t["mpc_s"]) or t["mpc_s"] < 0 for t in timings)):
+            raise ValueError("round fit requires finite measured SCI interactive timings")
+
+
 def fit_r_h(root: Path, device: str, dataset: str) -> dict | None:
-    """R_eff(s) by least squares of wall vs RTT (zero loss/jitter, largest BW),
-    and SCI rounds per layer from the client's mpc_s vs RTT."""
+    """仅拟合当前 MPC 合同的 mpcv2 端到端记录，保留 wall/SCI 斜率算法。"""
+    from pi_proto import MPC_CONTRACT
+
+    out = root / "results" / "rounds" / f"r_h_netem_{dataset}_mpcv2.json"
+    if out.exists():
+        raise ValueError(f"拒绝覆盖已有协议轮数输出：{out}")
     slopes = {}
     sci_rounds = {}
     tcp_idle = set()
     for f in sorted((root / "results" / "raw_results" / "E3" / device)
-                    .glob(f"netem_{dataset}_s*/run.json")):
+                    .glob(f"netem_{dataset}_s*_mpcv2/run.json")):
         d = json.loads(f.read_text(encoding="utf-8"))
+        validate_round_record(d, MPC_CONTRACT)
+        mpc_contract = d.get("mpc_contract")
+        if mpc_contract != MPC_CONTRACT or any(
+                p.get("mpc_contract") != mpc_contract for p in d["points"]):
+            raise ValueError(f"{f}: record/point 的 mpc_contract 必须一致且等于当前 MPC_CONTRACT；"
+                             "需要新的 netem/SCI 实测，不能使用旧协议记录")
         mult = float(d.get("delay_mult", 1.0))
         pts = [p for p in d["points"]
                if p.get("loss_pct", 0) == 0 and p.get("jitter_ms", 0) == 0]
@@ -194,6 +235,8 @@ def fit_r_h(root: Path, device: str, dataset: str) -> dict | None:
                                  "bandwidth_mbps": bw, "n": int(len(xs)),
                                  "delay_mult": mult}
     if "00" not in slopes or len(slopes) < 2:
+        print("缺少当前 MPC_CONTRACT 的完整 netem/SCI RTT 测量（需 00 与 hybrid 调度）；"
+              "未生成 end-to-end 轮数，不复用旧协议文件")
         return None
     per = {}
     for s, v in slopes.items():
@@ -211,6 +254,7 @@ def fit_r_h(root: Path, device: str, dataset: str) -> dict | None:
         "method": "tc/netem RTT sweep; least-squares slope of wall time vs RTT "
                   "per schedule; r_h = (R_eff(s) - R_eff(00)) / K_h",
         "scope": "end-to-end",
+        "mpc_contract": mpc_contract,
         "sci_internal_rounds_counted": True,
         "rtt_convention": "configured delay = added RTT; on loopback the "
                           "bidirectional netem factor is divided out (delay_mult)",
@@ -229,10 +273,9 @@ def fit_r_h(root: Path, device: str, dataset: str) -> dict | None:
                 "handshake when the context is not reused; the difference "
                 "cancels the handshake.",
     }
-    out = root / "results" / "rounds" / f"r_h_netem_{dataset}.json"
     out.parent.mkdir(parents=True, exist_ok=True)
-    out.write_text(json.dumps(payload, indent=2, ensure_ascii=False) + "\n",
-                   encoding="utf-8")
+    with out.open("x", encoding="utf-8") as stream:
+        stream.write(json.dumps(payload, indent=2, ensure_ascii=False) + "\n")
     print(f"r_h (end-to-end) = {r_h:.2f}  [wall-slope cross-check {r_h_wall:.2f}, "
           f"per schedule {per}]  -> {out}")
     if r_sci is not None and r_h_wall > r_h + 1.0:
@@ -264,11 +307,17 @@ def main() -> int:
     ap.add_argument("--rtts", default=None)
     ap.add_argument("--bws", default=None)
     ap.add_argument("--dry-run", action="store_true")
-    ap.add_argument("--fit-only", action="store_true")
+    ap.add_argument("--fit-only", action="store_true",
+                    help="仅拟合当前 MPC_CONTRACT 的 mpcv2 记录，scope=end-to-end（含 SCI）；"
+                         "旧 rounds 不复用，已有新轮数输出拒绝覆盖")
     args = ap.parse_args()
 
     if args.fit_only:
         return 0 if fit_r_h(args.root, args.device, args.dataset) else 1
+
+    od = out_dir(args.root, args.device, args.mode, args.dataset, args.schedule)
+    if not args.dry_run and od.exists():
+        ap.error(f"拒绝覆盖已有 mpcv2 测量目录：{od}；没有 resume，不执行本次测量")
 
     from canonical_net import CANONICAL_SPECS
     # conv3 is model B: start the server with pi_server.py --deep-weights.
@@ -294,9 +343,13 @@ def main() -> int:
         tc_clear(args.iface, args.dry_run)
     if args.dry_run:
         return 0
-    od = out_dir(args.root, args.device, args.mode, args.dataset, args.schedule)
-    od.mkdir(parents=True, exist_ok=True)
-    (od / "run.json").write_text(json.dumps({
+    mpc_contract = points[0].get("mpc_contract") if points else None
+    if not isinstance(mpc_contract, dict) or any(
+            p.get("mpc_contract") != mpc_contract for p in points):
+        raise ValueError("拒绝保存 netem record：各 point 必须具有相同的实际 mpc_contract；"
+                         "不能以本地常量代替缺失的 peer 合同")
+    od.mkdir(parents=True, exist_ok=False)
+    record = {
         "exp_id": "E3" if args.mode == "e3" else "E9",
         "git_sha": git_sha(args.root),
         "timestamp_utc": datetime.now(timezone.utc).isoformat(timespec="seconds"),
@@ -309,11 +362,14 @@ def main() -> int:
         "deployment_compliant": points[0].get("deployment_compliant") if points else None,
         "protocol_failures": points[0].get("protocol_failures") if points else None,
         "mpc_runtime": points[0].get("mpc_runtime") if points else None,
+        "mpc_contract": mpc_contract,
         "tcp_slow_start_after_idle": slow_start_after_idle(),
         "warmup_discarded": args.warmup, "repeat": args.repeat,
         "measured": True,
         "points": points,
-    }, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
+    }
+    with (od / "run.json").open("x", encoding="utf-8") as stream:
+        stream.write(json.dumps(record, indent=2, ensure_ascii=False) + "\n")
     print(f"written -> {od / 'run.json'}")
     if args.mode == "e3":
         fit_r_h(args.root, args.device, args.dataset)

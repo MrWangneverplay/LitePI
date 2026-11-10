@@ -1,5 +1,8 @@
 """M1–M3 mask/session state machine (protocol §8) and the M2 domain rule.
 
+本会话的防护范围是随机材料的一次性消费与查询同步，不保证跨会话种子
+唯一性，不构成 function privacy 或完整协议安全的证明。
+
 M1  fresh per (query, layer):
     r_k^(q) = PRG(seed_session, q || k), SHAKE-256 in counter mode.  The seed
     comes from the OS CSPRNG on the server and is never sent to the client.
@@ -231,7 +234,12 @@ def _grid_draw(stream: bytes, size: int, domain: MaskDomain) -> list[float]:
 
 
 class MaskSession:
-    """Server-only PRG session with explicit M3 resynchronisation."""
+    """服务端 PRG 会话，供串行单线程调用。
+
+    draw 与 draw_ints 在每个查询内共用 layer 的一次性消费空间；重复请求
+    或失败均关闭会话。这里只防护本会话的随机材料消费，不保证 function
+    privacy 或完整协议安全；新 Setup 仍须使用新的会话种子。
+    """
 
     def __init__(self, seed: bytes | None = None,
                  domains: dict[int, MaskDomain] | None = None,
@@ -243,6 +251,7 @@ class MaskSession:
         self._default_domain = default_domain
         self._next_query = 0
         self._active_query: int | None = None
+        self._consumed_layers: set[int] = set()
         self._closed = False
 
     @property
@@ -267,7 +276,10 @@ class MaskSession:
     def begin_query(self, query_id: int) -> None:
         if self._closed:
             raise MaskSessionError("session is closed; run Setup again")
-        if query_id != self._next_query:
+        if type(query_id) is not int or not 0 <= query_id < (1 << 64):
+            self.abort()
+            raise MaskSessionError("query id must be a uint64 integer, not bool")
+        if self._next_query >= (1 << 64) or query_id != self._next_query:
             self.abort()
             raise MaskSessionError(
                 f"query counter mismatch: expected {self._next_query}, got {query_id}"
@@ -275,49 +287,80 @@ class MaskSession:
         if self._active_query is not None:
             self.abort()
             raise MaskSessionError("previous query was not finalized")
+        self._consumed_layers.clear()
         self._active_query = query_id
 
     def end_query(self, query_id: int) -> None:
-        if self._active_query != query_id:
+        if self._closed:
+            raise MaskSessionError("session is closed; run Setup again")
+        if type(query_id) is not int or not 0 <= query_id < (1 << 64):
+            self.abort()
+            raise MaskSessionError("query id must be a uint64 integer, not bool")
+        if self._active_query is None or self._active_query != query_id:
             self.abort()
             raise MaskSessionError("query finalization mismatch")
         self._active_query = None
         self._next_query += 1
+        if self._next_query >= (1 << 64):
+            self.abort()
+
+    def _consume_layer(self, query_id: int, layer_id: int, size: int,
+                       domain: MaskDomain | None) -> MaskDomain:
+        if self._closed:
+            raise MaskSessionError("session is closed; run Setup again")
+        if type(query_id) is not int or not 0 <= query_id < (1 << 64):
+            raise MaskSessionError("query id must be a uint64 integer, not bool")
+        if type(layer_id) is not int or not 0 <= layer_id < (1 << 64):
+            raise MaskSessionError("layer id must be a uint64 integer, not bool")
+        if self._active_query is None or self._active_query != query_id:
+            raise MaskSessionError("mask requested outside its active query")
+        if layer_id in self._consumed_layers:
+            raise MaskSessionError("mask layer was already consumed")
+        if type(size) is not int or size <= 0:
+            raise ValueError("mask size must be a positive integer, not bool")
+        domain = self.domain(layer_id) if domain is None else domain
+        if not isinstance(domain, MaskDomain):
+            raise ValueError("mask domain must be a MaskDomain")
+        domain.__post_init__()
+        self._consumed_layers.add(layer_id)
+        return domain
 
     def draw(self, query_id: int, layer_id: int, size: int,
              domain: MaskDomain | None = None) -> list[float]:
-        """Fresh mask for (query, layer); ``domain`` overrides the layer's
-        stored domain (used when the ciphertext's remaining modulus cannot
-        hold the full-width mask, see pi_server.fit_mask_domain)."""
-        if size <= 0:
-            raise ValueError("mask size must be positive")
-        if self._active_query != query_id:
-            raise MaskSessionError("mask requested outside its active query")
-        domain = domain or self.domain(layer_id)
-        material = (
-            _DOMAIN
-            + self._seed
-            + int(query_id).to_bytes(8, "big")
-            + int(layer_id).to_bytes(8, "big")
-        )
-        stream = hashlib.shake_256(material).digest(16 * size)
-        return _grid_draw(stream, size, domain)
+        """一次性消费 (query, layer)，与 draw_ints 共用消费空间。
+
+        domain 可覆盖存储的域，以适应密文剩余模数
+        （参见 pi_server.fit_mask_domain）；失败后不得在本会话重试。
+        """
+        try:
+            domain = self._consume_layer(query_id, layer_id, size, domain)
+            material = (
+                _DOMAIN
+                + self._seed
+                + query_id.to_bytes(8, "big")
+                + layer_id.to_bytes(8, "big")
+            )
+            stream = hashlib.shake_256(material).digest(16 * size)
+            return _grid_draw(stream, size, domain)
+        except BaseException:
+            self.abort()
+            raise
 
     def draw_ints(self, query_id: int, layer_id: int, size: int,
                   domain: MaskDomain | None = None) -> list[int]:
-        """v3 draw: the mask as fixed-point integers (r = k / 2^F)."""
-        if size <= 0:
-            raise ValueError("mask size must be positive")
-        if self._active_query != query_id:
-            raise MaskSessionError("mask requested outside its active query")
-        domain = domain or self.domain(layer_id)
-        material = (
-            _DOMAIN + b"v3" + self._seed
-            + int(query_id).to_bytes(8, "big")
-            + int(layer_id).to_bytes(8, "big")
-        )
-        return _grid_ints(hashlib.shake_256(material).digest(32 * size),
-                          size, domain)
+        """v3 定点整数掩码 (r = k / 2^F)，与 draw 共用一次性消费空间。"""
+        try:
+            domain = self._consume_layer(query_id, layer_id, size, domain)
+            material = (
+                _DOMAIN + b"v3" + self._seed
+                + query_id.to_bytes(8, "big")
+                + layer_id.to_bytes(8, "big")
+            )
+            return _grid_ints(hashlib.shake_256(material).digest(32 * size),
+                              size, domain)
+        except BaseException:
+            self.abort()
+            raise
 
     def abort(self) -> None:
         self._closed = True

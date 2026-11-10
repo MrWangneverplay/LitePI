@@ -115,7 +115,7 @@ def main() -> int:
     try:
         records, _, provenance = load_e1_series(root, args.wire, args.e1_suffix,
                                                datasets=DATASETS, seeds=SEEDS)
-        r_h, scope, source = load_r_h(root)
+        r_h, scope, source = load_r_h(root, provenance["protocol_identity"].get("mpc_contract"))
         model_added_rtt(0.0, 0, 0.0, r_h, scope)
         tables = {ds: aggregate_schedules(records, ds, provenance) for ds in DATASETS}
     except (ValueError, FileNotFoundError) as exc:

@@ -1,6 +1,7 @@
-"""Self-test for the M1–M3 mask session and the M2 v2 domain rule."""
+"""会话随机材料消费、查询同步及 M2 域规则自检，非完整协议安全证明。"""
 
 import math
+from unittest.mock import patch
 
 from mask_session import (
     RULE_V1,
@@ -15,6 +16,177 @@ from mask_session import (
     widen_domains,
 )
 from params_pi import F, MASK_MAX_BITS, MASK_SIGMA_TARGET
+
+
+def assert_rejected(action, error_type=MaskSessionError) -> None:
+    try:
+        action()
+    except error_type:
+        pass
+    else:
+        raise AssertionError("应拒绝的请求被接受")
+
+
+def assert_closed(session: MaskSession) -> None:
+    assert session._closed and session._active_query is None, "会话未关闭"
+    next_query = session.next_query
+    consumed = set(session._consumed_layers)
+    layer_id = next(iter(consumed), 0)
+    for action in (
+        lambda: session.begin_query(0),
+        lambda: session.begin_query(next_query),
+        lambda: session.end_query(None),
+        lambda: session.end_query(0),
+        lambda: session.draw(0, 0, 1),
+        lambda: session.draw_ints(0, 0, 1),
+        lambda: session.draw(0, layer_id, 1),
+        lambda: session.draw_ints(0, layer_id, 1),
+    ):
+        assert_rejected(action)
+        assert session.next_query == next_query, "关闭后查询计数器被改变"
+        assert session._consumed_layers == consumed, "关闭后消费集合被改变"
+        assert session._closed and session._active_query is None
+
+
+def check_consumption_guard() -> None:
+    codecs = ("draw", "draw_ints")
+    alternate = MaskDomain(-2.0, 4.0)
+    for first in codecs:
+        for second in codecs:
+            for size, domain in ((1, None), (2, None), (1, alternate),
+                                 (2, alternate), (False, object())):
+                session = MaskSession(seed=b"c" * 32)
+                session.begin_query(0)
+                getattr(session, first)(0, 7, 1)
+                with patch("mask_session.hashlib.shake_256",
+                           side_effect=AssertionError("重复请求进入派生")):
+                    assert_rejected(
+                        lambda: getattr(session, second)(0, 7, size, domain)
+                    )
+                    assert session._consumed_layers == {7}
+                    assert_closed(session)
+    print("PASS  共用 layer 消费空间：同 codec、跨 codec、size/domain 变化均拒绝")
+
+    bad_ids = (True, False, 0.0, 1.5, "0", None, -1, 1 << 64)
+    for bad in bad_ids:
+        session = MaskSession(seed=b"i" * 32)
+        assert_rejected(lambda: session.begin_query(bad))
+        assert_closed(session)
+        session = MaskSession(seed=b"i" * 32)
+        session.begin_query(0)
+        assert_rejected(lambda: session.end_query(bad))
+        assert_closed(session)
+        for codec in codecs:
+            for query_id, layer_id in ((bad, 0), (0, bad)):
+                session = MaskSession(seed=b"i" * 32)
+                session.begin_query(0)
+                assert_rejected(
+                    lambda: getattr(session, codec)(query_id, layer_id, 1)
+                )
+                assert not session._consumed_layers
+                assert_closed(session)
+    for codec in codecs:
+        for bad_size in (True, False, 0, -1, 1.0, "1", None):
+            session = MaskSession(seed=b"i" * 32)
+            session.begin_query(0)
+            assert_rejected(lambda: getattr(session, codec)(0, 0, bad_size),
+                            ValueError)
+            assert not session._consumed_layers
+            assert_closed(session)
+        invalid_domain = MaskDomain(-1.0, 1.0)
+        object.__setattr__(invalid_domain, "lo", float("nan"))
+        for bad_domain in (False, object(), invalid_domain):
+            for source in ("override", "stored", "default"):
+                session = MaskSession(
+                    seed=b"i" * 32,
+                    domains={0: bad_domain} if source == "stored" else None,
+                    default_domain=bad_domain if source == "default" else alternate,
+                )
+                session.begin_query(0)
+                override = bad_domain if source == "override" else None
+                with patch("mask_session.hashlib.shake_256",
+                           side_effect=AssertionError("无效域进入派生")):
+                    assert_rejected(
+                        lambda: getattr(session, codec)(0, 0, 1, override),
+                        ValueError,
+                    )
+                    assert not session._consumed_layers, "域校验前已占用 layer"
+                    assert_closed(session)
+    print("PASS  query/layer uint64 非 bool、size 正整数与 domain 校验失败即关闭")
+
+    for codec in codecs:
+        for state in ("inactive", "finished", "wrong-query"):
+            session = MaskSession(seed=b"o" * 32)
+            if state != "inactive":
+                session.begin_query(0)
+            if state == "finished":
+                session.end_query(0)
+            query_id = 1 if state == "wrong-query" else 0
+            assert_rejected(lambda: getattr(session, codec)(query_id, 0, 1))
+            assert not session._consumed_layers
+            assert_closed(session)
+    for action in (lambda s: s.begin_query(0), lambda s: s.end_query(1)):
+        session = MaskSession(seed=b"o" * 32)
+        session.begin_query(0)
+        assert_rejected(lambda: action(session))
+        assert_closed(session)
+    session = MaskSession(seed=b"o" * 32)
+    assert_rejected(lambda: session.end_query(None))
+    assert_closed(session)
+    session = MaskSession(seed=b"o" * 32)
+    session.begin_query(0)
+    session.draw(0, 0, 1)
+    session.abort()
+    session.abort()
+    assert_closed(session)
+    print("PASS  outside-active、未完成查询和显式 abort 不可由 end/begin 恢复")
+
+    for codec, output in (("draw", "_grid_draw"), ("draw_ints", "_grid_ints")):
+        for stage in ("derive", "digest", "output"):
+            for error_type in (RuntimeError, KeyboardInterrupt):
+                session = MaskSession(seed=b"e" * 32)
+                session.begin_query(0)
+                target = (f"mask_session.{output}" if stage == "output"
+                          else "mask_session.hashlib.shake_256")
+                failure = error_type("注入随机材料派生或输出失败")
+                with patch(target) as mocked:
+                    if stage == "digest":
+                        mocked.return_value.digest.side_effect = failure
+                    else:
+                        mocked.side_effect = failure
+                    assert_rejected(lambda: getattr(session, codec)(0, 3, 1),
+                                    error_type)
+                    assert session._consumed_layers == {3}, "派生前未占用 layer"
+                    mocked.assert_called_once()
+                    if stage == "digest":
+                        mocked.return_value.digest.assert_called_once()
+                    assert_closed(session)
+                    mocked.assert_called_once()
+    print("PASS  派生、digest 和输出异常（含中断）均关闭，不得重试复用")
+
+    session = MaskSession(seed=b"b" * 32)
+    session.begin_query(0)
+    session.draw(0, (1 << 64) - 1, 1)
+    session.draw_ints(0, 0, 1)
+    session.end_query(0)
+    session.begin_query(1)
+    assert not session._consumed_layers, "新查询未重置消费集合"
+    session.draw_ints(1, (1 << 64) - 1, 1)
+    session.draw(1, 0, 1)
+    session.end_query(1)
+    session._next_query = (1 << 64) - 1
+    session.begin_query((1 << 64) - 1)
+    session.draw((1 << 64) - 1, 0, 1)
+    session.draw_ints((1 << 64) - 1, (1 << 64) - 1, 1)
+    session.end_query((1 << 64) - 1)
+    assert session.next_query == 1 << 64, "查询计数器溢出回绕"
+    assert_closed(session)
+    session = MaskSession(seed=b"b" * 32)
+    session._next_query = 1 << 64
+    assert_rejected(lambda: session.begin_query(0))
+    assert session.next_query == 1 << 64
+    assert_closed(session)
+    print("PASS  串行混合 codec、跨查询 layer 复用与 uint64 上界；溢出关闭无回绕")
 
 
 def main() -> int:
@@ -36,6 +208,7 @@ def main() -> int:
     assert explicit.draw(1, 0, 128) != layer0
     explicit.end_query(1)
     print("PASS  M1 fresh (query, layer) masks; M3 rejects query gaps")
+    check_consumption_guard()
 
     # M2 v2 rule --------------------------------------------------------------
     assert power_of_two_bound(10.8) == 16.0          # 1.25*10.8 = 13.5 -> 16

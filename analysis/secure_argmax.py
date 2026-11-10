@@ -19,7 +19,9 @@ from secure_relu_net import (
     Chan,
     Ctx,
     d_drelu_batch,
+    d_wand_batch,
     d_xorbit_mult_batch,
+    validate_fixed_point,
 )
 
 
@@ -55,13 +57,16 @@ def run_party_argmax(ctx: Ctx, shares, k: int, f: int,
 
     When ``sci`` is a ``litepi_sci.SecureReLU`` session, the comparison and
     the select run inside CrypTFlow2's OT-based protocols (MSB + multiplexer)
-    instead of the Python OT emulation.
+    instead of the Python OT emulation.  The emulated path compares three
+    DReLU bits (the signs of both scores and of their difference), so a
+    difference spanning the whole ring cannot wrap into a wrong ordering.
     """
-    if not (1 <= k_compare <= k) or f < 0:
-        raise ValueError("require 1 <= k_compare <= k and f >= 0")
+    validate_fixed_point(k, f, k_compare)
     q = [_quantize(v, k, f) for v in shares]
     n = len(q)
-    if n < 2:
+    if n == 0:
+        raise ValueError("argmax requires at least one logit")
+    if n == 1:
         return 0
     mask = 1 << k
     champion_score = q[0]
@@ -73,7 +78,10 @@ def run_party_argmax(ctx: Ctx, shares, k: int, f: int,
         diff = (champion_score - q[i]) % mask
         challenger_index = i if ctx.party == 0 else 0
         if sci is None:
-            w = d_drelu_batch(ctx, [diff], k_compare)[0]
+            # Three DReLU bits (both signs plus the difference sign) keep the
+            # ordering correct even when the difference spans the whole ring.
+            a, b, d = d_drelu_batch(ctx, [champion_score, q[i], diff], k)
+            w = d ^ d_wand_batch(ctx, [a ^ b], [a ^ d])[0]
             champion_score, champion_index = _select_shared(
                 ctx,
                 [champion_score, champion_index],

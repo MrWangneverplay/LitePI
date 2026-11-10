@@ -37,6 +37,7 @@ from pi_proto import (
     F,
     K_COMPARE,
     K_RING,
+    MPC_CONTRACT,
     WIRE_GUARD_BITS,
     WIRE_PROFILES,
     ProtocolError,
@@ -65,6 +66,15 @@ from sci_relu import SCI_AVAILABLE, SciReLUSession, ring_to_float, sci_bytes
 P2_A0 = 0.0625
 P2_A1 = 0.5
 P2_A2 = 0.5
+
+TIMING_SEMANTICS_VERSION = 2
+TIMING_CONTRACT = {
+    "timing_semantics_version": TIMING_SEMANTICS_VERSION,
+    "server_he_compute_s": "encrypted_forward 内正向累计的局部 HE 线性、P2、mask encryption/add、share HE combine；不是全服务器 CPU；不含网络、序列化、MPC",
+    "forward_s": "forward elapsed, not compute；保留原边界，包含 wire/MPC 等待",
+    "server_mpc_interactive_s": "原 server mpc_s，含交互等待，不是纯 CPU",
+    "client_mpc_interactive_s": "原 client mpc_s，含交互等待，不是纯 CPU",
+}
 
 
 def _dbg(tag, arr, k=4):
@@ -181,7 +191,9 @@ class HybridMLP:
             t0 = time.perf_counter()
             ct = be.mm(ct, w)
             ct = be.add_plain(ct, b)
-            timings["linear_s"] += time.perf_counter() - t0
+            linear_s = time.perf_counter() - t0
+            timings["linear_s"] += linear_s
+            timings["server_he_compute_s"] = timings.get("server_he_compute_s", 0.0) + linear_s
             if i < len(self.weights) - 1:
                 t0 = time.perf_counter()
                 if self.schedule[i]:
@@ -195,7 +207,10 @@ class HybridMLP:
                 else:
                     if getattr(self, "schedule_obfuscated", False):
                         ct = dummy_round_server(be, ctx, ct, wire, i)
+                    he_t0 = time.perf_counter()
                     ct = he_poly_server(be, ct)
+                    timings["server_he_compute_s"] = timings.get("server_he_compute_s", 0.0) + (
+                        time.perf_counter() - he_t0)
                 timings["hybrid_relu_s"] += time.perf_counter() - t0
         return ct
 
@@ -217,7 +232,8 @@ def he_poly_server(be, ct):
     return be.poly2(ct, P2_A0, P2_A1, P2_A2)
 
 
-def he_poly_layer(be, ctx, ct, wire: Wire, model, layer_index: int):
+def he_poly_layer(be, ctx, ct, wire: Wire, model, layer_index: int,
+                  timings: dict | None = None):
     """§3.1 1-level P2: return ct_{(z+c)^2} plus the folded (a2, d) coefficients.
 
     P2(z) = a2(z + c)^2 + d with c = a1/(2a2), d = a0 - a1^2/(4a2), so the
@@ -230,7 +246,12 @@ def he_poly_layer(be, ctx, ct, wire: Wire, model, layer_index: int):
         ct = dummy_round_server(be, ctx, ct, wire, layer_index)
     c = P2_A1 / (2.0 * P2_A2)
     d = P2_A0 - P2_A1 * P2_A1 / (4.0 * P2_A2)
-    return be.poly2_shifted(ct, c), (P2_A2, d)
+    he_t0 = time.perf_counter()
+    ct = be.poly2_shifted(ct, c)
+    if timings is not None:
+        timings["server_he_compute_s"] = timings.get("server_he_compute_s", 0.0) + (
+            time.perf_counter() - he_t0)
+    return ct, (P2_A2, d)
 
 
 def fold_poly_into(weight_t, bias, weight, folded) -> tuple:
@@ -322,10 +343,13 @@ def hybrid_relu_server(be, ctx, ct, wire: Wire, mpc_ctx, timings: dict,
             )
     # Protocol step 1: ct_{z+r} = ct_z + Enc_pk(r).  The server has only the
     # public context and therefore encrypts the mask with pk, never with sk.
+    he_t0 = time.perf_counter()
     if exact:
         ct_zr = be.add_cipher(ct, be.encrypt_like_exact(ctx, k, ct))
     else:
         ct_zr = be.add_cipher(ct, be.encrypt_like(ctx, r, ct))
+    timings["server_he_compute_s"] = timings.get("server_he_compute_s", 0.0) + (
+        time.perf_counter() - he_t0)
     ct_zr = _shrink(be, wire, ct_zr, f"hyb{layer_index}")
     wire.send(b"CTXT", b"\x00" + be.serialize(ct_zr))
     timings["hybrid_wire_sends"] += 1
@@ -376,7 +400,11 @@ def hybrid_relu_server(be, ctx, ct, wire: Wire, mpc_ctx, timings: dict,
     # step 1) and adding two same-level fresh ciphertexts preserves the
     # level and matches the protocol's depth-reset property; no wire message
     # changes (this encryption is local), r_h stays 1.
-    return be.add_cipher(ct_cc, be.encrypt_like(ctx, c_server, ct_cc))
+    he_t0 = time.perf_counter()
+    ct_out = be.add_cipher(ct_cc, be.encrypt_like(ctx, c_server, ct_cc))
+    timings["server_he_compute_s"] = timings.get("server_he_compute_s", 0.0) + (
+        time.perf_counter() - he_t0)
+    return ct_out
 
 
 def _nonlinear_server(be, ctx, ct, wire, timings, model, layer_index,
@@ -391,7 +419,11 @@ def _nonlinear_server(be, ctx, ct, wire, timings, model, layer_index,
         )
     if getattr(model, "schedule_obfuscated", False):
         ct = dummy_round_server(be, ctx, ct, wire, layer_index)
-    return he_poly_server(be, ct)
+    he_t0 = time.perf_counter()
+    ct = he_poly_server(be, ct)
+    timings["server_he_compute_s"] = timings.get("server_he_compute_s", 0.0) + (
+        time.perf_counter() - he_t0)
+    return ct
 
 
 def canonical_encrypted_forward(model: CanonicalCNN, be, ctx, ct, wire: Wire,
@@ -417,12 +449,14 @@ def canonical_encrypted_forward(model: CanonicalCNN, be, ctx, ct, wire: Wire,
             f"packed conv has {be.slot_count(ct)} slots, "
             f"expected {model.spec.conv_flat}"
         )
-    timings["linear_s"] += time.perf_counter() - t0
+    linear_s = time.perf_counter() - t0
+    timings["linear_s"] += linear_s
+    timings["server_he_compute_s"] = timings.get("server_he_compute_s", 0.0) + linear_s
 
     t0 = time.perf_counter()
     w1, b1 = model.fc1_weight_t_np, model.fc1_bias_np
     if model.schedule[0] == 0:
-        ct, folded = he_poly_layer(be, ctx, ct, wire, model, 0)
+        ct, folded = he_poly_layer(be, ctx, ct, wire, model, 0, timings)
         w1, b1 = fold_poly_into(w1, b1, model.fc1_weight, folded)
     else:
         ct = _nonlinear_server(
@@ -434,12 +468,14 @@ def canonical_encrypted_forward(model: CanonicalCNN, be, ctx, ct, wire: Wire,
     t0 = time.perf_counter()
     ct = be.mm(ct, w1)
     ct = be.add_plain(ct, b1)
-    timings["linear_s"] += time.perf_counter() - t0
+    linear_s = time.perf_counter() - t0
+    timings["linear_s"] += linear_s
+    timings["server_he_compute_s"] = timings.get("server_he_compute_s", 0.0) + linear_s
 
     t0 = time.perf_counter()
     w2, b2 = model.fc2_weight_t_np, model.fc2_bias_np
     if model.schedule[1] == 0:
-        ct, folded = he_poly_layer(be, ctx, ct, wire, model, 1)
+        ct, folded = he_poly_layer(be, ctx, ct, wire, model, 1, timings)
         w2, b2 = fold_poly_into(w2, b2, model.fc2_weight, folded)
     else:
         ct = _nonlinear_server(
@@ -451,7 +487,9 @@ def canonical_encrypted_forward(model: CanonicalCNN, be, ctx, ct, wire: Wire,
     t0 = time.perf_counter()
     ct = be.mm(ct, w2)
     ct = be.add_plain(ct, b2)
-    timings["linear_s"] += time.perf_counter() - t0
+    linear_s = time.perf_counter() - t0
+    timings["linear_s"] += linear_s
+    timings["server_he_compute_s"] = timings.get("server_he_compute_s", 0.0) + linear_s
     return ct
 
 
@@ -497,12 +535,14 @@ def secure_argmax_server(be, ctx, ct, wire: Wire, timings: dict,
     wire.send(b"CTXT", b"\x02" + be.serialize(ct_masked))
 
     t0 = time.perf_counter()
+    mpc_ctx = wire.mpc_ctx()
+    ots_before = mpc_ctx.ot_count
     server_share = run_party_argmax(
-        wire.mpc_ctx(), (-r).tolist(), K_RING, F, K_COMPARE,
+        mpc_ctx, (-r).tolist(), K_RING, F, K_COMPARE,
     )
     timings["mpc_s"] += time.perf_counter() - t0
     timings["mpc_elements"] += classes
-    timings["base_ots"] += (classes - 1) * max(K_COMPARE - 1, 1)
+    timings["base_ots"] += mpc_ctx.ot_count - ots_before
     wire.send_json(b"IDXS", {"share": server_share})
     return server_share
 
@@ -753,6 +793,8 @@ def serve_connection(conn: socket.socket, be, model,
                 init = pending_init
                 pending_init = None
 
+            if init.get("mpc_contract") != MPC_CONTRACT:
+                raise ProtocolError("MPC comparison/real-bridge contract mismatch; update both parties")
             if init.get("backend") != be.name:
                 raise ProtocolError(
                     f"backend mismatch: server={be.name} client={init.get('backend')}"
@@ -815,6 +857,7 @@ def serve_connection(conn: socket.socket, be, model,
 
             timings = {
                 "linear_s": 0.0,
+                "server_he_compute_s": 0.0,
                 "hybrid_relu_s": 0.0,
                 "mpc_s": 0.0,
                 "mpc_elements": 0,
@@ -852,6 +895,8 @@ def serve_connection(conn: socket.socket, be, model,
 
             stats = {
                 "role": "server/party0",
+                "timing_semantics_version": TIMING_SEMANTICS_VERSION,
+                "timing_contract": TIMING_CONTRACT,
                 **profile_info(be.name, mask_domain_aligned=aligned),
                 "architecture": getattr(model, "architecture", "hybrid_mlp"),
                 "dims": model.dims,

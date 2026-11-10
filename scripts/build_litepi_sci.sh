@@ -71,6 +71,9 @@ PYTHON="$("${PYTHON}" -c 'import sys; print(sys.executable)')"
     fail "指定 Python 缺少开发头文件：${PYTHON}；请安装与该解释器匹配的开发包。"
 PYBIND11_DIR="$("${PYTHON}" -m pybind11 --cmakedir)" || \
     fail "指定 Python 找不到 pybind11；请为 ${PYTHON} 安装 pybind11，或显式设置 INSTALL_DEPS=1。"
+# pybind11 3.x 在含非 ASCII 字符的路径上会给输出加单引号，去掉后再做文件检查。
+PYBIND11_DIR="${PYBIND11_DIR#\'}"
+PYBIND11_DIR="${PYBIND11_DIR%\'}"
 [[ -f "${PYBIND11_DIR}/pybind11Config.cmake" ]] || fail "pybind11 CMake 配置不存在：${PYBIND11_DIR}。"
 
 printf '配置 litepi_sci，Python：%s\n' "${PYTHON}"

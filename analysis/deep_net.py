@@ -276,10 +276,14 @@ class DeepNet:
                            dtype=np.float64)
         at = 0
         for ct, size in zip(cts, sizes):
+            he_t0 = time.perf_counter()
             enc = (be.encrypt_like_exact(ctx, ints[at:at + size], ct) if exact
                    else be.encrypt_like(ctx, r[at:at + size], ct))
             at += size
-            ct_zr = S._shrink(be, wire, be.add_cipher(ct, enc), f"hyb{k}")
+            ct_zr = be.add_cipher(ct, enc)
+            timings["server_he_compute_s"] = timings.get("server_he_compute_s", 0.0) + (
+                time.perf_counter() - he_t0)
+            ct_zr = S._shrink(be, wire, ct_zr, f"hyb{k}")
             wire.send(b"CTXT", b"\x00" + be.serialize(ct_zr))
         timings["hybrid_wire_sends"] += 1
         if exact:
@@ -337,7 +341,9 @@ class DeepNet:
             raise ProtocolError("deep networks need a mask session")
         t0 = time.perf_counter()
         cts = self._conv_rows(be, ctx, list(cts), 0)
-        timings["linear_s"] += time.perf_counter() - t0
+        linear_s = time.perf_counter() - t0
+        timings["linear_s"] += linear_s
+        timings["server_he_compute_s"] = timings.get("server_he_compute_s", 0.0) + linear_s
         i = 1
         while i < len(self.ops):
             op = self.ops[i]
@@ -354,7 +360,10 @@ class DeepNet:
                 blocks = post_share(share, _post_of(chain))
                 got = self._recv_share_blocks(be, ctx, wire, len(blocks))
                 timings["hybrid_wire_recvs"] += 1
+                he_t0 = time.perf_counter()
                 cts = [be.add_plain(ct, blk) for ct, blk in zip(got, blocks)]
+                timings["server_he_compute_s"] = timings.get("server_he_compute_s", 0.0) + (
+                    time.perf_counter() - he_t0)
                 timings["hybrid_relu_s"] += time.perf_counter() - t0
                 t0 = time.perf_counter()
                 if last["op"] == "conv":
@@ -368,11 +377,16 @@ class DeepNet:
             else:
                 c = P2_A1 / (2.0 * P2_A2)
                 d = P2_A0 - P2_A1 * P2_A1 / (4.0 * P2_A2)
+                he_t0 = time.perf_counter()
                 cts = [be.poly2_shifted(ct, c) for ct in cts]
+                timings["server_he_compute_s"] = timings.get("server_he_compute_s", 0.0) + (
+                    time.perf_counter() - he_t0)
                 timings["hybrid_relu_s"] += time.perf_counter() - t0
                 t0 = time.perf_counter()
                 cts = self._sparse(be, ctx, cts, chain, shape, P2_A2, d)
-            timings["linear_s"] += time.perf_counter() - t0
+            linear_s = time.perf_counter() - t0
+            timings["linear_s"] += linear_s
+            timings["server_he_compute_s"] = timings.get("server_he_compute_s", 0.0) + linear_s
             i += len(chain) + 1
         if len(cts) != 1:
             raise ProtocolError("the output must fit one ciphertext")

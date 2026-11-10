@@ -1,12 +1,13 @@
 """E9：按测量环境分组分析 netem 丢包与抖动的实测结果。
 
-读取 results/raw_results/E9/<device>/netem_<dataset>_s<schedule>/run.json，
+读取 results/raw_results/E9/<device>/netem_<dataset>_s<schedule>[_mpcv2]/run.json，
 保留所有设备的点及 run 来源，不按设备优先级合并，也不推测缺失环境元数据。
+mpc_contract 以稳定 JSON 参与比较环境键；不同合同或有/无合同不混用基准与排名。
 同一比较环境、数据集、调度和链路条件的重复点显式报错。
 
 放大率只使用同一比较环境、数据集、调度和 RTT 下零丢包、零抖动的基准。
 缺失或无效基准、非有限延迟及明确不合规或非真实测量的点跳过并报告。
-旧记录缺少端点/接口等关键元数据时只保留描述性放大率，不生成调度排名。
+旧记录缺少 mpc_contract 或端点/接口等关键元数据时只保留描述性放大率，不生成调度排名。
 最低 p95 仅在同环境、同数据集、同 RTT/丢包/抖动条件下，观测到且达到
 精度门槛的候选调度之间选择，不代表全局最优。
 
@@ -35,17 +36,18 @@ DEFAULT_ACC_MIN = P.DEFAULT_ACC_MIN
 ROOT = Path(__file__).resolve().parent.parent
 COMPARISON_CONTEXT_FIELDS = (
     "device", "topology", "iface", "host", "port", "backend", "output_mode",
-    "delay_mult", "bandwidth_mbps", "wire",
+    "delay_mult", "bandwidth_mbps", "wire", "mpc_contract",
 )
 
 
 def comparison_context(row: dict) -> tuple:
     """返回按 COMPARISON_CONTEXT_FIELDS 排序的可哈希环境键。
 
-    缺失字段保持 None；非空 wire 用排序键的 JSON 字符串表示，不从设备名猜拓扑。
+    缺失字段保持 None；wire/mpc_contract 使用排序键的稳定 JSON 字符串，
+    不从设备名猜拓扑，也不将无合同的旧记录与有合同的记录混比。
     """
     return tuple(json.dumps(row.get(field), sort_keys=True, ensure_ascii=False)
-                 if field == "wire" and row.get(field) is not None else row.get(field)
+                 if field in ("wire", "mpc_contract") and row.get(field) is not None else row.get(field)
                  for field in COMPARISON_CONTEXT_FIELDS)
 
 
@@ -53,7 +55,7 @@ def comparison_metadata_complete(row: dict) -> bool:
     # Unlimited bandwidth may legitimately be None. Missing endpoints/interface
     # in legacy records, however, cannot establish a fair cross-schedule ranking.
     required = ("device", "topology", "iface", "host", "port", "backend",
-                "output_mode", "delay_mult", "wire")
+                "output_mode", "delay_mult", "wire", "mpc_contract")
     return all(row.get(field) is not None for field in required)
 
 
@@ -78,7 +80,7 @@ def load_points(root: Path, devices: list[str]) -> list[dict]:
         pattern = str(root / "results" / "raw_results" / "E9" / device / "netem_*_s*" / "run.json")
         for path in sorted(glob.glob(pattern)):
             source = Path(path)
-            dataset, schedule = re.fullmatch(r"netem_(.+)_s(\d+)", source.parent.name).groups()
+            dataset, schedule = re.fullmatch(r"netem_(.+)_s(\d+)(?:_mpcv2)?", source.parent.name).groups()
             run = json.loads(source.read_text(encoding="utf-8"))
             metadata = {key: value for key, value in run.items() if key != "points"}
             for point in run["points"]:

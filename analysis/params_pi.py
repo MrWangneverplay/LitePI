@@ -32,8 +32,11 @@ from __future__ import annotations
 
 import os
 
-PROFILE_NAME = "paper-profile-B"
-PAPER_PROFILE = True
+_PROFILE = os.environ.get("LITEPI_PARAMS", "paper").strip().lower()
+IS_DEEP_PROFILE = _PROFILE in ("deep", "n16384")
+
+PROFILE_NAME = "deep-profile-N16384" if IS_DEEP_PROFILE else "paper-profile-B"
+PAPER_PROFILE = not IS_DEEP_PROFILE
 
 # MPC / fixed point.
 K_COMPARE = 14
@@ -43,11 +46,26 @@ F = int(os.environ.get("LITEPI_F", "8"))
 SIGMA = 30
 K_RING = K_COMPARE + SIGMA
 
-# CKKS.  Seven data primes (40 + 21*6 = 166 bit) plus one 40-bit
-# key-switching prime, per protocol §6.1.
-POLY_MODULUS_DEGREE = 8192
-COEFF_MOD_BIT_SIZES = [40, 21, 21, 21, 21, 21, 21, 40]
-GLOBAL_SCALE_BITS = 21
+# CKKS.  Paper profile: seven data primes (40 + 21*6 = 166 bit) plus one
+# 40-bit key-switching prime, per protocol §6.1.
+# Deep profile (LITEPI_PARAMS=deep): N=16384 and ten 30-bit data primes, which
+# gives the depth-10 budget that the 4-conv VGG-lite chain needs (depth-4
+# all-ReLU was measured at mult_depth=10; the N=8192 chain stops after 7
+# products).  The intermediate primes must be 23 bits or wider: SEAL requires
+# p = 1 mod 2N, and for N=16384 there are only four qualifying 21-bit primes
+# (params_b.py), so a 21-bit chain cannot be constructed.  30 bits is the
+# widest that still fits 128-bit security at 12 primes: 60 + 10*30 + 60 = 420
+# bit against the ~438-bit ceiling.  The scale follows the level primes so
+# rescaling preserves it; measured fresh-ciphertext error is 4.9e-6 and the
+# depth-4 relative error is 3.5e-3 (check_ckks_depth under this profile).
+if IS_DEEP_PROFILE:
+    POLY_MODULUS_DEGREE = 16384
+    COEFF_MOD_BIT_SIZES = [60] + [30] * 10 + [60]
+    GLOBAL_SCALE_BITS = 30
+else:
+    POLY_MODULUS_DEGREE = 8192
+    COEFF_MOD_BIT_SIZES = [40, 21, 21, 21, 21, 21, 21, 40]
+    GLOBAL_SCALE_BITS = 21
 GLOBAL_SCALE = 1 << GLOBAL_SCALE_BITS
 
 # Legacy mask half-width (+/- 8 * 2^sigma).  Kept only for hybrid_mpc.py /

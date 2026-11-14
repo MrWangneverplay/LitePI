@@ -1,0 +1,116 @@
+{
+  "exp_id": "E3",
+  "git_sha": "0ab1e93a594fe71c0e8a264aacebc107c7be8e22-dirty",
+  "timestamp_utc": "2026-11-13T11:09:45+00:00",
+  "device": "desktop_z_baseline",
+  "dataset": "cifar10",
+  "schedule": "00",
+  "host": "127.0.0.1",
+  "port": 9103,
+  "iface": "lo",
+  "backend": "seal",
+  "output_mode": "logits",
+  "topology": "loopback",
+  "delay_mult": 2.0,
+  "python_runtime": "3.11",
+  "deployment_compliant": true,
+  "protocol_failures": [],
+  "mpc_runtime": "litepi_sci",
+  "mpc_contract": {
+    "version": 2,
+    "effective_compare_bits": 44,
+    "fractional_bits": 8,
+    "argmax": "full-ring-signed-overflow-safe-first-max",
+    "sci_real_bridge_version": 1
+  },
+  "tcp_slow_start_after_idle": 0,
+  "warmup_discarded": 2,
+  "repeat": 3,
+  "measured": true,
+  "points": [
+    {
+      "rtt_ms": 50.0,
+      "bandwidth_mbps": 50.0,
+      "loss_pct": 0.0,
+      "jitter_ms": 0.0,
+      "wall_ms": [
+        27489.7,
+        27510.4,
+        27352.5
+      ],
+      "wall_mean_ms": 27450.86666666667,
+      "wall_p95_ms": 27508.33,
+      "client_timings": [
+        {
+          "encrypt_input_s": 0.0084,
+          "decrypt_s": 0.000928,
+          "mpc_s": 0.0,
+          "reencrypt_s": 0.0
+        },
+        {
+          "encrypt_input_s": 0.006824,
+          "decrypt_s": 0.001071,
+          "mpc_s": 0.0,
+          "reencrypt_s": 0.0
+        },
+        {
+          "encrypt_input_s": 0.006555,
+          "decrypt_s": 0.001088,
+          "mpc_s": 0.0,
+          "reencrypt_s": 0.0
+        }
+      ],
+      "bytes_sent": [
+        917641,
+        917641,
+        917641
+      ],
+      "bytes_received": [
+        264466,
+        264466,
+        264465
+      ],
+      "online_up_bytes": [
+        917641,
+        917641,
+        917641
+      ],
+      "online_down_bytes": [
+        264466,
+        264466,
+        264465
+      ],
+      "server_wall_s": [
+        27.4891,
+        27.5098,
+        27.352
+      ],
+      "hybrid_roundtrips": 0,
+      "schedule": [
+        0,
+        0
+      ],
+      "wire": {
+        "name": "baseline",
+        "compr": "none",
+        "seeded_client": false,
+        "seeded_keys": false,
+        "modswitch_send": false,
+        "short_chain": false
+      },
+      "mpc_runtime": "litepi_sci",
+      "mpc_contract": {
+        "version": 2,
+        "effective_compare_bits": 44,
+        "fractional_bits": 8,
+        "argmax": "full-ring-signed-overflow-safe-first-max",
+        "sci_real_bridge_version": 1
+      },
+      "deployment_compliant": true,
+      "protocol_failures": [],
+      "profile_name": "paper-profile-B",
+      "keygen_s": 0.6363,
+      "context_upload_s": 33.75053
+    }
+  ]
+}

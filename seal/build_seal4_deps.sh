@@ -37,6 +37,7 @@ mkdir -p "$WZY/seal/$OUT_DIR"
 cd "$WZY/seal"
 g++ -O3 -shared -fPIC -std=c++17 \
     -DLITEPI_SEAL_VERSION='"4.1.2"' \
+    -DSEAL_USE_ZSTD -DSEAL_USE_ZLIB \
     -I"$PYBIND_INC" -I"$PY_INC" \
     -I"$SEAL_DIR/native/src" -I"$SEAL_DIR/build/native/src" \
     -I"$SEAL_DIR/build/thirdparty/msgsl-src/include" \

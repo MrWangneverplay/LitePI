@@ -36,6 +36,7 @@ from params_pi import (  # noqa: F401  (re-exported for callers)
     COEFF_MOD_BIT_SIZES,
     F,
     GLOBAL_SCALE,
+    GLOBAL_SCALE_BITS,
     K_COMPARE,
     K_RING,
     PAPER_PROFILE,
@@ -455,7 +456,7 @@ class SealBackend:
     def new_context(self, lazy_eval_keys: bool = False):
         kwargs = {"lazy_eval_keys": True} if lazy_eval_keys else {}
         self.ctx = self.seal.new_context(
-            POLY_MODULUS_DEGREE, COEFF_MOD_BIT_SIZES, 21,
+            POLY_MODULUS_DEGREE, COEFF_MOD_BIT_SIZES, GLOBAL_SCALE_BITS,
             max_rot_pow=getattr(self, "max_rot_pow", -1), **kwargs,
         )
         return self.ctx

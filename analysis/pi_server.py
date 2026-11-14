@@ -1030,6 +1030,8 @@ def main() -> int:
                     help="per-hidden-layer 0=P2, 1=ReLU; e.g. 0,1,0")
     ap.add_argument("--plan", type=Path, default=None,
                     help="planner JSON; its s vector overrides --schedule")
+    ap.add_argument("--planner-objective", choices=["client", "server"], default=None,
+                    help="校验 --plan 的目标（默认 client）；省略时兼容旧 plan，包括 e2e")
     ap.add_argument("--mask-domains", type=Path, default=None,
                     help="M2 JSON exported by analysis/export_mask_domains.py")
     ap.add_argument("--obfuscate-schedule", action="store_true",
@@ -1046,6 +1048,10 @@ def main() -> int:
                          "bytes; compact = zstd + seeded + modswitch + "
                          "short-chain)")
     args = ap.parse_args()
+    objective_explicit = args.planner_objective is not None
+    args.planner_objective = args.planner_objective or "client"
+    if objective_explicit and not args.plan:
+        ap.error("--planner-objective 仅能校验 --plan；server 无直接 planner 调用，未实现自动规划")
 
     mask_domains = None
     if args.deep_weights:
@@ -1053,6 +1059,9 @@ def main() -> int:
             raise SystemExit("--deep-weights needs --schedule")
     if args.plan:
         plan = json.loads(args.plan.read_text(encoding="utf-8"))
+        if objective_explicit and plan.get("objective", "client") != args.planner_objective:
+            ap.error("--plan 的 objective 与 --planner-objective 不一致；"
+                     "请使用 planner --objective 重新生成 plan，不能仅改目标标签")
         planned = _as_schedule(",".join(str(v) for v in plan.get("s", [])))
         if args.schedule is not None and planned != args.schedule:
             raise SystemExit("--plan and --schedule disagree")

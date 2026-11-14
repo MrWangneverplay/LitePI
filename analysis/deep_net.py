@@ -41,12 +41,16 @@ from pathlib import Path
 import numpy as np
 
 from deep_hybrid import im2col_rows, to_blocks
+from params_pi import POLY_MODULUS_DEGREE
 from pi_proto import F, K_COMPARE, K_RING, ProtocolError, ots_per_relu
 from sci_relu import ring_to_float
 from secure_relu_net import run_party_batch
 
 P2_A0, P2_A1, P2_A2 = 0.0625, 0.5, 0.5
-SLOTS = 4096
+# One CKKS ciphertext carries N/2 slots; the deep profile (LITEPI_PARAMS=deep,
+# N=16384) doubles that, so the block layout must follow the profile rather
+# than a fixed 4096.
+SLOTS = POLY_MODULUS_DEGREE // 2
 
 
 def _pool(x: np.ndarray, k: int) -> np.ndarray:

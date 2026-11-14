@@ -769,6 +769,8 @@ def main() -> int:
                     help="loopback only: protect s with dummy ciphertext pairs")
     ap.add_argument("--schedule", type=_as_schedule, default=None,
                     help="loopback only: per-hidden-layer 0=P2, 1=ReLU")
+    ap.add_argument("--planner-objective", choices=["client", "server"], default=None,
+                    help="调度目标（默认 client）；本客户端无 planner/调度 plan，显式指定不支持")
     ap.add_argument("--dims", type=_as_dims, default=[64, 32, 10],
                     help="loopback only: layer sizes")
     ap.add_argument("--seed", type=int, default=7, help="loopback model seed")
@@ -787,6 +789,11 @@ def main() -> int:
     ap.add_argument("--out", type=Path, default=None)
     ap.add_argument("--verbose", action="store_true")
     args = ap.parse_args()
+    objective_explicit = args.planner_objective is not None
+    args.planner_objective = args.planner_objective or "client"
+    if objective_explicit:
+        ap.error("客户端无 planner 调用或调度 plan 消费；未实现 --planner-objective，"
+                 "请在 server 的 --plan 消费处校验目标（不改变旧协议）")
 
     if args.repeat < 1:
         ap.error("--repeat must be >= 1")

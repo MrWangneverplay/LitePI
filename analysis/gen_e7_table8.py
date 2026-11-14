@@ -1,297 +1,193 @@
-"""E7 Table 8: what each LitePI design decision buys, one row per ablation.
+"""E7 Table 8：仅汇总 results/raw_results/E7/**/*.json 中的消融证据。
 
-Every row compares the full design with the same system minus one decision and
-says where its numbers come from:
-
-  measured    both sides ran on the real protocol (real SEAL + SCI, per-schedule
-              ciphertext runs of model B, separate client process for memory)
-  derived     measured unit cost times a protocol count, no run of the ablated
-              variant exists
-  baseline    taken from the Delphi reproduction or the E10 runs
-  n/a         the plan lists it, but the implementation has no such component;
-              it is reported as absent, never filled with a stand-in
-  pending     the input file does not exist yet
-
-Rows (experiment plan §7 E7, plus the client-side decisions the paper claims):
-
-  wo_client_aware  server-time objective instead of the client objective
-  wo_planner       fixed all-P2 / fixed all-hybrid instead of the planner
-  wo_stream_keys   one-shot M0 instead of frame-by-frame evaluation keys
-  wo_share_decrypt naive HE<->share conversion instead of decrypt-as-share
-  wo_fusion        P2 not folded into the next linear layer
-  wo_packing       one ciphertext per value instead of SIMD packing
-  gc_route         Delphi's GC ReLU instead of the OT ReLU
-  mask_reuse       one mask across queries (violates M1)
-  wo_offline       n/a: weight encoding still runs online
-  wo_rand_trunc    n/a: the share domain has no fixed-point product
-
-Inputs: train_mid.py and eval_deep_accuracy.py on model B (one run per schedule),
-measure_client_memory.py --modes oneshot,streamed, E4, E10, results/E_delphi.
-
-    python analysis/gen_e7_table8.py
-    python analysis/gen_e7_table8.py --acc-floor 0.82 --rtt-ms 50 --bandwidth-mbps 50
+不读取其他实验，不执行协议、规划器或成本推导。只有 measured is True、
+status 为 ok 且无错误的原始记录可标为实测；缺项始终保留为【待测】。
+CLI 参数保留在汇总配置中，原始实验配置逐行保留，不重新计算指标。
 """
 
 from __future__ import annotations
 
 import argparse
-import csv
-import glob
 import json
-import re
-from datetime import datetime, timezone
 from pathlib import Path
 
-import numpy as np
-
-import planner as P
-from cost_model import fit
-from data_manifest import git_sha
-from pi_proto import make_backend
-
 ROOT = Path(__file__).resolve().parent.parent
-R_H = 6.025                  # end-to-end, Table 7-12
-MINIONN_RELUS = 173_056      # 7 layers of rust/experiments/src/minionn.rs
-MODEL_B_LAYERS = 4           # activations of model B
-MiB = 1024 * 1024
+R_H = 6.02
+PENDING = "【待测】"
+ABLATIONS = (
+    "compact_latency", "wo_client_aware", "wo_planner", "wo_stream_keys",
+    "wo_share_decrypt", "wo_fusion", "wo_packing", "gc_route", "mask_reuse",
+    "wo_offline", "wo_rand_trunc",
+)
+NAMED_FILES = {name + ".json": name for name in
+               ("compact_latency", "wo_client_aware", "wo_planner")}
 
 
-def row(name, status, full, ablated, effect, source):
-    return {"ablation": name, "status": status, "full": full, "ablated": ablated,
-            "effect": effect, "source": source}
+def within(path: Path, directory: Path) -> bool:
+    return path.resolve().is_relative_to(directory.resolve())
 
 
-def load_schedules(root: Path) -> dict:
-    """Mean per-schedule figures of model B from the real ciphertext runs."""
-    base = root / "results" / "raw_results" / "E1" / "cifar10" / "mid"
-    out = {}
-    for path in sorted(glob.glob(str(base / "s*_cipher*" / "seed*.json"))):
-        tag = re.search(r"s(\d+)_cipher", path).group(1)
-        rec = json.loads(Path(path).read_text(encoding="utf-8"))
-        out.setdefault(tag, []).append(rec)
-    table = {}
-    for tag, recs in out.items():
-        recs = [rec for rec in recs if rec.get("rows")]
-        if not recs:
+def memory_source(root: Path, path: Path | None) -> Path | None:
+    if path is None:
+        return None
+    path = path if path.is_absolute() else root / path
+    if not within(path, root / "results" / "raw_results" / "E7"):
+        raise ValueError("--memory-summary 只允许 results/raw_results/E7 内的 JSON")
+    if path.suffix.lower() != ".json":
+        raise ValueError("--memory-summary 必须是 E7 JSON 文件")
+    return path.resolve()
+
+
+def ablation_name(record: dict, fallback: str | None = None) -> str | None:
+    name = record.get("ablation")
+    config = record.get("config")
+    if name is None and isinstance(config, dict):
+        name = config.get("ablation")
+    return name if isinstance(name, str) and name.strip() else fallback
+
+
+def has_error(value) -> bool:
+    if isinstance(value, dict):
+        return bool(value.get("error")) or any(has_error(v) for v in value.values())
+    if isinstance(value, list):
+        return any(has_error(v) for v in value)
+    return False
+
+
+def evidence_row(name: str, record: dict | None, source, parent: dict | None = None) -> dict:
+    record = record or {}
+    parent = parent or {}
+    measured = (record.get("measured") is True and record.get("status") == "ok"
+                and not has_error(record) and not parent.get("error")
+                and parent.get("status", "ok") == "ok")
+    return {
+        "ablation": name,
+        "status": "ok" if measured else "pending",
+        "evidence": "实测" if measured else PENDING,
+        "measured": measured,
+        "full": record["full"] if measured and record.get("full") is not None else PENDING,
+        "ablated": record["ablated"] if measured and record.get("ablated") is not None else PENDING,
+        "effect": record["effect"] if measured and record.get("effect") is not None else PENDING,
+        "source": source,
+        "config": record.get("config", parent.get("config", {})),
+        "git_sha": record.get("git_sha", parent.get("git_sha", "unknown")),
+        "device": record.get("device", parent.get("device", "unknown")),
+        "timestamp": record.get("timestamp", record.get("timestamp_utc",
+                         parent.get("timestamp", parent.get("timestamp_utc", PENDING)))),
+        "record": record or None,
+    }
+
+
+def collect_rows(root: Path, memory_summary: Path | None = None) -> tuple[list[dict], list[dict]]:
+    root = root.resolve()
+    memory = memory_source(root, memory_summary)
+    base = root / "results" / "raw_results" / "E7"
+    rows = []
+    issues = []
+    seen = set()
+    for path in sorted(base.rglob("*.json")):
+        if not path.is_file() or not within(path, base):
             continue
-        rows = [r for rec in recs for r in rec["rows"]]
-        accs = [json.loads(Path(p).read_text(encoding="utf-8"))["test_acc"]
-                for p in glob.glob(str(base / f"s{tag}" / "seed*.json"))]
-        t = lambda k: float(np.mean([r["timings"][k] for r in rows]))
-        hybrid = sum(int(b) for b in tag)
-        table[tag] = {
-            "accuracy": float(np.mean(accs)) if accs else None,
-            "agreement": float(np.mean([rec["agreement"] for rec in recs])),
-            "K_h": hybrid,
-            "rounds": 2 + hybrid * R_H,
-            "client_s": t("encrypt_input_s") + t("decrypt_s") + t("reencrypt_s") + t("mpc_s"),
-            "server_s": float(np.mean([r["server"]["forward_s"] for r in rows])),
-            "bytes": float(np.mean([r["up_bytes"] + r["down_bytes"] for r in rows])),
-            "sci_bytes": float(np.mean([r["up_sci_bytes"] + r["down_sci_bytes"] for r in rows])),
-            "elements": int(rows[0]["timings"]["mpc_elements"]),
-        }
-    return table
+        source = path.relative_to(root).as_posix()
+        fallback = None
+        if any(part in ("ablation", "ablations") for part in path.relative_to(base).parts[:-1]):
+            fallback = NAMED_FILES.get(path.name)
+        if memory is not None and path.resolve() == memory:
+            fallback = "wo_stream_keys"
+        try:
+            payload = json.loads(path.read_text(encoding="utf-8"))
+        except (OSError, ValueError, UnicodeError) as exc:
+            issues.append({"source": source, "error": str(exc)})
+            if fallback:
+                rows.append(evidence_row(fallback, None, source))
+                seen.add(fallback)
+            continue
+        if isinstance(payload, dict):
+            if payload.get("record_type") == "summary" or payload.get("summary") is True:
+                continue
+            nested = payload.get("rows")
+            named_rows = [item for item in nested if isinstance(item, dict) and ablation_name(item)] \
+                if isinstance(nested, list) else []
+            if named_rows:
+                records = [(item, payload) for item in named_rows]
+            else:
+                records = [(payload, None)]
+        elif isinstance(payload, list):
+            records = [(item, None) for item in payload if isinstance(item, dict)]
+        else:
+            issues.append({"source": source, "error": "E7 JSON 必须是对象或记录列表"})
+            records = []
+        for record, parent in records:
+            name = ablation_name(record, fallback)
+            if name:
+                rows.append(evidence_row(name, record, source, parent))
+                seen.add(name)
+    for name in ABLATIONS:
+        if name not in seen:
+            rows.append(evidence_row(name, None, PENDING))
+    if memory is not None and not memory.is_file():
+        issues.append({"source": str(memory), "error": "E7 memory source 不存在，保持【待测】"})
+    return rows, issues
 
 
-def planner_rows(table: dict, acc_floor: float, rtt_ms: float, mbps: float) -> list[dict]:
-    """The planner's two objectives over the real runs of model B."""
-    if not table:
-        return [row(n, "pending", None, None, None, "eval_deep_accuracy on model B")
-                for n in ("wo_client_aware", "wo_planner")]
+def write_summary(root: Path, out: Path, config: dict, rows: list[dict], issues: list[dict]) -> Path:
+    target = out / "e7_table8.json"
+    raw = root / "results" / "raw_results"
+    raw_path = (within(target, raw)
+                or any(part.casefold() == "raw_results"
+                       for part in (*target.absolute().parts, *target.resolve().parts)))
+    overwrite = not raw_path
+    if not overwrite and (target.exists() or target.is_symlink()):
+        raise FileExistsError(f"禁止覆盖 raw_results 已有文件：{target}")
 
-    ok = {t: s for t, s in table.items()
-          if s["accuracy"] is not None and s["accuracy"] >= acc_floor
-          and P.required_depth(tuple(int(b) for b in t), P.MODEL_B_LAYERS) <= P.Profile(None).depth_budget}
-    if not ok:
-        return [row(n, "pending", None, None,
-                    f"no deployable schedule reaches the floor {acc_floor}", "train_mid")
-                for n in ("wo_client_aware", "wo_planner")]
-    profile = P.Profile(fit(ROOT), accuracies={t: s["accuracy"] for t, s in ok.items()},
-                        rtt_ms=rtt_ms, bandwidth_mbps=mbps, arch="conv3",
-                        input_blocks=P.MODEL_B_INPUT_BLOCKS)
-    server_side = P.Profile(**{**profile.__dict__, "objective": "server"})
-    full = P.constrained(P.MODEL_B_LAYERS, profile, acc_floor).key()
-    server = P.constrained(P.MODEL_B_LAYERS, server_side, acc_floor).key()
-    a, b = ok[full], ok[server]
-    rows = [row("wo_client_aware", "measured", {"schedule": full, **a},
-                {"schedule": server, **b},
-                {"client_s_x": b["client_s"] / a["client_s"],
-                 "bytes_x": b["bytes"] / a["bytes"],
-                 "rounds_delta": b["rounds"] - a["rounds"],
-                 "server_s_x": b["server_s"] / a["server_s"]},
-                "real ciphertext runs of model B")]
-    hybrid_all = "1" * MODEL_B_LAYERS
-    fixed = table.get(hybrid_all)
-    rows.append(row(
-        "wo_planner", "measured" if fixed else "pending", {"schedule": full, **a},
-        {"all_p2": f"{'0' * MODEL_B_LAYERS} is not deployable: depth "
-                   f"{P.required_depth((0,) * MODEL_B_LAYERS, P.MODEL_B_LAYERS)}",
-         "all_hybrid": {"schedule": hybrid_all, **fixed} if fixed else None},
-        ({"accuracy_delta": fixed["accuracy"] - a["accuracy"]
-          if fixed["accuracy"] is not None else None,
-          "bytes_x": fixed["bytes"] / a["bytes"],
-          "rounds_delta": fixed["rounds"] - a["rounds"]} if fixed else None),
-        "real ciphertext runs of model B" if fixed
-        else f"pending: no ciphertext run of s{hybrid_all} yet"))
-    return rows
+    # 共享帮助文件由主线程维护；此消费者不提供另一套写入实现。
+    if __package__:
+        from .e7_io import atomic_json, metadata
+    else:
+        from e7_io import atomic_json, metadata
+    payload = {
+        **metadata(config, measured=False, device="desktop", root=root),
+        "exp_id": "E7",
+        "record_type": "summary",
+        "summary": True,
+        "measured": False,
+        "evidence_scope": "汇总本身不是实测；证据按行判定，缺项为【待测】",
+        "r_h": R_H,
+        "r_h_scope": "端到端口径，仅声明，不推导轮数",
+        "acc_floor": config["acc_floor"],
+        "rtt_ms": config["rtt_ms"],
+        "bandwidth_mbps": config["bandwidth_mbps"],
+        "rows": rows,
+        "issues": issues,
+    }
+    atomic_json(target, payload, overwrite=overwrite)
+    return target
 
 
-def memory_row(path: Path) -> dict:
-    if not path.is_file():
-        return row("wo_stream_keys", "pending", None, None, None, str(path))
-    rows = json.loads(path.read_text(encoding="utf-8"))["rows"]
-    vals = lambda mode: [r["client_peak_rss_mb"] for r in rows if r["mode"] == mode]
-    streamed, oneshot = vals("streamed"), vals("oneshot")
-    if not streamed or not oneshot:
-        missing = "oneshot" if not oneshot else "streamed"
-        return row("wo_stream_keys", "pending",
-                   {"client_peak_mb": float(np.mean(streamed)) if streamed else None},
-                   None, None,
-                   f"measure_client_memory.py --modes oneshot,streamed ({missing} missing)")
-    full, off = float(np.mean(streamed)), float(np.mean(oneshot))
-    return row("wo_stream_keys", "measured", {"client_peak_mb": full},
-               {"client_peak_mb": off}, {"memory_x": off / full},
-               "measure_client_memory.py, client process only")
-
-
-def segment_depth(bits, fold: bool) -> int:
-    """Largest depth between resets of model B; P2 costs one more if not folded."""
-    layers = tuple(P.Layer(l.name, l.elements, p2_depth=1 if fold else 2)
-                   for l in P.MODEL_B_LAYERS)
-    return P.required_depth(bits, layers)
-
-
-def measured_budget() -> int:
-    """Rescales the CKKS chain really allows."""
-    be = make_backend("seal")
-    ct = be.encrypt(be.new_context(), np.ones(16))
-    count = 0
-    try:
-        for _ in range(16):
-            ct = be.mul_plain(ct, np.ones(16))
-            be.decrypt(ct)
-            count += 1
-    except Exception:
-        pass
-    return count
-
-
-def fusion_row() -> dict:
-    budget = measured_budget()
-    grid = [tuple(int(b) for b in f"{i:0{MODEL_B_LAYERS}b}") for i in range(2 ** MODEL_B_LAYERS)]
-    count = lambda fold: sum(segment_depth(s, fold) <= budget for s in grid)
-    main = (0, 1, 0, 0)
-    return row("wo_fusion", "derived",
-               {"deployable_schedules": count(True), "depth_s0100": segment_depth(main, True)},
-               {"deployable_schedules": count(False), "depth_s0100": segment_depth(main, False)},
-               {"budget_measured": budget, "of_schedules": len(grid)},
-               "depth count against the measured SEAL chain")
-
-
-def packing_row(root: Path) -> dict:
-    path = root / "results" / "raw_results" / "E4" / "all" / "wire_bytes" / "seed73.csv"
-    if not path.is_file():
-        return row("wo_packing", "pending", None, None, None, str(path))
-    with path.open(encoding="utf-8") as fh:
-        ct = max(int(r["bytes"]) for r in csv.DictReader(fh)
-                 if r["profile"] == "baseline" and r["message"] == "M1")
-    slots = 6912                       # im2col input of model B
-    return row("wo_packing", "derived", {"ciphertexts": 2, "bytes": 2 * ct},
-               {"ciphertexts": slots, "bytes": slots * ct}, {"bytes_x": slots / 2},
-               "measured M1 size times the ciphertext count")
-
-
-def share_row(root: Path) -> dict:
-    path = root / "results" / "raw_results" / "E4" / "all" / "wire_bytes" / "seed73.csv"
-    if not path.is_file():
-        return row("wo_share_decrypt", "pending", None, None, None, str(path))
-    with path.open(encoding="utf-8") as fh:
-        ct = max(int(r["bytes"]) for r in csv.DictReader(fh)
-                 if r["profile"] == "baseline" and r["message"] == "M1")
-    return row("wo_share_decrypt", "derived", {"per_layer_extra": 0},
-               {"per_layer_extra_bytes": ct, "per_layer_extra_rounds": 1,
-                "per_layer_extra_encryptions": 1}, None,
-               "protocol count times the measured fresh ciphertext")
-
-
-def _client_cpu(root: Path, layers: int) -> float | None:
-    vals = []
-    for f in glob.glob(str(root / "results" / "E_delphi" / "logs" / f"client_L{layers}_r*.time")):
-        text = Path(f).read_text(encoding="utf-8", errors="replace")
-        vals.append(float(re.search(r"User time \(seconds\): ([\d.]+)", text).group(1))
-                    + float(re.search(r"System time \(seconds\): ([\d.]+)", text).group(1)))
-    return float(np.mean(vals)) if vals else None
-
-
-def gc_row(root: Path, table: dict) -> dict:
-    path = root / "results" / "E_delphi" / "delphi_minionn_summary.csv"
-    with path.open(encoding="utf-8") as fh:
-        rows = {int(r["layers"]): r for r in csv.DictReader(fh)}
-    comm = lambda r, k: float(r[k]) * 1024
-    off = (comm(rows[0], "client_comm_off_KB") - comm(rows[7], "client_comm_off_KB")) / MINIONN_RELUS
-    on = (comm(rows[0], "client_comm_on_KB") - comm(rows[7], "client_comm_on_KB")) / MINIONN_RELUS
-    cpu = [_client_cpu(root, 0), _client_cpu(root, 7)]
-    gc = {"bytes_per_relu_offline": off, "bytes_per_relu_online": on,
-          "client_cpu_s_all_relu": cpu[0], "client_cpu_s_all_poly": cpu[1]}
-    sci = [s["sci_bytes"] / s["elements"] for s in table.values() if s["elements"]]
-    if not sci:
-        return row("gc_route", "pending", None, gc, None, "needs model B SCI bytes")
-    ot = float(np.mean(sci))
-    return row("gc_route", "baseline", {"bytes_per_relu": ot}, gc,
-               {"total_bytes_x": (off + on) / ot, "online_bytes_x": on / ot},
-               "Delphi reproduction (L0 minus L7) against real SCI bytes")
-
-
-def mask_row(root: Path) -> dict:
-    path = root / "results" / "raw_results" / "E10" / "all" / "summary_5seeds.json"
-    if not path.is_file():
-        return row("mask_reuse", "pending", None, None, None, str(path))
-    data = json.loads(path.read_text(encoding="utf-8"))["datasets"]
-    return row("mask_reuse", "measured",
-               {d: v["mask_fresh_layer1"]["single_query_sign_accuracy"] for d, v in data.items()},
-               {d: v["mask_reuse_layer1"]["mean"] for d, v in data.items()}, None,
-               "E10a: fresh sign recovery against the reuse residual")
-
-
-def main() -> int:
+def main(argv: list[str] | None = None) -> int:
     ap = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     ap.add_argument("--root", type=Path, default=ROOT)
     ap.add_argument("--acc-floor", type=float, default=0.82)
     ap.add_argument("--rtt-ms", type=float, default=50.0)
     ap.add_argument("--bandwidth-mbps", type=float, default=50.0)
     ap.add_argument("--memory-summary", type=Path, default=None)
-    ap.add_argument("--out", type=Path, default=None)
-    args = ap.parse_args()
-
-    table = load_schedules(args.root)
-    memory = args.memory_summary or (args.root / "results" / "raw_results" / "E2"
-                                     / "client_only" / "desktop" / "seed73" / "summary.json")
-    rows = [
-        *planner_rows(table, args.acc_floor, args.rtt_ms, args.bandwidth_mbps),
-        memory_row(memory),
-        share_row(args.root),
-        fusion_row(),
-        packing_row(args.root),
-        gc_row(args.root, table),
-        mask_row(args.root),
-        row("wo_offline", "n/a", None, None, None,
-            "LinearEval encodes the weights online; the encoding cache is not built"),
-        row("wo_rand_trunc", "n/a", None, None, None,
-            "SCI ReLU and the fallback only compare and select; no truncation exists"),
-    ]
-    out = args.out or args.root / "results" / "E7"
-    out.mkdir(parents=True, exist_ok=True)
-    (out / "e7_table8.json").write_text(json.dumps({
-        "exp_id": "E7", "git_sha": git_sha(args.root), "acc_floor": args.acc_floor, "rtt_ms": args.rtt_ms,
-        "bandwidth_mbps": args.bandwidth_mbps, "r_h": R_H,
-        "timestamp_utc": datetime.now(timezone.utc).isoformat(timespec="seconds"),
-        "schedules": table, "rows": rows,
-    }, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
-    for r in rows:
-        print(f"{r['ablation']:<18}{r['status']:<10}{json.dumps(r['effect'], ensure_ascii=False)}")
-        print(f"    full    {json.dumps(r['full'], ensure_ascii=False)[:150]}")
-        print(f"    ablated {json.dumps(r['ablated'], ensure_ascii=False)[:150]}")
-    print(f"-> {out / 'e7_table8.json'}")
+    ap.add_argument("--out", type=Path, default=None, help="汇总输出目录")
+    args = ap.parse_args(argv)
+    root = args.root.resolve()
+    out = args.out or root / "results" / "E7"
+    try:
+        memory = memory_source(root, args.memory_summary)
+        rows, issues = collect_rows(root, memory)
+        config = {"root": str(root), "acc_floor": args.acc_floor, "rtt_ms": args.rtt_ms,
+                  "bandwidth_mbps": args.bandwidth_mbps,
+                  "memory_summary": str(memory) if memory is not None else None,
+                  "out": str(out)}
+        target = write_summary(root, out, config, rows, issues)
+    except (ValueError, OSError) as exc:
+        ap.error(str(exc))
+    for record in rows:
+        print(f"{record['ablation']:<18} {record['evidence']}  {record['source']}")
+    print(f"汇总（measured=False）-> {target}")
     return 0
 
 
